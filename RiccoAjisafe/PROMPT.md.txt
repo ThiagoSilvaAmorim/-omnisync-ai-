@@ -1,0 +1,690 @@
+# PROMPT – Desenvolvimento de Site Premium para Ricco Ajisafe
+
+Atue como um **Desenvolvedor Front-End Sênior, UI/UX Designer, Motion Designer, Diretor de Arte Digital, Especialista em Performance Web, SEO Técnico e Acessibilidade**, com padrão de qualidade de uma agência internacional premiada (Awwwards, FWA e CSS Design Awards).
+
+Sua missão é desenvolver um site institucional completo para **Ricco Ajisafe**, paisagista especializado em eventos de alto padrão em São Paulo.
+
+O objetivo é criar um site que transmita luxo, exclusividade, sofisticação e confiança, convertendo visitantes em clientes através de um formulário inteligente e integração com WhatsApp.
+
+---
+
+# OBJETIVOS
+
+O site deve transmitir:
+
+* Elegância
+* Sofisticação
+* Natureza
+* Exclusividade
+* Modernidade
+* Alto padrão
+* Experiência premium
+
+O visitante deve sentir que está contratando um profissional de referência no mercado de eventos.
+
+---
+
+# PÚBLICO-ALVO
+
+* Casamentos de luxo
+* Eventos corporativos
+* Arquitetos
+* Decoradores
+* Cerimonialistas
+* Empresas
+* Hotéis
+* Espaços para eventos
+* Clientes de alto padrão de São Paulo
+
+---
+
+# ESTILO VISUAL
+
+Criar uma identidade inspirada em marcas premium como:
+
+* Apple
+* Aesop
+* Airbnb Luxe
+* Four Seasons
+* Aman Resorts
+
+Misturar elementos de natureza com sofisticação.
+
+Utilizar:
+
+* muito espaço em branco
+* design minimalista
+* fotos grandes
+* bordas suaves
+* sombras discretas
+* vidro (Glassmorphism leve)
+* efeitos orgânicos
+* transições elegantes
+* microinterações modernas
+
+---
+
+# PALETA DE CORES
+
+Primária:
+
+* Verde floresta (#23412F)
+
+Secundária:
+
+* Verde oliva
+
+Neutras:
+
+* Branco
+* Off White
+* Bege
+* Areia
+
+Detalhes:
+
+* Dourado fosco
+* Bronze
+* Tons terrosos
+
+Evitar cores saturadas.
+
+---
+
+# TIPOGRAFIA
+
+Título:
+
+Playfair Display ou Cormorant Garamond
+
+Texto:
+
+Inter
+
+ou
+
+Manrope
+
+Hierarquia tipográfica impecável.
+
+---
+
+# STACK
+
+Utilizar apenas:
+
+* HTML5
+* CSS3
+* Tailwind CSS (via CDN)
+* JavaScript ES6+
+
+Sem React.
+
+Sem Vue.
+
+Sem Angular.
+
+Código totalmente organizado.
+
+---
+
+# BIBLIOTECAS
+
+Utilizar:
+
+GSAP
+
+ScrollTrigger
+
+Lenis
+
+Swiper
+
+GLightbox
+
+SplitType
+
+Lucide Icons
+
+AOS (apenas se necessário)
+
+Todas carregadas via CDN.
+
+---
+
+# PERFORMANCE
+
+O projeto deve atingir:
+
+* Lighthouse Performance acima de 90
+* SEO acima de 95
+* Accessibility acima de 95
+* Best Practices acima de 95
+
+Aplicar:
+
+* Lazy Loading
+* preload
+* preconnect
+* imagens otimizadas
+* debounce
+* throttle
+* requestAnimationFrame
+* código otimizado
+
+---
+
+# SEO
+
+Criar:
+
+* Title
+* Meta Description
+* Open Graph
+* Twitter Cards
+* Canonical
+* Robots
+* JSON-LD
+* Sitemap preparado
+* robots.txt preparado
+
+Utilizar HTML semântico.
+
+---
+
+# ACESSIBILIDADE
+
+Seguir WCAG AA.
+
+Implementar:
+
+* aria-label
+* roles
+* foco visível
+* navegação por teclado
+* contraste adequado
+* textos alternativos
+
+---
+
+# RESPONSIVIDADE
+
+O site deve ser perfeito em:
+
+320px
+
+375px
+
+425px
+
+768px
+
+1024px
+
+1280px
+
+1440px
+
+1920px
+
+Sem quebra de layout.
+
+---
+
+# ESTRUTURA DE PASTAS
+
+/assets
+
+/images
+
+/icons
+
+/fonts
+
+/css
+
+/js
+
+/data
+
+index.html
+
+styles.css
+
+script.js
+
+README.md
+
+robots.txt
+
+sitemap.xml
+
+---
+
+# ORGANIZAÇÃO DO CÓDIGO
+
+Separar totalmente:
+
+HTML
+
+CSS
+
+JavaScript
+
+Criar funções pequenas.
+
+Criar comentários.
+
+Não repetir código.
+
+Utilizar boas práticas ES6.
+
+---
+
+# DADOS DINÂMICOS
+
+Todas as informações devem ficar em arrays JavaScript.
+
+Exemplo:
+
+const portfolio = [
+{
+titulo:"",
+categoria:"",
+descricao:"",
+imagem:"",
+cliente:"",
+local:"",
+ano:""
+}
+]
+
+Também criar arrays para:
+
+Serviços
+
+Depoimentos
+
+FAQ
+
+Galeria
+
+Parceiros
+
+Redes sociais
+
+Assim, futuramente, basta adicionar novos objetos para atualizar o conteúdo sem alterar o layout.
+
+---
+
+# SEÇÕES
+
+## 1. Loader
+
+Criar um loader elegante com animação orgânica.
+
+Ao terminar, revelar o site utilizando GSAP.
+
+---
+
+## 2. Navbar
+
+Navbar fixa.
+
+Transparente no topo.
+
+Ao rolar:
+
+* fundo sólido
+* blur
+* animação suave
+
+Menu Desktop
+
+Menu Mobile
+
+Menu hambúrguer animado.
+
+---
+
+## 3. Hero
+
+Hero em tela cheia.
+
+Imagem ou vídeo de fundo.
+
+Overlay elegante.
+
+Título:
+
+"Vivendo com propósito e intensidade."
+
+Subtítulo.
+
+Botão:
+
+Solicitar orçamento
+
+Botão secundário:
+
+Conheça nossos projetos
+
+Adicionar animações:
+
+Split Text
+
+Fade
+
+Parallax
+
+Reveal
+
+Elementos flutuantes inspirados em folhas e natureza.
+
+---
+
+## 4. Sobre
+
+Foto premium.
+
+Texto institucional.
+
+Linha do tempo.
+
+Números animados.
+
+---
+
+## 5. Serviços
+
+Cards modernos.
+
+Hover elegante.
+
+Ícones.
+
+Descrição.
+
+Botão Saiba Mais.
+
+---
+
+## 6. Portfólio
+
+Criar um carrossel premium.
+
+Inspirado em Apple e Awwwards.
+
+Cards com profundidade.
+
+Centro maior.
+
+Laterais desfocadas.
+
+Escala dinâmica.
+
+Ao clicar:
+
+abrir página/modal do projeto.
+
+---
+
+## 7. Galeria
+
+Grid Masonry.
+
+Fotos carregadas via array.
+
+Animações ao rolar.
+
+Clique abre Lightbox.
+
+Zoom.
+
+Navegação por teclado.
+
+---
+
+## 8. Processo
+
+Mostrar como funciona:
+
+Contato
+
+Visita
+
+Projeto
+
+Execução
+
+Entrega
+
+Com animações.
+
+---
+
+## 9. Depoimentos
+
+Carrossel elegante.
+
+Foto do cliente.
+
+Estrelas.
+
+Animações suaves.
+
+---
+
+## 10. FAQ
+
+Accordion moderno.
+
+Animações.
+
+---
+
+## 11. Contato
+
+Formulário inteligente.
+
+Nome
+
+Telefone
+
+Email
+
+Tipo do evento
+
+Data
+
+Mensagem
+
+Validação em JavaScript.
+
+Feedback visual.
+
+---
+
+## 12. WhatsApp
+
+Botão flutuante.
+
+Mensagem automática personalizada.
+
+Abrir diretamente conversa.
+
+---
+
+## 13. Instagram
+
+Feed moderno.
+
+Cards.
+
+Botão.
+
+---
+
+## 14. Footer
+
+Mapa.
+
+Contato.
+
+Redes sociais.
+
+Links rápidos.
+
+Direitos autorais.
+
+---
+
+# ANIMAÇÕES
+
+Utilizar GSAP + ScrollTrigger.
+
+Criar:
+
+Reveal
+
+Fade
+
+Scale
+
+Rotate
+
+Parallax
+
+Blur
+
+Text Reveal
+
+Mask Reveal
+
+Hover 3D
+
+Magnetic Buttons
+
+Cursor personalizado
+
+Progress Bar de Scroll
+
+Scroll suave com Lenis
+
+Todos os efeitos devem manter 60 FPS.
+
+Nunca exagerar.
+
+As animações devem melhorar a experiência.
+
+---
+
+# MICROINTERAÇÕES
+
+Botões
+
+Cards
+
+Inputs
+
+Links
+
+Navbar
+
+Galeria
+
+Lightbox
+
+Hover
+
+Focus
+
+Todos devem possuir feedback visual elegante.
+
+---
+
+# FORMULÁRIO
+
+Criar máscara para telefone.
+
+Validação.
+
+Campos obrigatórios.
+
+Feedback de erro.
+
+Feedback de sucesso.
+
+Preparado para integração futura com:
+
+EmailJS
+
+Formspree
+
+Backend próprio
+
+---
+
+# IMAGENS
+
+Utilizar placeholders organizados.
+
+Todas devem possuir:
+
+alt
+
+lazy loading
+
+estrutura fácil para substituição.
+
+---
+
+# CÓDIGO
+
+Escrever código extremamente limpo.
+
+Comentários explicativos.
+
+Separação por módulos.
+
+Variáveis bem nomeadas.
+
+Funções reutilizáveis.
+
+Nenhum código duplicado.
+
+---
+
+# README
+
+Criar um README completo explicando:
+
+Como instalar
+
+Como editar
+
+Como trocar imagens
+
+Como adicionar novos projetos
+
+Como adicionar novos depoimentos
+
+Como alterar cores
+
+Como alterar tipografia
+
+Como publicar
+
+---
+
+# QUALIDADE
+
+O resultado deve parecer desenvolvido por uma agência digital internacional.
+
+O usuário deve ficar impressionado logo nos primeiros segundos.
+
+O visual deve ser comparável aos melhores sites do Awwwards.
+
+Todo o projeto deve ser elegante, moderno, altamente interativo, totalmente responsivo, otimizado para SEO, acessível, rápido, organizado e preparado para crescimento futuro.
+
+Ao final, entregue o projeto completo contendo todos os arquivos necessários (`index.html`, `styles.css`, `script.js`, `README.md`, `robots.txt`, `sitemap.xml`) com o código completo, sem omitir trechos, sem usar placeholders para a lógica principal e pronto para abrir localmente em um navegador.
