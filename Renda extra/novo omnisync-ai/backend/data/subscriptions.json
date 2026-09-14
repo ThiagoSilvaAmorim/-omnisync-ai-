@@ -1,0 +1,22 @@
+{
+  "StockGuard": [
+    "stock.low_detected",
+    "stock.critical"
+  ],
+  "CompraGuard": [
+    "stock.low_detected",
+    "purchase.created"
+  ],
+  "SocialPilot": [
+    "stock.low_detected",
+    "price.change_detected"
+  ],
+  "FiscalGuard": [
+    "fiscal.divergence",
+    "fiscal.rejected"
+  ],
+  "MarketRadar": [
+    "price.change_detected",
+    "sales.spike"
+  ]
+}

@@ -1,0 +1,1726 @@
+[
+  {
+    "event_id": "evt_1789085311053_1t7pkcnou",
+    "type": "heartbeat",
+    "timestamp": "2026-09-11T00:08:31.053Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789085311053_hd81xwo",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "origem": "validacao"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789085537993_695g9htr2",
+    "type": "heartbeat",
+    "timestamp": "2026-09-11T00:12:17.993Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789085537993_f0iow8y",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "origem": "validacao-pool"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789085754844_iigubmy1g",
+    "type": "heartbeat",
+    "timestamp": "2026-09-11T00:15:54.844Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789085754844_6f12nll",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "origem": "validacao-persistencia"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789087930334_735xseytk",
+    "type": "auth.login",
+    "timestamp": "2026-09-11T00:52:10.334Z",
+    "source_agent": "api",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789087930334_h4fj3b3",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "email": "t.bruno000@gmail.com"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789087966092_vmko2vp4l",
+    "type": "auth.login",
+    "timestamp": "2026-09-11T00:52:46.092Z",
+    "source_agent": "api",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789087966092_8fuw7fe",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "email": "admin@omnisync.ai"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789089187766_wglitnt7m",
+    "type": "product.deleted",
+    "timestamp": "2026-09-11T01:13:07.766Z",
+    "source_agent": "api",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789089187766_isrlukw",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "id": 10,
+      "sku": "PAR-FLA-440",
+      "nome": "Parafuso Flangeado 4x40 caixa 500un"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789089187766_z1bk1wq9f",
+    "type": "product.deleted",
+    "timestamp": "2026-09-11T01:13:07.766Z",
+    "source_agent": "api",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789089187766_mp6gzqv",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "id": 4,
+      "sku": "MDF-BRA-18",
+      "nome": "MDF BP Branco Prime 18mm 2750x1850"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789089187770_6oam9tuir",
+    "type": "product.deleted",
+    "timestamp": "2026-09-11T01:13:07.770Z",
+    "source_agent": "api",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789089187769_8rvr9hb",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "id": 5,
+      "sku": "FIT-BRA-22",
+      "nome": "Fita de Borda ABS Branca 22mm rolo 300m"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789089187866_zhollr2nr",
+    "type": "product.deleted",
+    "timestamp": "2026-09-11T01:13:07.866Z",
+    "source_agent": "api",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789089187866_zt7bse6",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "id": 6,
+      "sku": "DOB-CAN-35",
+      "nome": "Dobradiça Caneco 35mm com amortecedor"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789089188119_ohmdm3uju",
+    "type": "product.deleted",
+    "timestamp": "2026-09-11T01:13:08.119Z",
+    "source_agent": "api",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789089188119_3mrypty",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "id": 8,
+      "sku": "SUP-COND-36",
+      "nome": "Suporte Articulado para Condensadora até 36k"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789089188579_lst4tr7qg",
+    "type": "product.deleted",
+    "timestamp": "2026-09-11T01:13:08.579Z",
+    "source_agent": "api",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789089188579_zpdmjgp",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "id": 13,
+      "sku": "LAB-005-0001",
+      "nome": "Garrafa Térmica Eco"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789089188757_qttpa8nps",
+    "type": "product.deleted",
+    "timestamp": "2026-09-11T01:13:08.757Z",
+    "source_agent": "api",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789089188756_a8lbigy",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "id": 9,
+      "sku": "GAS-R410A",
+      "nome": "Gás Refrigerante R410A 11,3kg"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789089246191_unkytmi0b",
+    "type": "product.created",
+    "timestamp": "2026-09-11T01:14:06.191Z",
+    "source_agent": "api",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789089246191_2b2fdz9",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "id": 28,
+      "sku": "RAD-100",
+      "nome": "Apple Airpods"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789090565136_ehq46z6xu",
+    "type": "publication.scheduled",
+    "timestamp": "2026-09-11T01:36:05.136Z",
+    "source_agent": "SocialPilot",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789090565135_yc3wcui",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "contas": "+55 11 90000-0000",
+      "titulo": ""
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789090568099_k0xm7gp0i",
+    "type": "publication.scheduled",
+    "timestamp": "2026-09-11T01:36:08.099Z",
+    "source_agent": "SocialPilot",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789090568099_2u9x7db",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "contas": "+55 11 90000-0000",
+      "titulo": ""
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789090602908_0rvpnjmi8",
+    "type": "publication.scheduled",
+    "timestamp": "2026-09-11T01:36:42.908Z",
+    "source_agent": "SocialPilot",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789090602908_ycsijfz",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "contas": "+55 11 90000-0000",
+      "titulo": ""
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789151183178_f58ocyuqb",
+    "type": "publication.scheduled",
+    "timestamp": "2026-09-11T18:26:23.178Z",
+    "source_agent": "SocialPilot",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789151183178_omjg1xk",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "contas": "@loja.b, @canalprincipal, @bastidores",
+      "titulo": ""
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173916379_de1ouddjp",
+    "type": "director.scheduler_iniciado",
+    "timestamp": "2026-09-12T00:45:16.379Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789173916379_0t77rr6",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "proximaExecucao": "2026-09-12T01:15:16.379Z"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173920163_cixnqwtr6",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:45:20.163Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173920163",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "OmniAdvisor",
+      "resumo": "Operação saudável com pontos de atenção",
+      "duracaoMs": 1,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173920165_ks7fsie89",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:45:20.165Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173920165",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "CompraGuard",
+      "resumo": "0 compras em andamento (R$ 0.00)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173920168_hzi07lf5h",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:45:20.168Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173920168",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "MarketRadar",
+      "resumo": "Monitoramento de mercado ativo (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173920173_rtjx150gh",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:45:20.173Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173920173",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "FiscalGuard",
+      "resumo": "Fiscal em dia",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173920176_1kehzf3cq",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:45:20.176Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173920176",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SalesAnalyst",
+      "resumo": "Faturamento de R$ 9136.80 em 3 pedidos",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173920179_nnj96y4b1",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:45:20.179Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173920179",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "PriceWatch",
+      "resumo": "Preços competitivos monitorados (mock)",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173920181_n4f36cre2",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:45:20.181Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173920181",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "StockGuard",
+      "resumo": "5 produtos em risco de ruptura",
+      "duracaoMs": 0,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173920183_zqlcu7r8b",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:45:20.183Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173920183",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SocialPilot",
+      "resumo": "Calendário de publicações ativo (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173921679_mx6054m7j",
+    "type": "heartbeat",
+    "timestamp": "2026-09-12T00:45:21.679Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789173921679_i8z9wbc",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "modo": "manual",
+      "timestamp": "2026-09-12T00:45:16.375Z",
+      "areasCriticas": 2,
+      "areasSaudaveis": 6
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173988511_175ygpahe",
+    "type": "director.scheduler_iniciado",
+    "timestamp": "2026-09-12T00:46:28.511Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789173988511_t9ngy79",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "proximaExecucao": "2026-09-12T01:16:28.510Z"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173991396_k0jsbd8xp",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:46:31.396Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173991396",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "OmniAdvisor",
+      "resumo": "Operação saudável com pontos de atenção",
+      "duracaoMs": 0,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173991398_dmno6rkj1",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:46:31.398Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173991398",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "CompraGuard",
+      "resumo": "0 compras em andamento (R$ 0.00)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173991407_yq9odem00",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:46:31.407Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173991407",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "MarketRadar",
+      "resumo": "Monitoramento de mercado ativo (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173991410_cpdtbw6k8",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:46:31.410Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173991410",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "FiscalGuard",
+      "resumo": "Fiscal em dia",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173991412_6b1qkzy5q",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:46:31.412Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173991412",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SalesAnalyst",
+      "resumo": "Faturamento de R$ 9136.80 em 3 pedidos",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173991413_ie0zam43i",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:46:31.413Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173991413",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "PriceWatch",
+      "resumo": "Preços competitivos monitorados (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173991415_rtrz0dbdm",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:46:31.415Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173991415",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "StockGuard",
+      "resumo": "5 produtos em risco de ruptura",
+      "duracaoMs": 0,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173991423_8awpf4en2",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:46:31.423Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789173991423",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SocialPilot",
+      "resumo": "Calendário de publicações ativo (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789173992393_iyfiy6ide",
+    "type": "heartbeat",
+    "timestamp": "2026-09-12T00:46:32.393Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789173992393_n38vbsc",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "modo": "manual",
+      "timestamp": "2026-09-12T00:46:28.500Z",
+      "areasCriticas": 2,
+      "areasSaudaveis": 6
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174144401_f3nbfjppj",
+    "type": "director.scheduler_iniciado",
+    "timestamp": "2026-09-12T00:49:04.401Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789174144401_lpu3my0",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "proximaExecucao": "2026-09-12T01:19:04.401Z"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174147347_q12jeczeo",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:49:07.347Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174147347",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "OmniAdvisor",
+      "resumo": "Operação saudável com pontos de atenção",
+      "duracaoMs": 1,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174147351_4sr4wndeg",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:49:07.351Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174147351",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "CompraGuard",
+      "resumo": "0 compras em andamento (R$ 0.00)",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174147353_0vay2wrgv",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:49:07.353Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174147353",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "MarketRadar",
+      "resumo": "Monitoramento de mercado ativo (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174147356_ib3ljz1to",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:49:07.356Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174147356",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "FiscalGuard",
+      "resumo": "Fiscal em dia",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174147361_hzy5pzr4e",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:49:07.362Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174147361",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SalesAnalyst",
+      "resumo": "Faturamento de R$ 9136.80 em 3 pedidos",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174147364_2j04087uj",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:49:07.364Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174147364",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "PriceWatch",
+      "resumo": "Preços competitivos monitorados (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174147367_k7puavlqe",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:49:07.367Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174147367",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "StockGuard",
+      "resumo": "5 produtos em risco de ruptura",
+      "duracaoMs": 0,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174147370_9dgg8qzqw",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:49:07.370Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174147370",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SocialPilot",
+      "resumo": "Calendário de publicações ativo (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174148299_5y5d1pz81",
+    "type": "heartbeat",
+    "timestamp": "2026-09-12T00:49:08.299Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789174148299_fx7u19z",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "modo": "manual",
+      "timestamp": "2026-09-12T00:49:04.398Z",
+      "areasCriticas": 2,
+      "areasSaudaveis": 6
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174325703_j9zjpc0b2",
+    "type": "director.scheduler_iniciado",
+    "timestamp": "2026-09-12T00:52:05.703Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789174325703_v8r2jr0",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "proximaExecucao": "2026-09-12T01:22:05.703Z"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174328645_lr3i8ia4m",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:52:08.645Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174328645",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "OmniAdvisor",
+      "resumo": "Operação saudável com pontos de atenção",
+      "duracaoMs": 0,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174328653_g663ulg7b",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:52:08.653Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174328653",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "CompraGuard",
+      "resumo": "0 compras em andamento (R$ 0.00)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174328657_eretohk8t",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:52:08.657Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174328657",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "MarketRadar",
+      "resumo": "Monitoramento de mercado ativo (mock)",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174328660_4ujns6zc3",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:52:08.660Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174328660",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "FiscalGuard",
+      "resumo": "Fiscal em dia",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174328664_u7a7u33wy",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:52:08.664Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174328664",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SalesAnalyst",
+      "resumo": "Faturamento de R$ 9136.80 em 3 pedidos",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174328669_dk11hcp3r",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:52:08.669Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174328669",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "PriceWatch",
+      "resumo": "Preços competitivos monitorados (mock)",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174328672_4ha7vvql0",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:52:08.672Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174328672",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "StockGuard",
+      "resumo": "5 produtos em risco de ruptura",
+      "duracaoMs": 1,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174328674_hbp19yu8j",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T00:52:08.674Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789174328674",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SocialPilot",
+      "resumo": "Calendário de publicações ativo (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789174329669_8qv4tiljs",
+    "type": "heartbeat",
+    "timestamp": "2026-09-12T00:52:09.669Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789174329669_lfzzg8j",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "modo": "manual",
+      "timestamp": "2026-09-12T00:52:05.696Z",
+      "areasCriticas": 2,
+      "areasSaudaveis": 6
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789182050076_k8toai5u6",
+    "type": "product.created",
+    "timestamp": "2026-09-12T03:00:50.076Z",
+    "source_agent": "api",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789182050075_thf38cq",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "id": 29,
+      "sku": "LAB-003-0001",
+      "nome": "Creatina Monohidratada"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789182050339_ly1yrsdpk",
+    "type": "opportunity.detected",
+    "timestamp": "2026-09-12T03:00:50.339Z",
+    "source_agent": "MarketRadar",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789182050339_p0jk4xl",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "origem": "laboratorio",
+      "oportunidade": "Creatina Monohidratada"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241790009_offir6v9o",
+    "type": "director.scheduler_iniciado",
+    "timestamp": "2026-09-12T19:36:30.009Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789241790009_66kcitx",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "proximaExecucao": "2026-09-12T20:06:30.009Z"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241793834_yv0kdpo03",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:36:33.834Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241793834",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "OmniAdvisor",
+      "resumo": "Operação saudável com pontos de atenção",
+      "duracaoMs": 7,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241793841_2xf4ygviz",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:36:33.841Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241793841",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "CompraGuard",
+      "resumo": "0 compras em andamento (R$ 0.00)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241793844_tk0z5nhzf",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:36:33.844Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241793844",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "MarketRadar",
+      "resumo": "Monitoramento de mercado ativo (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241793851_d20kr80x6",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:36:33.851Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241793851",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "FiscalGuard",
+      "resumo": "Fiscal em dia",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241793854_23ikvtsk8",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:36:33.854Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241793854",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SalesAnalyst",
+      "resumo": "Faturamento de R$ 9136.80 em 3 pedidos",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241793859_51ivfev2s",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:36:33.859Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241793859",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "PriceWatch",
+      "resumo": "Preços competitivos monitorados (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241793867_czcxua4la",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:36:33.867Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241793867",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "StockGuard",
+      "resumo": "6 produtos em risco de ruptura",
+      "duracaoMs": 1,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241793870_yut7hzuoj",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:36:33.870Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241793870",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SocialPilot",
+      "resumo": "Calendário de publicações ativo (mock)",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241794937_ldi5pq6c0",
+    "type": "heartbeat",
+    "timestamp": "2026-09-12T19:36:34.937Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789241794937_wahppii",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "modo": "manual",
+      "timestamp": "2026-09-12T19:36:30.004Z",
+      "areasCriticas": 2,
+      "areasSaudaveis": 6
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241865675_2viz0rz2l",
+    "type": "director.scheduler_iniciado",
+    "timestamp": "2026-09-12T19:37:45.675Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789241865675_d4wcx64",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "proximaExecucao": "2026-09-12T20:07:45.675Z"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241869041_tedpzg0h7",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:37:49.041Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241869041",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "OmniAdvisor",
+      "resumo": "Operação saudável com pontos de atenção",
+      "duracaoMs": 6,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241869045_iglcibyxi",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:37:49.045Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241869045",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "CompraGuard",
+      "resumo": "0 compras em andamento (R$ 0.00)",
+      "duracaoMs": 1,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241869052_umflkezf2",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:37:49.052Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241869052",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "MarketRadar",
+      "resumo": "Monitoramento de mercado ativo (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241869056_6fytyszlp",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:37:49.056Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241869056",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "FiscalGuard",
+      "resumo": "Fiscal em dia",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241869060_bx0d0s4op",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:37:49.060Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241869060",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SalesAnalyst",
+      "resumo": "Faturamento de R$ 9136.80 em 3 pedidos",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241869062_1xxfb2pb4",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:37:49.062Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241869062",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "PriceWatch",
+      "resumo": "Preços competitivos monitorados (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241869069_v85z4pxky",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:37:49.069Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241869069",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "StockGuard",
+      "resumo": "6 produtos em risco de ruptura",
+      "duracaoMs": 1,
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241869071_ooy83nmkv",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:37:49.071Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241869071",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SocialPilot",
+      "resumo": "Calendário de publicações ativo (mock)",
+      "duracaoMs": 0,
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241870130_lt1iu08qo",
+    "type": "heartbeat",
+    "timestamp": "2026-09-12T19:37:50.130Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789241870130_nk1tzjl",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "modo": "manual",
+      "timestamp": "2026-09-12T19:37:45.669Z",
+      "areasCriticas": 2,
+      "areasSaudaveis": 6
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241908362_k08l8yl3x",
+    "type": "director.scheduler_iniciado",
+    "timestamp": "2026-09-12T19:38:28.362Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789241908362_hj1zu9b",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "proximaExecucao": "2026-09-12T20:08:28.362Z"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241911404_l25zihuax",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:38:31.404Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241911404",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "OmniAdvisor",
+      "duracaoMs": 0,
+      "resumo": "Operação saudável com pontos de atenção",
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241911410_q0sinuvx9",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:38:31.410Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241911410",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "CompraGuard",
+      "duracaoMs": 0,
+      "resumo": "0 compras em andamento (R$ 0.00)",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241911413_v9h9xobt4",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:38:31.413Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241911413",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "MarketRadar",
+      "duracaoMs": 0,
+      "resumo": "Monitoramento de mercado ativo (mock)",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241911416_py1lozs7j",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:38:31.416Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241911416",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "FiscalGuard",
+      "duracaoMs": 0,
+      "resumo": "Fiscal em dia",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241911426_jrm2618ot",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:38:31.426Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241911426",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SalesAnalyst",
+      "duracaoMs": 0,
+      "resumo": "Faturamento de R$ 9136.80 em 3 pedidos",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241911429_1j4dtlmo2",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:38:31.429Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241911429",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "PriceWatch",
+      "duracaoMs": 0,
+      "resumo": "Preços competitivos monitorados (mock)",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241911432_pv0xjn9hv",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:38:31.432Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241911432",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "StockGuard",
+      "duracaoMs": 0,
+      "resumo": "6 produtos em risco de ruptura",
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241911439_6urwffom6",
+    "type": "agent.completed",
+    "timestamp": "2026-09-12T19:38:31.439Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789241911439",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SocialPilot",
+      "duracaoMs": 0,
+      "resumo": "Calendário de publicações ativo (mock)",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789241912280_dmux12k9d",
+    "type": "heartbeat",
+    "timestamp": "2026-09-12T19:38:32.280Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789241912280_y87i1lz",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "timestamp": "2026-09-12T19:38:28.358Z",
+      "modo": "manual",
+      "areasSaudaveis": 6,
+      "areasCriticas": 2
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789347598350_gefsllp0y",
+    "type": "director.scheduler_iniciado",
+    "timestamp": "2026-09-14T00:59:58.350Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789347598349_ivjn611",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "proximaExecucao": "2026-09-14T01:29:58.349Z"
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789347603520_etxc6d0e7",
+    "type": "agent.completed",
+    "timestamp": "2026-09-14T01:00:03.520Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789347603520",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "OmniAdvisor",
+      "duracaoMs": 0,
+      "resumo": "Operação saudável com pontos de atenção",
+      "temAlertas": true
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789347603524_kxbn9ev7e",
+    "type": "agent.completed",
+    "timestamp": "2026-09-14T01:00:03.524Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789347603524",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "CompraGuard",
+      "duracaoMs": 0,
+      "resumo": "0 compras em andamento (R$ 0.00)",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789347603527_wnx8apbtw",
+    "type": "agent.completed",
+    "timestamp": "2026-09-14T01:00:03.527Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789347603527",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "MarketRadar",
+      "duracaoMs": 0,
+      "resumo": "Monitoramento de mercado ativo (mock)",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789347603531_rpuxcdp0b",
+    "type": "agent.completed",
+    "timestamp": "2026-09-14T01:00:03.531Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789347603531",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "FiscalGuard",
+      "duracaoMs": 1,
+      "resumo": "Fiscal em dia",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789347603535_fp9sq5s89",
+    "type": "agent.completed",
+    "timestamp": "2026-09-14T01:00:03.535Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789347603535",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SalesAnalyst",
+      "duracaoMs": 0,
+      "resumo": "Faturamento de R$ 0.00 em 0 pedidos",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789347603538_tj6crpeha",
+    "type": "agent.completed",
+    "timestamp": "2026-09-14T01:00:03.538Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789347603538",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "PriceWatch",
+      "duracaoMs": 0,
+      "resumo": "Preços competitivos monitorados (mock)",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789347603542_hkd83m09d",
+    "type": "agent.completed",
+    "timestamp": "2026-09-14T01:00:03.542Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789347603542",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "StockGuard",
+      "duracaoMs": 0,
+      "resumo": "Estoque saudável",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789347603545_y94brcqwg",
+    "type": "agent.completed",
+    "timestamp": "2026-09-14T01:00:03.545Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "director_cycle_1789347603545",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "agente": "SocialPilot",
+      "duracaoMs": 0,
+      "resumo": "Calendário de publicações ativo (mock)",
+      "temAlertas": false
+    },
+    "metadata": {}
+  },
+  {
+    "event_id": "evt_1789347608633_9ud17wrjr",
+    "type": "heartbeat",
+    "timestamp": "2026-09-14T01:00:08.633Z",
+    "source_agent": "DirectorIA",
+    "entity_type": "system",
+    "entity_id": null,
+    "correlation_id": "corr_1789347608632_izt2ci0",
+    "causation_id": null,
+    "severity": "info",
+    "payload": {
+      "timestamp": "2026-09-14T00:59:58.344Z",
+      "modo": "manual",
+      "areasSaudaveis": 7,
+      "areasCriticas": 1
+    },
+    "metadata": {}
+  }
+]

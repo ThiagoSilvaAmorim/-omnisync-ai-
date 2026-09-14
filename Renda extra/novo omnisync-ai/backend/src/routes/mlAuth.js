@@ -1,0 +1,118 @@
+// backend/src/routes/mlAuth.js
+// Rotas OAuth Mercado Livre
+
+import { Router } from 'express';
+import { mlOAuth } from '../services/mlOAuth.js';
+import { usuarioDoRequest } from '../auth.js';
+
+const router = Router();
+
+function requireAuth(req, res, next) {
+  const user = usuarioDoRequest(req);
+  if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
+  req.empresaId = user.empresaId || 1;
+  next();
+}
+
+// GET /api/auth/ml/start
+// Inicia fluxo OAuth Mercado Livre
+router.get('/start', requireAuth, (req, res) => {
+  try {
+    const { url, state } = mlOAuth.buildAuthUrl({ 
+      empresaId: req.empresaId, 
+      userId: req.empresaId 
+    });
+    res.json({ url, state });
+  } catch (error) {
+    console.error('[MLAuth] Erro ao gerar URL de autorização:', error);
+    res.status(500).json({ error: 'Erro ao iniciar conexão com Mercado Livre' });
+  }
+});
+
+// GET /api/auth/ml/callback
+// Callback OAuth Mercado Livre
+router.get('/callback', async (req, res) => {
+  try {
+    const { code, state, error, error_description } = req.query;
+
+    if (error) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/integracoes?error=${encodeURIComponent(error_description || error)}`);
+    }
+
+    if (!code || !state) {
+      return res.status(400).json({ error: 'Parâmetros code e state são obrigatórios' });
+    }
+
+    const parsedState = mlOAuth.parseState(state);
+    if (!parsedState) {
+      return res.status(400).json({ error: 'State inválido' });
+    }
+
+    const { empresaId, userId, codeVerifier } = parsedState;
+
+    const tokens = await mlOAuth.exchangeCodeForTokens({
+      code,
+      redirectUri: process.env.ML_REDIRECT_URI,
+      codeVerifier,
+    });
+
+    const mlUser = await mlOAuth.fetchMlUser(tokens.access_token);
+
+    await mlOAuth.saveIntegration({
+      empresaId,
+      userId,
+      tokens,
+      mlUser,
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/integracoes?connected=mercadolivre`);
+  } catch (error) {
+    console.error('[MLAuth] Erro no callback:', error);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/integracoes?error=${encodeURIComponent('Falha ao conectar Mercado Livre')}`);
+  }
+});
+
+// GET /api/auth/ml/status
+// Status da conexão Mercado Livre
+router.get('/status', requireAuth, async (req, res) => {
+  try {
+    const integration = await mlOAuth.getIntegration(req.empresaId);
+    const status = mlOAuth.getIntegrationStatus(integration);
+    
+    res.json({
+      status,
+      conta: integration ? {
+        id: integration.id,
+        mlUserId: integration.mlUserId,
+        mlUser: integration.mlUser,
+        updatedAt: integration.updatedAt,
+      } : null,
+    });
+  } catch (error) {
+    console.error('[MLAuth] Erro ao buscar status:', error);
+    res.status(500).json({ error: 'Erro ao buscar status da conexão' });
+  }
+});
+
+// POST /api/auth/ml/disconnect
+// Desconecta conta Mercado Livre
+router.post('/disconnect', requireAuth, async (req, res) => {
+  try {
+    const { prisma } = await import('../prisma/client.js');
+    
+    await prisma.contaIntegracao.update({
+      where: { provedor_empresaId: { provedor: 'mercadolivre', empresaId: req.empresaId } },
+      data: { ativo: false },
+    });
+
+    res.json({ ok: true, message: 'Conta desconectada' });
+  } catch (error) {
+    console.error('[MLAuth] Erro ao desconectar:', error);
+    res.status(500).json({ error: 'Erro ao desconectar conta' });
+  }
+});
+
+export default router;

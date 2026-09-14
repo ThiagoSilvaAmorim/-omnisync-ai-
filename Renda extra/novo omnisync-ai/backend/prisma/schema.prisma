@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id         Int     @id @default(autoincrement())
+  nome       String
+  sku        String  @unique
+  categoria  String
+  preco      Float
+  estoque    Int
+  minimo     Int     @default(0)
+  status     String
+  fornecedor String  @default("")
+  movements StockMovement[]
+}
+
+model Order {
+  id               String   @id
+  cliente          String
+  data             String
+  total            Float
+  itens            Int
+  status           String
+  // Fase 1 dropshipping: decomposição do lucro por pedido
+  custoFornecedor  Float?   @default(0)
+  taxaMarketplace  Float?   @default(0)
+  frete            Float?   @default(0)
+  lucro            Float?   @default(0)
+  origem           String?  @default("manual")
+}
+
+model Customer {
+  id            Int     @id @default(autoincrement())
+  nome          String
+  tipo          String  @default("pessoa")
+  email         String  @unique
+  telefone      String
+  cidade        String
+  segmento      String  @default("")
+  totalPedidos  Int
+  totalGasto    Float
+  status        String
+  ultimoContato String  @default("")
+}
+
+model PurchaseOrder {
+  id            String   @id
+  fornecedor    String
+  data          String
+  total         Float
+  status        String
+}
+
+model NotaFiscal {
+  id            Int      @id @default(autoincrement())
+  numero        String   @unique
+  tipo          String
+  destinatario  String
+  origem        String
+  data          String
+  valor         Float
+  status        String
+}
+
+model Cupom {
+  id        Int      @id @default(autoincrement())
+  codigo    String   @unique
+  tipo      String   @default("percentual")
+  valor     Float
+  validade  String   @default("")
+  usos      Int      @default(0)
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Evento {
+  id             String   @id
+  type           String
+  timestamp      DateTime @default(now()) @db.Timestamptz(6)
+  source_agent   String   @default("")
+  entity_type    String   @default("system")
+  entity_id      String?
+  correlation_id String
+  causation_id   String?
+  severity       String   @default("info")
+  payload        Json     @default("{}")
+  metadata       Json     @default("{}")
+
+  @@index([type])
+  @@index([correlation_id])
+  @@index([timestamp(sort: Desc)])
+  @@map("Evento")
+}
+
+model Tarefa {
+  id              String   @id
+  agent_id        String   @default("")
+  action          String   @default("")
+  entity_type     String   @default("system")
+  entity_id       String?
+  payload         Json     @default("{}")
+  priority        String   @default("normal")
+  status          String   @default("pending")
+  attempts        Int      @default(0)
+  max_retries     Int      @default(3)
+  idempotency_key String?  @unique
+  correlation_id  String?
+  causation_id    String?
+  result          Json?
+  error           String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([status])
+  @@index([agent_id])
+  @@map("Tarefa")
+}
+
+model ProvedorChave {
+  id        Int      @id @default(autoincrement())
+  provedor  String
+  rotulo    String   @default("")
+  segredo   String
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([provedor])
+  @@map("ProvedorChave")
+}
+
+model ContaIntegracao {
+  id        Int      @id @default(autoincrement())
+  provedor  String
+  empresaId Int
+  rotulo    String   @default("")
+  segredo   String   @default("")
+  metadados Json     @default("{}")
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provedor, empresaId])
+  @@map("ContaIntegracao")
+}
+
+model StockMovement {
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  product     Product  @relation(fields: [productId], references: [id])
+  type        String   // 'entrada' | 'saida' | 'ajuste'
+  quantity    Int
+  reason      String?
+  createdAt   DateTime @default(now())
+}

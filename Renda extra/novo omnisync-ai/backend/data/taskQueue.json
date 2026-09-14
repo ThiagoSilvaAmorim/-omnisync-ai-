@@ -1,0 +1,71 @@
+[
+  {
+    "id": "task_1789089221935_oia0004bc",
+    "agentId": "PriceWatch",
+    "action": "sales.generate_report",
+    "entityType": "produto",
+    "entityId": null,
+    "payload": {
+      "acao": "Kit",
+      "selecionados": []
+    },
+    "priority": "normal",
+    "status": "error",
+    "createdAt": "2026-09-11T01:13:41.938Z",
+    "updatedAt": "2026-09-12T00:45:20.414Z",
+    "attempts": 1,
+    "maxRetries": 3,
+    "idempotencyKey": "idem_PriceWatch_sales.generate_report_undefined_mtw9j2nj",
+    "correlationId": "corr_1789089221935_uwciq54",
+    "causationId": null,
+    "result": null,
+    "error": "Handler não registrado para ação: sales.generate_report"
+  },
+  {
+    "id": "task_1789089222835_bp2lq1wre",
+    "agentId": "PriceWatch",
+    "action": "social.schedule_post",
+    "entityType": "produto",
+    "entityId": null,
+    "payload": {
+      "acao": "Campanha",
+      "selecionados": []
+    },
+    "priority": "normal",
+    "status": "completed",
+    "createdAt": "2026-09-11T01:13:42.837Z",
+    "updatedAt": "2026-09-12T00:45:20.432Z",
+    "attempts": 1,
+    "maxRetries": 3,
+    "idempotencyKey": "idem_PriceWatch_social.schedule_post_undefined_mtw9j3cj",
+    "correlationId": "corr_1789089222835_r0h9raa",
+    "causationId": null,
+    "result": {
+      "postId": "POST_1789173920416",
+      "scheduled": true
+    },
+    "error": null
+  },
+  {
+    "id": "task_1789089223422_drhv2jgk8",
+    "agentId": "PriceWatch",
+    "action": "stock.alert_rupture",
+    "entityType": "produto",
+    "entityId": null,
+    "payload": {
+      "acao": "Liquidar",
+      "selecionados": []
+    },
+    "priority": "normal",
+    "status": "error",
+    "createdAt": "2026-09-11T01:13:43.424Z",
+    "updatedAt": "2026-09-12T00:45:20.436Z",
+    "attempts": 1,
+    "maxRetries": 3,
+    "idempotencyKey": "idem_PriceWatch_stock.alert_rupture_undefined_mtw9j3su",
+    "correlationId": "corr_1789089223422_n9dxu3r",
+    "causationId": null,
+    "result": null,
+    "error": "Handler não registrado para ação: stock.alert_rupture"
+  }
+]

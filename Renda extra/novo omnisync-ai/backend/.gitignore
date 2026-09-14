@@ -1,0 +1,10 @@
+node_modules/
+*.db
+*.db-journal
+
+.vercel
+
+# Secrets
+.env
+.env.*
+!.env.example
