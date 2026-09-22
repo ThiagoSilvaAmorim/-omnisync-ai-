@@ -49,6 +49,9 @@ export function Fornecedores() {
   // ---- Modais ----
   const [modalNovo, setModalNovo] = useState(false);
   const [excluindo, setExcluindo] = useState(null);
+  const [analiseFornId, setAnaliseFornId] = useState(null);
+  const [analiseForn, setAnaliseForn] = useState(null);
+  const [analisandoForn, setAnalisandoForn] = useState(false);
   const [verificando, setVerificando] = useState(null);
   const [formVerificar, setFormVerificar] = useState({
     vendeAtacado: false,
@@ -127,6 +130,27 @@ export function Fornecedores() {
       toast('Erro ao salvar fornecedor');
     } finally {
       setSalvandoId(null);
+    }
+  };
+
+  // Análise Gemini do fornecedor salvo (resumo, pontos, riscos, perguntas de cotação).
+  const analisarFornecedor = async (f) => {
+    if (analiseFornId === f.id) {
+      setAnaliseFornId(null);
+      setAnaliseForn(null);
+      return;
+    }
+    setAnalisandoForn(true);
+    setAnaliseFornId(f.id);
+    setAnaliseForn(null);
+    try {
+      const r = await api.analisarDominio('supplier', { fornecedorId: f.id });
+      setAnaliseForn(r);
+    } catch (e) {
+      console.error('Erro na análise do fornecedor:', e);
+      setAnaliseForn({ ok: false, message: e.message || 'Falha na análise.' });
+    } finally {
+      setAnalisandoForn(false);
     }
   };
 
@@ -472,16 +496,26 @@ export function Fornecedores() {
                       </div>
                     )}
                     <p className="text-xs text-slate-400">Fonte: {f.fonte || '—'}</p>
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
-                      {!f.verificado ? (
+                    <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                      <div className="flex items-center gap-3">
+                        {!f.verificado && (
+                          <button
+                            type="button"
+                            onClick={() => abrirVerificar(f)}
+                            className="text-xs font-medium text-primary-600 hover:underline"
+                          >
+                            Marcar como verificado
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => abrirVerificar(f)}
-                          className="text-xs font-medium text-primary-600 hover:underline"
+                          onClick={() => analisarFornecedor(f)}
+                          disabled={analisandoForn && analiseFornId === f.id}
+                          className="text-xs font-medium text-primary-600 hover:underline disabled:opacity-50"
                         >
-                          Marcar como verificado
+                          {analisandoForn && analiseFornId === f.id ? 'Analisando...' : 'Analisar com Gemini'}
                         </button>
-                      ) : <span />}
+                      </div>
                       <button
                         type="button"
                         onClick={() => setExcluindo(f)}
@@ -492,6 +526,26 @@ export function Fornecedores() {
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
+                    {analiseFornId === f.id && analiseForn && (
+                      <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        {analiseForn.ok ? (
+                          <div className="space-y-1.5">
+                            <p className="whitespace-pre-wrap">{analiseForn.analysis}</p>
+                            {analiseForn.recommendations?.length > 0 && (
+                              <p><span className="font-semibold">Recomendações:</span> {analiseForn.recommendations.join(' • ')}</p>
+                            )}
+                            {analiseForn.risks?.length > 0 && (
+                              <p><span className="font-semibold">Riscos:</span> {analiseForn.risks.join(' • ')}</p>
+                            )}
+                            <p className="text-slate-400">
+                              Confiança {Math.round((analiseForn.confidence ?? 0) * 100)}% • Qualidade {analiseForn.dataQuality}
+                            </p>
+                          </div>
+                        ) : (
+                          <p>{analiseForn.message || 'Sem análise no momento.'}</p>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

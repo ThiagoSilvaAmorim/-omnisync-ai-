@@ -173,6 +173,8 @@ export function RadarMercado() {
   const [resultadosML, setResultadosML] = useState([]);
   const [carregandoML, setCarregandoML] = useState(false);
   const [erroML, setErroML] = useState('');
+  const [analiseML, setAnaliseML] = useState(null);
+  const [analisandoML, setAnalisandoML] = useState(false);
   const [ordenarML, setOrdenarML] = useState('vendidos');
   // Acompanhamento de preços (watchlist local do navegador).
   const [watchlist, setWatchlist] = useState(() => {
@@ -213,6 +215,28 @@ export function RadarMercado() {
   const resultadosMLOrdenados = [...resultadosML].sort((a, b) => (
     ordenarML === 'vendidos' ? b.vendidos - a.vendidos : a.preco - b.preco
   ));
+
+  // Análise Gemini somente sobre os cards reais visíveis (nunca DummyJSON).
+  // Margem indisponível: custo de aquisição não existe nesses cards.
+  const analisarML = async () => {
+    setAnalisandoML(true);
+    setAnaliseML(null);
+    try {
+      const produtos = resultadosMLOrdenados.slice(0, 12).map(p => ({
+        nome: p.nome,
+        preco: p.preco,
+        moeda: p.moeda,
+        fonte: 'Mercado Livre (busca autenticada)',
+        vendidos: p.vendidos,
+      }));
+      const r = await api.analisarDominio('market', { produtos });
+      setAnaliseML(r);
+    } catch (e) {
+      setAnaliseML({ ok: false, code: 'ANALYZE_FAILED', message: e.message || 'Falha na análise.' });
+    } finally {
+      setAnalisandoML(false);
+    }
+  };
 
   // Moeda explícita via helper compartilhado: USD original sem conversão inventada.
   const formatarPreco = p => formatPrecoRadar(p);
@@ -263,7 +287,7 @@ export function RadarMercado() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Radar de Mercado</h1>
-        <p className="text-sm text-slate-500">Descubra produtos com potencial de crescimento e alta margem</p>
+        <p className="text-sm text-slate-500">Descubra produtos com potencial de crescimento</p>
       </div>
 
       {/* Filtros */}
@@ -289,17 +313,6 @@ export function RadarMercado() {
               { value: '100', label: 'Até R$ 100' },
               { value: '200', label: 'Até R$ 200' },
               { value: '400', label: 'Até R$ 400' },
-            ]}
-          />
-          <Select
-            label="Margem mínima"
-            value={draft.margem}
-            onChange={v => setDraft(d => ({ ...d, margem: v }))}
-            options={[
-              { value: 'Todas', label: 'Todas' },
-              { value: '30', label: '≥ 30%' },
-              { value: '40', label: '≥ 40%' },
-              { value: '50', label: '≥ 50%' },
             ]}
           />
           <Select
@@ -452,6 +465,14 @@ export function RadarMercado() {
             <Button onClick={buscarML} disabled={carregandoML}>
               <Search className="h-4 w-4" /> {carregandoML ? 'Buscando...' : 'Buscar no ML'}
             </Button>
+            <Button
+              variant="secondary"
+              onClick={analisarML}
+              disabled={carregandoML || analisandoML || resultadosMLOrdenados.length === 0}
+              title="Analisa somente os cards reais visíveis"
+            >
+              {analisandoML ? 'Analisando...' : 'Analisar com Gemini'}
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -543,6 +564,38 @@ export function RadarMercado() {
                 </div>
               ))}
             </div>
+            {analiseML && (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+                {analiseML.ok ? (
+                  <div className="space-y-2 text-sm">
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">Análise Gemini — cards reais</p>
+                    <p className="whitespace-pre-wrap text-slate-600 dark:text-slate-300">{analiseML.analysis}</p>
+                    {analiseML.recommendations?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Recomendações</p>
+                        <ul className="list-disc pl-5 text-slate-600 dark:text-slate-300">
+                          {analiseML.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                    {analiseML.risks?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Riscos</p>
+                        <ul className="list-disc pl-5 text-slate-600 dark:text-slate-300">
+                          {analiseML.risks.map((r, i) => <li key={i}>{r}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                    <p className="text-xs text-slate-400">
+                      Margem indisponível sem custo real • Confiança {Math.round((analiseML.confidence ?? 0) * 100)}% •
+                      Qualidade {analiseML.dataQuality} • {analiseML.generatedAt ? new Date(analiseML.generatedAt).toLocaleString('pt-BR') : ''}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">{analiseML.message || 'Sem análise no momento.'}</p>
+                )}
+              </div>
+            )}
             </>
           )}
         </CardContent>

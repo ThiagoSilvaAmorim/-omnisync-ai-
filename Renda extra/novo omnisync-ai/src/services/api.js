@@ -298,6 +298,14 @@ export const api = {
     if (API_URL) return request('/auth/ml/disconnect', { method: 'POST' });
     return delay().then(() => ({ ok: true, status: 'desconectado' }));
   },
+  // ---------- Análises Gemini sobre dados reais (somente leitura + rascunho) ----------
+  // Exige backend; sem API configurada, rejeita com erro explícito.
+  analisarDominio: (dominio, payload) => (API_URL
+    ? request(`/ai/analyze/${dominio}`, json(payload || {}))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  gerarRascunhoAnuncio: (produtoId) => (API_URL
+    ? request('/ai/generate/listing', json({ produtoId }))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   // Health check do backend
   healthCheck: () => get('/health', { status: 'online', timestamp: new Date().toISOString(), environment: 'development', ml_configured: false }),
 

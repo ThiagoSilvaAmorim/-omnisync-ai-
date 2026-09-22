@@ -15,6 +15,7 @@ import supplierRoutes from './routes/suppliers.js';
 import mlAuthRoutes from './routes/mlAuth.js';
 import shopeeAuthRoutes from './routes/shopeeAuth.js';
 import tiktokShopAuthRoutes from './routes/tiktokShopAuth.js';
+import aiAnalysisRoutes from './routes/aiAnalysis.js';
 
 // ============================================
 // app.js — Express app com as rotas da API.
@@ -223,7 +224,35 @@ app.use('/api/fornecedores', supplierRoutes);
 app.get('/api/problemas', send(data.problemas));
 app.get('/api/negocios', send(data.negocios));
 app.get('/api/estagios', send(data.estagiosPipeline));
-app.get('/api/dashboard/analytics', send(data.dashboardAnalytics));
+// ---------- Dashboard analytics (agregados reais do banco) ----------
+// Sem período comparável definido: delta sempre null → UI exibe
+// "Sem histórico" em vez de percentual inventado. Sem pedidos, os
+// totais são zero e a lista de KPIs só inclui lucro quando há base
+// de custo real em ao menos um pedido.
+app.get('/api/dashboard/analytics', async (_req, res) => {
+  try {
+    const pedidos = await prisma.order.findMany();
+    const faturamento = pedidos.reduce((a, p) => a + (Number(p.total) || 0), 0);
+    const ticketMedio = pedidos.length ? faturamento / pedidos.length : 0;
+    const comCusto = pedidos.filter(p =>
+      Number(p.custoFornecedor) > 0 || Number(p.taxaMarketplace) > 0 || Number(p.frete) > 0
+    );
+    const kpis = [
+      { id: 'faturamento', label: 'Faturamento', value: Math.round(faturamento * 100) / 100, format: 'currency', delta: null },
+      { id: 'pedidos', label: 'Pedidos', value: pedidos.length, format: 'number', delta: null },
+      { id: 'ticketMedio', label: 'Ticket médio', value: Math.round(ticketMedio * 100) / 100, format: 'currency', delta: null },
+    ];
+    if (comCusto.length > 0) {
+      const lucro = comCusto.reduce((a, p) =>
+        a + Number(p.total || 0) - Number(p.custoFornecedor || 0) - Number(p.taxaMarketplace || 0) - Number(p.frete || 0), 0);
+      kpis.push({ id: 'lucroEstimado', label: 'Lucro estimado', value: Math.round(lucro * 100) / 100, format: 'currency', delta: null });
+    }
+    res.json({ kpis, vendasPorCanal: [], alertas: [] });
+  } catch (e) {
+    console.error('[Analytics] Erro ao agregar:', e.message);
+    res.status(500).json({ error: 'Erro ao carregar analytics' });
+  }
+});
 
 // ---------- Auth (token assinado + perfil) ----------
 app.post('/api/auth/login', (req, res) => {
@@ -244,6 +273,9 @@ app.get('/api/auth/me', (req, res) => {
 
 // ---------- Mercado Livre OAuth ----------
 app.use('/api/auth/ml', mlAuthRoutes);
+
+// ---------- Análises Gemini sobre dados reais (somente leitura + rascunho) ----------
+app.use('/api/ai', aiAnalysisRoutes);
 
 // ---------- Shopee / TikTok Shop (somente preparação) ----------
 app.use('/api/auth/shopee', shopeeAuthRoutes);

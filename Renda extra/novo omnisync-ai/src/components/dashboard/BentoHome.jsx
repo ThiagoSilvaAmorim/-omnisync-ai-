@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Bot, Boxes, PackageSearch, Wallet } from 'lucide-react';
 import { api } from '../../services/api';
+import { isValidDelta } from '../../lib/utils';
 import { useTheme } from '../../hooks/useTheme';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Skeleton } from '../ui/Skeleton';
@@ -98,7 +99,7 @@ export function BentoHome({ period, customRange }) {
           )}
           {!loading && (
             <p className="mt-1 text-sm text-primary-700/80 dark:text-primary-300/80">
-              {Number.isFinite(Number(receita.delta)) ? (
+              {isValidDelta(receita.delta) ? (
                 <>{receita.delta >= 0 ? '▲' : '▼'} {Math.abs(receita.delta)}% vs anterior</>
               ) : (
                 'Sem histórico'

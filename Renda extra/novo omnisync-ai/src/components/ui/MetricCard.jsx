@@ -1,5 +1,5 @@
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
-import { cn, formatValue, formatPercent } from '../../lib/utils';
+import { cn, formatValue, formatPercent, isValidDelta } from '../../lib/utils';
 import { useCountUp } from '../../hooks/useCountUp';
 
 // ============================================
@@ -10,7 +10,7 @@ import { useCountUp } from '../../hooks/useCountUp';
 export function MetricCard({ label, value, delta, format = 'number' }) {
   const animated = useCountUp(value);
   const deltaNumber = Number(delta);
-  const deltaValido = Number.isFinite(deltaNumber);
+  const deltaValido = isValidDelta(delta);
   const positive = deltaValido && deltaNumber >= 0;
   const DeltaIcon = positive ? ArrowUpRight : ArrowDownRight;
 

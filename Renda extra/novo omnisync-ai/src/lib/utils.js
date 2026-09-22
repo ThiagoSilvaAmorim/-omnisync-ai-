@@ -62,6 +62,13 @@ export function safePercent(current, previous) {
   return ((a - b) / Math.abs(b)) * 100;
 }
 
+// Delta válido para exibição: null/undefined/''/NaN/Infinity são inválidos.
+// (Number(null) === 0, por isso o nulo precisa ser rejeitado antes.)
+export function isValidDelta(delta) {
+  if (delta === null || delta === undefined || delta === '') return false;
+  return Number.isFinite(Number(delta));
+}
+
 // Variação percentual segura para exibição ("+10,0%", "-10,0%" ou "—").
 // Nunca retorna NaN/Infinity/undefined: base zero, nula ou inexistente vira "—".
 export function formatVariation(current, previous) {

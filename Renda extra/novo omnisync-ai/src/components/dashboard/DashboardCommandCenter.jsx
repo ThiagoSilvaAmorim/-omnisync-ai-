@@ -11,6 +11,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { isValidDelta } from '../../lib/utils';
 import { useTheme } from '../../hooks/useTheme';
 import { MetricCard } from '../ui/MetricCard';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
@@ -131,7 +132,7 @@ export function DashboardCommandCenter({ period, customRange }) {
               </p>
             )}
             <p className="mt-1 text-sm text-primary-700/80 dark:text-primary-300/80">
-              {Number.isFinite(Number(receita.delta)) ? (
+              {isValidDelta(receita.delta) ? (
                 <>{receita.delta >= 0 ? '▲' : '▼'} {Math.abs(receita.delta)}% vs mês anterior</>
               ) : (
                 'Sem histórico'
