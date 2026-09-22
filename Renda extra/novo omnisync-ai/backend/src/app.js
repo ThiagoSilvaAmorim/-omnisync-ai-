@@ -547,7 +547,8 @@ app.use((err, req, res, _next) => {
 
 // ---------- Assistente de IA (proxy Gemini) ----------
 // O frontend chama este endpoint; a chave fica segura no servidor.
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+// Leitura preguiçosa para permitir rotação sem restart e testes.
+const geminiKey = () => process.env.GEMINI_API_KEY || null;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
 
 const SYSTEM_INSTRUCTION =
@@ -557,19 +558,32 @@ const SYSTEM_INSTRUCTION =
   'clara, objetiva e estruturada (com listas quando fizer sentido).';
 
 app.post('/api/ai', aiLimiter, async (req, res) => {
-  if (!GEMINI_API_KEY) {
-    return res.status(503).json({ error: 'Chave do Gemini não configurada no servidor (GEMINI_API_KEY).' });
+  const user = usuarioDoRequest(req);
+  if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
+
+  const chaveGemini = geminiKey();
+  if (!chaveGemini) {
+    return res.status(503).json({
+      code: 'GEMINI_NOT_CONFIGURED',
+      message: 'O assistente de IA ainda não está configurado no servidor.',
+    });
   }
 
-  const { history = [], images = [] } = req.body;
+  // Contexto mínimo e limitado: últimas mensagens e poucas imagens, sem segredos.
+  const { history = [], images = [] } = req.body || {};
+  const historicoLimitado = Array.isArray(history) ? history.slice(-20).map(m => ({
+    role: m?.role === 'assistant' ? 'assistant' : 'user',
+    text: String(m?.text ?? '').slice(0, 4000),
+  })) : [];
+  const imagensLimitadas = Array.isArray(images) ? images.slice(0, 4) : [];
 
-  const contents = history.map(m => ({
+  const contents = historicoLimitado.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.text }],
   }));
 
-  if (images.length > 0) {
-    const imgParts = images.map(img => ({
+  if (imagensLimitadas.length > 0) {
+    const imgParts = imagensLimitadas.map(img => ({
       inline_data: { mime_type: img.mimeType, data: img.base64 },
     }));
     const last = contents[contents.length - 1];
@@ -580,31 +594,39 @@ app.post('/api/ai', aiLimiter, async (req, res) => {
     }
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${chaveGemini}`;
+
+  const ctrl = new AbortController();
+  const timeout = setTimeout(() => ctrl.abort(), 60000);
 
   try {
     const r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] }, contents }),
+      signal: ctrl.signal,
     });
 
     if (!r.ok) {
-      const err = await r.json().catch(() => ({}));
       const status = r.status;
       if (status === 429) return res.status(429).json({ error: 'Limite de uso do Gemini atingido. Tente em uma hora.' });
       if (status === 403) return res.status(403).json({ error: 'Acesso negado ao Gemini. Verifique a chave.' });
-      return res.status(status).json({ error: err?.error?.message || `Erro ${status}` });
+      return res.status(500).json({ error: 'Falha ao consultar o Gemini.' });
     }
 
     const data = await r.json();
     const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') ?? '';
     if (!text) {
-      throw new Error('Resposta vazia do Gemini.');
+      return res.status(500).json({ error: 'Resposta vazia do Gemini.' });
     }
-    res.json({ texto: text });
+    res.json({ ok: true, answer: text, provider: 'gemini' });
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Erro ao chamar o Gemini.' });
+    if (err?.name === 'AbortError') {
+      return res.status(504).json({ error: 'Tempo esgotado ao consultar o Gemini.' });
+    }
+    res.status(500).json({ error: 'Erro ao chamar o Gemini.' });
+  } finally {
+    clearTimeout(timeout);
   }
 });
 
