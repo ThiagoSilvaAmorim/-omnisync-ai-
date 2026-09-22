@@ -21,6 +21,22 @@ function authHeaders() {
   }
 }
 
+// Sessão expirada/inválida (token de 12h): limpa o estado local de
+// autenticação e volta ao login. Sem isso, um token vencido mantém o
+// usuário "logado" na UI enquanto todas as chamadas autenticadas falham
+// (ex.: card ML em "Erro de sincronização" sem causa real no backend).
+export function invalidarSessaoExpirada() {
+  try {
+    localStorage.removeItem('omnisync-token');
+    localStorage.removeItem('omnisync-user');
+  } catch {
+    // Armazenamento indisponível: segue sem limpar.
+  }
+  if (typeof window !== 'undefined' && window.location && !window.location.pathname.startsWith('/login')) {
+    window.location.href = '/login';
+  }
+}
+
 async function request(path, options) {
   const opts = {
     ...(options || {}),
@@ -29,6 +45,7 @@ async function request(path, options) {
   const fullPath = path.startsWith('/api') ? path : `/api${path}`;
   const res = await fetch(`${API_URL}${fullPath}`, opts);
   if (!res.ok) {
+    if (res.status === 401) invalidarSessaoExpirada();
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.error || `Erro ${res.status}`);
   }
