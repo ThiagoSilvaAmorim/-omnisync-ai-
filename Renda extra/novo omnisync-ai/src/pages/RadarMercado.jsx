@@ -83,6 +83,7 @@ export function RadarMercado() {
   // Ids de produtos ocultos (X) e a lista original para restaurar.
   const [ocultos, setOcultos] = useState([]);
   const [todosProdutos, setTodosProdutos] = useState([]);
+  const [termoML, setTermoML] = useState('');
   const toast = useToast();
 
   const registrarLog = texto => {
