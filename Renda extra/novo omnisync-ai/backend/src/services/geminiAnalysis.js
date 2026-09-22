@@ -129,6 +129,25 @@ const PROMPT_BASE =
   '{"analysis": "texto em português", "recommendations": ["..."], "risks": ["..."], ' +
   '"confidence": 0.0-1.0, "dataQuality": "high|medium|low|insufficient"}.';
 
+// Conversão de moeda SOMENTE com taxa, fonte e timestamp explícitos.
+// Sem isso, convertedAmount fica null e a UI mantém a moeda original.
+function aplicarFx(p) {
+  const fx = p?.fx || {};
+  const rate = Number(fx.rate ?? fx.taxa);
+  const source = typeof fx.source === 'string' ? fx.source.trim() : '';
+  const observedAt = typeof fx.observedAt === 'string' ? fx.observedAt.trim() : '';
+  if (p?.moeda && p.moeda !== 'BRL' && Number.isFinite(rate) && rate > 0 && source && observedAt) {
+    return {
+      convertedAmount: Math.round(Number(p.preco) * rate * 100) / 100,
+      convertedCurrency: 'BRL',
+      fxRate: rate,
+      fxSource: source,
+      fxObservedAt: observedAt,
+    };
+  }
+  return { convertedAmount: null };
+}
+
 function envelope(tipo, source, resultado) {
   return {
     ok: true,
@@ -211,19 +230,31 @@ const analisadores = {
         fonte: String(p.fonte).slice(0, 60),
         vendidos: Number.isFinite(Number(p.vendidos)) ? Number(p.vendidos) : null,
         custo: Number.isFinite(Number(p.custo)) ? Number(p.custo) : null,
+        ...aplicarFx(p),
       }));
     if (validos.length === 0) {
       return insufficient('market', 'nenhum produto válido com nome, preço e fonte');
     }
     const contexto = expurgarSegredos({
       produtos: validos,
-      aviso: 'Sem custo de aquisição em nenhum item, margem é indisponível.',
+      aviso: 'Sem custo de aquisição em nenhum item, margem é indisponível. Conversão de moeda só vale com taxa, fonte e timestamp explícitos.',
     });
     const r = await chamarGemini(
-      `${PROMPT_BASE} Contexto: produtos observados em fontes públicas. Nunca chame de "alta margem" sem custo. Nunca trate como produtos da loja.`,
+      `${PROMPT_BASE} Contexto: produtos observados em fontes públicas. Nunca chame de "alta margem" sem custo. Nunca trate como produtos da loja. Converta moeda somente quando convertedAmount vier preenchido com fxRate, fxSource e fxObservedAt.`,
       contexto
     );
-    return envelope('market', [{ origem: 'seleção do usuário', itens: validos.length }], r);
+    const resultado = envelope('market', [{ origem: 'seleção do usuário', itens: validos.length }], r);
+    resultado.itens = validos.map(v => ({
+      nome: v.nome,
+      preco: v.preco,
+      moeda: v.moeda,
+      convertedAmount: v.convertedAmount,
+      convertedCurrency: v.convertedCurrency,
+      fxRate: v.fxRate,
+      fxSource: v.fxSource,
+      fxObservedAt: v.fxObservedAt,
+    }));
+    return resultado;
   },
 
   async supplier(payload = {}) {

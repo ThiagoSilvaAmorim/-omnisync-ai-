@@ -86,6 +86,7 @@ async function buscarDummy(categoria, limit) {
   const res = await fetchComTimeout(url);
   const data = await res.json();
   const lista = Array.isArray(data) ? data : data.products || [];
+  const consultadoEm = new Date().toISOString();
   return lista.map(p => ({
     id: p.id,
     nome: p.title,
@@ -95,6 +96,7 @@ async function buscarDummy(categoria, limit) {
     marca: p.brand,
     avaliacao: p.rating,
     origem: 'DummyJSON',
+    consultadoEm,
   }));
 }
 
@@ -105,6 +107,7 @@ async function buscarOff(categoria, limit) {
   const res = await fetchComTimeout(url);
   if (!res.ok) return [];
   const data = await res.json();
+  const consultadoEm = new Date().toISOString();
   return (data.products || [])
     .filter(p => p.product_name && p.image_url)
     .map((p, i) => ({
@@ -116,6 +119,7 @@ async function buscarOff(categoria, limit) {
       marca: p.brands || '—',
       avaliacao: null,
       origem: 'OpenFoodFacts',
+      consultadoEm,
     }));
 }
 
@@ -132,6 +136,7 @@ export async function buscarMercadoLivre(termo, limit = 12) {
     throw new Error(err.mensagem || err.error || `Erro ${res.status} ao buscar no Mercado Livre`);
   }
   const data = await res.json();
+  const consultadoEm = new Date().toISOString();
   return (data.produtos || []).map(p => ({
     id: p.id,
     nome: p.nome,
@@ -144,6 +149,7 @@ export async function buscarMercadoLivre(termo, limit = 12) {
     vendidos: p.vendidos,
     link: p.link,
     origem: p.origem,
+    consultadoEm,
   }));
 }
 

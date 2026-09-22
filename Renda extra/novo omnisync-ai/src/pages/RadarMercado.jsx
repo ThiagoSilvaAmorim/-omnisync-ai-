@@ -413,6 +413,12 @@ export function RadarMercado() {
                       {p.marca}
                     </p>
                   )}
+                  <p className="mt-1 text-[10px] leading-tight text-slate-400">
+                    Moeda original: {p.moeda || 'USD'} • Fonte: catálogo público externo
+                  </p>
+                  <p className="text-[10px] leading-tight text-slate-400">
+                    Produto da loja: não{p.consultadoEm ? ` • ${new Date(p.consultadoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : ''}
+                  </p>
                   <button
                     type="button"
                     onClick={() => importarProduto(p)}
@@ -541,6 +547,9 @@ export function RadarMercado() {
                   </p>
                   <p className="mt-0.5 text-[11px] font-medium text-teal-600 dark:text-teal-400">
                     {p.vendidos > 0 ? `${p.vendidos.toLocaleString('pt-BR')} vendidos` : p.marca}
+                  </p>
+                  <p className="mt-0.5 text-[10px] leading-tight text-slate-400">
+                    Fonte: Mercado Livre (busca) • Produto da loja: não{p.consultadoEm ? ` • ${new Date(p.consultadoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : ''}
                   </p>
                   <div className="mt-2 flex gap-1.5">
                     <button

@@ -108,6 +108,41 @@ describe('POST /api/ai/analyze/:dominio', () => {
     expect(res.body.ok).toBe(true);
   });
 
+  it('conversão só com taxa, fonte e timestamp explícitos', async () => {
+    const res = await request(app).post('/api/ai/analyze/market').set(auth()).send({
+      produtos: [{
+        nome: 'Fone X', preco: 9.99, moeda: 'USD', fonte: 'DummyJSON',
+        fx: { rate: 5, source: 'Banco Central', observedAt: '2026-09-22T12:00:00.000Z' },
+      }],
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.itens[0]).toMatchObject({
+      convertedAmount: 49.95,
+      convertedCurrency: 'BRL',
+      fxRate: 5,
+      fxSource: 'Banco Central',
+      fxObservedAt: '2026-09-22T12:00:00.000Z',
+    });
+  });
+
+  it('sem fx a moeda original é preservada e convertedAmount é nulo', async () => {
+    const res = await request(app).post('/api/ai/analyze/market').set(auth()).send({
+      produtos: [{ nome: 'Fone X', preco: 9.99, moeda: 'USD', fonte: 'DummyJSON' }],
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.itens[0]).toMatchObject({ moeda: 'USD', convertedAmount: null });
+  });
+
+  it('BRL com fx não sofre conversão', async () => {
+    const res = await request(app).post('/api/ai/analyze/market').set(auth()).send({
+      produtos: [{
+        nome: 'Cadeira', preco: 52.4, moeda: 'BRL', fonte: 'DummyJSON',
+        fx: { rate: 5, source: 'Banco Central', observedAt: '2026-09-22T12:00:00.000Z' },
+      }],
+    });
+    expect(res.body.itens[0]).toMatchObject({ convertedAmount: null });
+  });
+
   it('segredos no payload não chegam ao Gemini', async () => {
     await request(app).post('/api/ai/analyze/market').set(auth()).send({
       produtos: [{ nome: 'Fone X', preco: 10, moeda: 'USD', fonte: 'DummyJSON', token: 'segredo-absurdo-123' }],
