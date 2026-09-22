@@ -164,6 +164,9 @@ async function getIntegration(empresaId) {
     return {
       id: record.id,
       empresaId: record.empresaId,
+      // Necessário: getIntegrationStatus decide por `ativo`; sem ele,
+      // toda integração salva era lida como 'desconectado'.
+      ativo: record.ativo,
       mlUserId: decrypted.user_id,
       mlUser: decrypted.ml_user,
       accessToken: decrypted.access_token,

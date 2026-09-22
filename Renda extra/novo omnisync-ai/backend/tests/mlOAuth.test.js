@@ -183,6 +183,30 @@ describe('mlOAuth service', () => {
     it('deve retornar conectado para integração válida', () => {
       expect(mlOAuth.getIntegrationStatus({ ativo: true, isExpired: false })).toBe('conectado');
     });
+
+    it('integração vinda do banco deve incluir ativo para não cair em desconectado', async () => {
+      const { prisma } = await import('../src/prisma/client.js');
+      const payload = {
+        access_token: 'tok',
+        refresh_token: 'ref',
+        expires_in: 21600,
+        token_type: 'Bearer',
+        scope: 'read write',
+        user_id: 123,
+        ml_user: { id: 123, nickname: 'lojateste', email: null },
+        obtained_at: Date.now(),
+      };
+      prisma.contaIntegracao.findUnique.mockResolvedValue({
+        id: 1,
+        empresaId: 1,
+        ativo: true,
+        segredo: `encrypted:${JSON.stringify(payload)}`,
+        updatedAt: new Date(),
+      });
+      const integration = await mlOAuth.getIntegration(1);
+      expect(integration.ativo).toBe(true);
+      expect(mlOAuth.getIntegrationStatus(integration)).toBe('conectado');
+    });
   });
 });
 
