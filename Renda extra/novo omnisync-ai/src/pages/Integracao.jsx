@@ -275,8 +275,10 @@ export function Integracao() {
                 </div>
                 <div className="flex items-center gap-3">
                   {getStatusBadge(mlStatus?.status || 'nao_configurado')}
-                  {mlStatus?.mlUser && (
-                    <span className="text-xs text-slate-500">@{mlStatus.mlUser.nickname}</span>
+                  {mlStatus?.conta?.mlUser && (
+                    <span className="text-xs text-slate-500">
+                      @{typeof mlStatus.conta.mlUser === 'string' ? mlStatus.conta.mlUser : mlStatus.conta.mlUser.nickname}
+                    </span>
                   )}
                 </div>
               </div>
@@ -289,7 +291,25 @@ export function Integracao() {
               )}
 
               <div className="flex gap-2">
-                {mlStatus?.status === 'conectado' || mlStatus?.status === 'token_expirado' ? (
+                {mlStatus?.status === 'token_expirado' ? (
+                  <>
+                    <Button
+                      onClick={handleConectarML}
+                      disabled={mlLoading}
+                      className="flex-1"
+                    >
+                      {mlLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reautorizar'}
+                      <ExternalLink className="h-4 w-4 ml-2" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={handleDesconectarML}
+                      disabled={mlLoading}
+                    >
+                      Desconectar
+                    </Button>
+                  </>
+                ) : mlStatus?.status === 'conectado' ? (
                   <Button
                     variant="secondary"
                     onClick={handleDesconectarML}
