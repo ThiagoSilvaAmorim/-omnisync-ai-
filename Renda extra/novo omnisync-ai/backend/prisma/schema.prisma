@@ -159,3 +159,33 @@ model StockMovement {
   reason      String?
   createdAt   DateTime @default(now())
 }
+
+model Fornecedor {
+  id                   Int      @id @default(autoincrement())
+  empresaId            Int
+  externalId           String?
+  nome                 String
+  endereco             String?
+  telefone             String?
+  site                 String?
+  mapsUrl              String?
+  avaliacao            Float?
+  quantidadeAvaliacoes Int      @default(0)
+  categoria            String?
+  fonte                String   @default("Google Places")
+  verificado           Boolean  @default(false)
+  vendeAtacado         Boolean?
+  aceitaRevenda        Boolean?
+  possuiNotaFiscal     Boolean?
+  possuiApi            Boolean?
+  prazoInformado       String?
+  custoNegociado       Float?
+  observacao           String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([empresaId])
+  @@unique([empresaId, externalId])
+  @@map("Fornecedor")
+}
+

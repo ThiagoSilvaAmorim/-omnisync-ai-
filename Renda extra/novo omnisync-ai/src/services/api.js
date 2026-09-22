@@ -176,6 +176,23 @@ export const api = {
   getEventos: () => get('/eventos', mock.eventosCalendario),
   getIntegracoes: () => get('/integracoes', mock.integracoes),
   getFornecedores: () => get('/fornecedores', mock.fornecedores),
+  // ---------- Fornecedores reais (Google Places + salvamento manual) ----------
+  // Busca pública e escrita exigem backend; sem API configurada, rejeitam
+  // com erro explícito em vez de fallback silencioso.
+  buscarFornecedoresPublicos: (query, cidade) => {
+    const params = new URLSearchParams({ query, cidade });
+    return request(`/fornecedores/buscar?${params.toString()}`);
+  },
+  getFornecedoresSalvos: () => get('/fornecedores', []),
+  salvarFornecedor: body => (API_URL
+    ? request('/fornecedores', json(body))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  verificarFornecedor: (id, body) => (API_URL
+    ? request(`/fornecedores/${id}/verificar`, { method: 'PATCH', ...json(body) })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  excluirFornecedor: id => (API_URL
+    ? request(`/fornecedores/${id}`, { method: 'DELETE' })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
 
   // ---------- Marketplaces ----------
   getMarketplaces: () => get('/marketplaces', mock.integracoes.filter(i => i.categoria === 'Marketplace')),

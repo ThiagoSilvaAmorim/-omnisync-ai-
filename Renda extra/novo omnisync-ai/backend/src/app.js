@@ -11,6 +11,7 @@ import { prisma } from './prisma/client.js';
 import { assinarToken, usuarioDoRequest } from './auth.js';
 import productRoutes from './routes/products.js';
 import stockRoutes from './routes/stock.js';
+import supplierRoutes from './routes/suppliers.js';
 import mlAuthRoutes from './routes/mlAuth.js';
 import shopeeAuthRoutes from './routes/shopeeAuth.js';
 import tiktokShopAuthRoutes from './routes/tiktokShopAuth.js';
@@ -217,7 +218,8 @@ app.get('/api/transacoes', async (_req, res) => {
 app.get('/api/oportunidades', send(data.oportunidades));
 app.get('/api/eventos', send(data.eventosCalendario));
 app.get('/api/integracoes', send(data.integracoes));
-app.get('/api/fornecedores', send(data.fornecedores));
+// Fornecedores reais (Google Places + salvamento manual). Substitui o mock estático.
+app.use('/api/fornecedores', supplierRoutes);
 app.get('/api/problemas', send(data.problemas));
 app.get('/api/negocios', send(data.negocios));
 app.get('/api/estagios', send(data.estagiosPipeline));
