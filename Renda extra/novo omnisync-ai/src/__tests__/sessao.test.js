@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { invalidarSessaoExpirada } from '../services/api';
+import { invalidarSessaoExpirada, normalizarInicioOAuth } from '../services/api';
 
 describe('invalidarSessaoExpirada', () => {
   beforeEach(() => {
@@ -25,5 +25,22 @@ describe('invalidarSessaoExpirada', () => {
     });
     expect(() => invalidarSessaoExpirada()).not.toThrow();
     Object.defineProperty(window, 'localStorage', { value: original, configurable: true });
+  });
+});
+
+describe('normalizarInicioOAuth', () => {
+  it('converte resposta do backend {url, state} para {authUrl, state}', () => {
+    const r = normalizarInicioOAuth({ url: 'https://auth.mercadolivre.com.br/authorization?x=1', state: 'abc' });
+    expect(r).toEqual({ authUrl: 'https://auth.mercadolivre.com.br/authorization?x=1', state: 'abc' });
+  });
+
+  it('preserva fallback local {authUrl, state}', () => {
+    const r = normalizarInicioOAuth({ authUrl: '#', state: 'mock-state' });
+    expect(r).toEqual({ authUrl: '#', state: 'mock-state' });
+  });
+
+  it('resposta vazia vira authUrl null (botão exibe erro explícito)', () => {
+    expect(normalizarInicioOAuth(null)).toEqual({ authUrl: null, state: null });
+    expect(normalizarInicioOAuth({})).toEqual({ authUrl: null, state: null });
   });
 });

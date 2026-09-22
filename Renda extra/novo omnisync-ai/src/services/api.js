@@ -37,6 +37,14 @@ export function invalidarSessaoExpirada() {
   }
 }
 
+// Normaliza a resposta de início do OAuth para { authUrl, state }.
+// Backend real: { url, state }. Fallback local: { authUrl, state }.
+// Retorna authUrl null quando ausente para o chamador exibir erro explícito.
+export function normalizarInicioOAuth(res) {
+  const authUrl = res?.url || res?.authUrl || null;
+  return { authUrl, state: res?.state ?? null };
+}
+
 async function request(path, options) {
   const opts = {
     ...(options || {}),
@@ -261,8 +269,11 @@ export const api = {
   // ---------- MercadoLivre OAuth ----------
   // Busca produtos do Mercado Livre via backend (com token salvo)
   searchMercadoLivre: (termo) => get(`/produtos/mercadolibre?q=${encodeURIComponent(termo || 'notebook')}`, []),
+  // Normaliza o início do OAuth para o contrato { authUrl, state }.
+  // O backend responde { url, state }; o fallback local usa { authUrl, state }.
+  // Sem isso, o botão navegaria para ".../undefined" (chave inexistente).
   // Inicia fluxo OAuth — retorna { authUrl, state }
-  mlStartOAuth: () => get('/auth/ml/start', { authUrl: '#', state: 'mock-state' }),
+  mlStartOAuth: async () => normalizarInicioOAuth(await get('/auth/ml/start', { authUrl: '#', state: 'mock-state' })),
   // Status da integração ML para a empresa autenticada
   mlGetStatus: () => get('/auth/ml/status', { status: 'nao_configurado', provedor: 'mercadolivre', empresaId: 1 }),
   // Desconecta a integração ML

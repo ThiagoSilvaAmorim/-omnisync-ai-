@@ -85,6 +85,11 @@ export function Integracao() {
     setMlLoading(true);
     try {
       const { authUrl } = await api.mlStartOAuth();
+      if (!authUrl || authUrl === '#') {
+        toast('Autorização do Mercado Livre indisponível no momento');
+        setMlLoading(false);
+        return;
+      }
       window.location.href = authUrl;
     } catch (e) {
       console.error('Erro ao iniciar OAuth ML:', e);
