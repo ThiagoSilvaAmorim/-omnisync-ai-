@@ -131,7 +131,11 @@ export function DashboardCommandCenter({ period, customRange }) {
               </p>
             )}
             <p className="mt-1 text-sm text-primary-700/80 dark:text-primary-300/80">
-              {receita.delta >= 0 ? '▲' : '▼'} {Math.abs(receita.delta)}% vs mês anterior
+              {Number.isFinite(Number(receita.delta)) ? (
+                <>{receita.delta >= 0 ? '▲' : '▼'} {Math.abs(receita.delta)}% vs mês anterior</>
+              ) : (
+                'Sem histórico'
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">

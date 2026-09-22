@@ -12,6 +12,8 @@ import { assinarToken, usuarioDoRequest } from './auth.js';
 import productRoutes from './routes/products.js';
 import stockRoutes from './routes/stock.js';
 import mlAuthRoutes from './routes/mlAuth.js';
+import shopeeAuthRoutes from './routes/shopeeAuth.js';
+import tiktokShopAuthRoutes from './routes/tiktokShopAuth.js';
 
 // ============================================
 // app.js — Express app com as rotas da API.
@@ -240,6 +242,10 @@ app.get('/api/auth/me', (req, res) => {
 
 // ---------- Mercado Livre OAuth ----------
 app.use('/api/auth/ml', mlAuthRoutes);
+
+// ---------- Shopee / TikTok Shop (somente preparação) ----------
+app.use('/api/auth/shopee', shopeeAuthRoutes);
+app.use('/api/auth/tiktok-shop', tiktokShopAuthRoutes);
 
 // ---------- Marketplaces (pronto para integração real) ----------
 app.get('/api/marketplaces', (_req, res) => {

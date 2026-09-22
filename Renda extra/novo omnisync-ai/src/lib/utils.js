@@ -62,6 +62,22 @@ export function safePercent(current, previous) {
   return ((a - b) / Math.abs(b)) * 100;
 }
 
+// Variação percentual segura para exibição ("+10,0%", "-10,0%" ou "—").
+// Nunca retorna NaN/Infinity/undefined: base zero, nula ou inexistente vira "—".
+export function formatVariation(current, previous) {
+  const a = Number(current);
+  const b = Number(previous);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b === 0) {
+    return '—';
+  }
+  const variation = ((a - b) / Math.abs(b)) * 100;
+  if (!Number.isFinite(variation)) return '—';
+  return `${variation >= 0 ? '+' : ''}${variation.toLocaleString('pt-BR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}%`;
+}
+
 // Formata uma data em string formatada.
 export function formatDate(date) {
   if (!date) return '--';

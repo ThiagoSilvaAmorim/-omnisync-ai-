@@ -4,7 +4,7 @@ import { Download, RefreshCw, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { api } from '../services/api';
-import { CATEGORIAS_INTERNET, buscarMercadoLivre, buscarProdutosInternet } from '../services/marketplace';
+import { CATEGORIAS_INTERNET, buscarMercadoLivre, buscarProdutosInternet, formatPrecoRadar } from '../services/marketplace';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -214,12 +214,8 @@ export function RadarMercado() {
     ordenarML === 'vendidos' ? b.vendidos - a.vendidos : a.preco - b.preco
   ));
 
-  const formatarPreco = p => {
-    if (p.preco == null) return 'Sem preço';
-    return p.moeda === 'BRL'
-      ? `R$ ${Number(p.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-      : `US$ ${Number(p.preco).toFixed(2)}`;
-  };
+  // Moeda explícita via helper compartilhado: USD original sem conversão inventada.
+  const formatarPreco = p => formatPrecoRadar(p);
 
   const importarML = async p => {
     setImportandoId(p.id);
@@ -329,6 +325,7 @@ export function RadarMercado() {
           <div>
             <CardTitle>Radar ao vivo — produtos da internet</CardTitle>
             <p className="mt-0.5 text-xs text-slate-500">Varredura sob demanda com cache de 10 min e timeout de 8s</p>
+            <p className="mt-0.5 text-xs font-medium text-slate-500">Fonte: API pública (DummyJSON/OpenFoodFacts) — não são produtos da sua loja</p>
             <span className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${erroInternet ? 'bg-red-100 text-red-700' : carregandoInternet ? 'bg-amber-100 text-amber-700' : 'bg-teal-100 text-teal-700'}`}>
               <span className={`h-2 w-2 rounded-full ${erroInternet ? 'bg-red-500' : carregandoInternet ? 'bg-amber-500 animate-pulse' : 'bg-teal-500'}`} />
               {erroInternet ? 'Erro' : carregandoInternet ? 'Processando' : 'Ativo'}
@@ -432,7 +429,7 @@ export function RadarMercado() {
         <CardHeader>
           <div>
             <CardTitle>Mercado Livre ao vivo</CardTitle>
-            <p className="mt-0.5 text-xs text-slate-500">Produtos reais via API pública (sem chave), com vendidos</p>
+            <p className="mt-0.5 text-xs text-slate-500">Produtos reais via API pública (sem chave), com vendidos. Para dados da sua loja, conecte sua conta em Integrações.</p>
           </div>
           <div className="flex flex-wrap items-end gap-2">
             <input
@@ -495,7 +492,7 @@ export function RadarMercado() {
                       </a>
                       <span className="flex shrink-0 items-center gap-2">
                         <span className="font-semibold text-slate-800 dark:text-slate-100">
-                          R$ {Number(w.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          {formatarPreco(w)}
                         </span>
                         <button type="button" onClick={() => alternarWatchlist(w)} aria-label="Remover do acompanhamento" className="text-slate-400 hover:text-red-500">
                           <X className="h-3.5 w-3.5" />

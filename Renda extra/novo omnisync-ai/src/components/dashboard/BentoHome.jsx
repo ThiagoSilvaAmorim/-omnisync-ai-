@@ -98,7 +98,11 @@ export function BentoHome({ period, customRange }) {
           )}
           {!loading && (
             <p className="mt-1 text-sm text-primary-700/80 dark:text-primary-300/80">
-              {receita.delta >= 0 ? '▲' : '▼'} {Math.abs(receita.delta)}% vs anterior
+              {Number.isFinite(Number(receita.delta)) ? (
+                <>{receita.delta >= 0 ? '▲' : '▼'} {Math.abs(receita.delta)}% vs anterior</>
+              ) : (
+                'Sem histórico'
+              )}
             </p>
           )}
         </div>

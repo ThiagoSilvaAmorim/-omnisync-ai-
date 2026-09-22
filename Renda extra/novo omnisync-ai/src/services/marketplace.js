@@ -147,6 +147,22 @@ export async function buscarMercadoLivre(termo, limit = 12) {
   }));
 }
 
+// Formatação de preço do Radar com moeda explícita (sem conversão inventada).
+// - BRL → "R$ X,XX" (sem conversão)
+// - USD ou moeda ausente (ex.: DummyJSON) → "US$ X.XX" (moeda original)
+// - preço nulo/inválido → "Sem preço"
+export function formatPrecoRadar(p) {
+  const valor = Number(p?.preco);
+  if (p?.preco == null || !Number.isFinite(valor)) return 'Sem preço';
+  if (p.moeda === 'BRL') {
+    return `R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  if (p.moeda && p.moeda !== 'USD') {
+    return `${p.moeda} ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `US$ ${valor.toFixed(2)}`;
+}
+
 // Busca e combina as duas fontes (a Open Food Facts entra como complemento).
 // Varredura é sempre sob demanda (chamada explícita da tela); nunca em loop.
 export async function buscarProdutosInternet(categoria, limit = 8) {

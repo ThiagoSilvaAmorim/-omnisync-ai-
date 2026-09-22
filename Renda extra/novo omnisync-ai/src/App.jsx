@@ -110,7 +110,7 @@ export default function App() {
             <Route path="/calendario" element={<Calendario />} />
             <Route path="/conteudo-ia" element={<ConteudoIA />} />
             <Route path="/integracao" element={<Integracoes />} />
-            <Route path="/integracao" element={<Integracao />} />
+            <Route path="/integracoes" element={<Integracao />} />
             <Route path="/marketing" element={<Marketing />} />
             <Route path="/configuracoes" element={<Configuracoes />} />
             <Route path="/ia-automacao" element={<Automacao />} />
