@@ -200,6 +200,55 @@ describe('PATCH /api/fornecedores/:id/verificar', () => {
   });
 });
 
+describe('PATCH /api/fornecedores/:id/favorito', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('alterna favorito da própria empresa', async () => {
+    prisma.fornecedor.findFirst.mockResolvedValue({ id: 1, empresaId: 1, favorito: false });
+    prisma.fornecedor.update.mockImplementation(async ({ data }) => ({ id: 1, favorito: data.favorito }));
+    const res = await request(app).patch('/api/fornecedores/1/favorito').set(auth()).send({ favorito: true });
+    expect(res.status).toBe(200);
+    expect(res.body.fornecedor.favorito).toBe(true);
+  });
+
+  it('valor não booleano retorna 400', async () => {
+    const res = await request(app).patch('/api/fornecedores/1/favorito').set(auth()).send({ favorito: 'sim' });
+    expect(res.status).toBe(400);
+  });
+
+  it('fornecedor de outra empresa retorna 404', async () => {
+    prisma.fornecedor.findFirst.mockResolvedValue(null);
+    const res = await request(app).patch('/api/fornecedores/999/favorito').set(auth()).send({ favorito: true });
+    expect(res.status).toBe(404);
+    expect(prisma.fornecedor.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('PATCH /api/fornecedores/:id/arquivar', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('arquiva e restaura da própria empresa', async () => {
+    prisma.fornecedor.findFirst.mockResolvedValue({ id: 1, empresaId: 1, arquivado: false });
+    prisma.fornecedor.update.mockImplementation(async ({ data }) => ({ id: 1, arquivado: data.arquivado }));
+    const arquivou = await request(app).patch('/api/fornecedores/1/arquivar').set(auth()).send({ arquivado: true });
+    expect(arquivou.status).toBe(200);
+    expect(arquivou.body.fornecedor.arquivado).toBe(true);
+    const restaurou = await request(app).patch('/api/fornecedores/1/arquivar').set(auth()).send({ arquivado: false });
+    expect(restaurou.status).toBe(200);
+    expect(restaurou.body.fornecedor.arquivado).toBe(false);
+  });
+
+  it('fornecedor de outra empresa retorna 404', async () => {
+    prisma.fornecedor.findFirst.mockResolvedValue(null);
+    const res = await request(app).patch('/api/fornecedores/999/arquivar').set(auth()).send({ arquivado: true });
+    expect(res.status).toBe(404);
+  });
+});
+
 describe('DELETE /api/fornecedores/:id', () => {
   beforeEach(() => {
     vi.clearAllMocks();

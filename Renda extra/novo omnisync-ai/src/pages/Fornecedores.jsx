@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { useToast } from '../hooks/useToast';
 import { exportarCsv, formatCurrency } from '../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { AiActionButton } from '../components/ui/AiActionButton';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -51,7 +52,6 @@ export function Fornecedores() {
   const [excluindo, setExcluindo] = useState(null);
   const [analiseFornId, setAnaliseFornId] = useState(null);
   const [analiseForn, setAnaliseForn] = useState(null);
-  const [analisandoForn, setAnalisandoForn] = useState(false);
   const [verificando, setVerificando] = useState(null);
   const [formVerificar, setFormVerificar] = useState({
     vendeAtacado: false,
@@ -134,24 +134,11 @@ export function Fornecedores() {
   };
 
   // Análise Gemini do fornecedor salvo (resumo, pontos, riscos, perguntas de cotação).
+  // O AiActionButton exibe loading/erro/insuficiente; o painel abaixo exibe o resultado.
   const analisarFornecedor = async (f) => {
-    if (analiseFornId === f.id) {
-      setAnaliseFornId(null);
-      setAnaliseForn(null);
-      return;
-    }
-    setAnalisandoForn(true);
     setAnaliseFornId(f.id);
     setAnaliseForn(null);
-    try {
-      const r = await api.analisarDominio('supplier', { fornecedorId: f.id });
-      setAnaliseForn(r);
-    } catch (e) {
-      console.error('Erro na análise do fornecedor:', e);
-      setAnaliseForn({ ok: false, message: e.message || 'Falha na análise.' });
-    } finally {
-      setAnalisandoForn(false);
-    }
+    return api.analisarDominio('supplier', { fornecedorId: f.id });
   };
 
   const abrirVerificar = (f) => {
@@ -311,6 +298,39 @@ export function Fornecedores() {
 
   const nomesNaBase = new Set(salvos.map(f => f.nome));
 
+  const visiveis = salvos.filter(f => {
+    if (aba === 'favoritos') return f.favorito && !f.arquivado;
+    if (aba === 'arquivados') return !!f.arquivado;
+    return !f.arquivado;
+  });
+
+  const textoVazioAba = aba === 'favoritos'
+    ? 'Nenhum favorito ainda. Marque ★ nos fornecedores.'
+    : aba === 'arquivados'
+      ? 'Nenhum fornecedor arquivado.'
+      : 'Nenhum fornecedor salvo ainda. Busque empresas públicas acima ou cadastre manualmente.';
+
+  const alternarFavorito = async (f) => {
+    try {
+      await api.favoritarFornecedor(f.id, !f.favorito);
+      carregarSalvos();
+    } catch (e) {
+      console.error('Erro ao favoritar:', e);
+      toast('Erro ao favoritar fornecedor');
+    }
+  };
+
+  const alternarArquivado = async (f) => {
+    try {
+      await api.arquivarFornecedor(f.id, !f.arquivado);
+      toast(f.arquivado ? 'Fornecedor restaurado' : 'Fornecedor arquivado');
+      carregarSalvos();
+    } catch (e) {
+      console.error('Erro ao arquivar:', e);
+      toast('Erro ao arquivar fornecedor');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -410,21 +430,26 @@ export function Fornecedores() {
       </Card>
 
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800" role="tablist" aria-label="Abas de fornecedores">
-        {['carteira', 'radar'].map(t => (
+        {[
+          { id: 'carteira', label: 'Meus fornecedores' },
+          { id: 'favoritos', label: 'Favoritos' },
+          { id: 'arquivados', label: 'Arquivados' },
+          { id: 'radar', label: 'Radar de IA & Oportunidades' },
+        ].map(t => (
           <button
-            key={t}
+            key={t.id}
             type="button"
             role="tab"
-            aria-selected={aba === t}
-            onClick={() => setAba(t)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${aba === t ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            aria-selected={aba === t.id}
+            onClick={() => setAba(t.id)}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${aba === t.id ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
           >
-            {t === 'carteira' ? 'Meus Fornecedores' : 'Radar de IA & Oportunidades'}
+            {t.label}
           </button>
         ))}
       </div>
 
-      {aba === 'carteira' ? (
+      {aba !== 'radar' ? (
         <div>
           {loadingSalvos ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -436,13 +461,13 @@ export function Fornecedores() {
             <p className="rounded-lg border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
               {erroSalvos}
             </p>
-          ) : salvos.length === 0 ? (
+          ) : visiveis.length === 0 ? (
             <p className="rounded-lg border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500 dark:border-slate-700">
-              Nenhum fornecedor salvo ainda. Busque empresas públicas acima ou cadastre manualmente.
+              {textoVazioAba}
             </p>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {salvos.map(f => (
+              {visiveis.map(f => (
                 <Card key={f.id}>
                   <CardHeader>
                     <div className="flex items-center gap-3">
@@ -507,24 +532,40 @@ export function Fornecedores() {
                             Marcar como verificado
                           </button>
                         )}
+                        <AiActionButton
+                          label="Analisar com Gemini"
+                          onRun={() => analisarFornecedor(f)}
+                          onResult={setAnaliseForn}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          onClick={() => analisarFornecedor(f)}
-                          disabled={analisandoForn && analiseFornId === f.id}
-                          className="text-xs font-medium text-primary-600 hover:underline disabled:opacity-50"
+                          onClick={() => alternarFavorito(f)}
+                          title={f.favorito ? 'Remover dos favoritos' : 'Favoritar'}
+                          aria-label={`Favoritar ${f.nome}`}
+                          className={`rounded-lg p-1.5 transition-colors ${f.favorito ? 'text-amber-500 hover:text-amber-600' : 'text-slate-400 hover:bg-slate-100 hover:text-amber-500 dark:hover:bg-slate-800'}`}
                         >
-                          {analisandoForn && analiseFornId === f.id ? 'Analisando...' : 'Analisar com Gemini'}
+                          <span aria-hidden="true" className="text-base leading-none">★</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => alternarArquivado(f)}
+                          title={f.arquivado ? 'Restaurar' : 'Arquivar'}
+                          className="rounded-lg px-2 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                        >
+                          {f.arquivado ? 'Restaurar' : 'Arquivar'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setExcluindo(f)}
+                          title="Excluir"
+                          aria-label={`Excluir ${f.nome}`}
+                          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setExcluindo(f)}
-                        title="Excluir"
-                        aria-label={`Excluir ${f.nome}`}
-                        className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </div>
                     {analiseFornId === f.id && analiseForn && (
                       <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">

@@ -32,6 +32,8 @@ function paraPublico(f) {
     categoria: f.categoria,
     fonte: f.fonte,
     verificado: f.verificado,
+    favorito: f.favorito,
+    arquivado: f.arquivado,
     vendeAtacado: f.vendeAtacado,
     aceitaRevenda: f.aceitaRevenda,
     possuiNotaFiscal: f.possuiNotaFiscal,
@@ -190,6 +192,44 @@ router.patch('/:id/verificar', requireAuth, async (req, res) => {
   } catch (e) {
     console.error('[Suppliers] Erro ao verificar:', e.message);
     return res.status(500).json({ error: 'Erro ao verificar fornecedor' });
+  }
+});
+
+// PATCH /api/fornecedores/:id/favorito — somente da própria empresa.
+router.patch('/:id/favorito', requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || typeof req.body?.favorito !== 'boolean') {
+    return res.status(400).json({ code: 'INVALID_FAVORITE', message: 'Informe favorito como booleano.' });
+  }
+  try {
+    const existente = await prisma.fornecedor.findFirst({ where: { id, empresaId: req.empresaId } });
+    if (!existente) {
+      return res.status(404).json({ error: 'Fornecedor não encontrado' });
+    }
+    const atualizado = await prisma.fornecedor.update({ where: { id }, data: { favorito: req.body.favorito } });
+    return res.json({ ok: true, fornecedor: paraPublico(atualizado) });
+  } catch (e) {
+    console.error('[Suppliers] Erro ao favoritar:', e.message);
+    return res.status(500).json({ error: 'Erro ao favoritar fornecedor' });
+  }
+});
+
+// PATCH /api/fornecedores/:id/arquivar — arquivar ou restaurar, somente da própria empresa.
+router.patch('/:id/arquivar', requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || typeof req.body?.arquivado !== 'boolean') {
+    return res.status(400).json({ code: 'INVALID_ARCHIVE', message: 'Informe arquivado como booleano.' });
+  }
+  try {
+    const existente = await prisma.fornecedor.findFirst({ where: { id, empresaId: req.empresaId } });
+    if (!existente) {
+      return res.status(404).json({ error: 'Fornecedor não encontrado' });
+    }
+    const atualizado = await prisma.fornecedor.update({ where: { id }, data: { arquivado: req.body.arquivado } });
+    return res.json({ ok: true, fornecedor: paraPublico(atualizado) });
+  } catch (e) {
+    console.error('[Suppliers] Erro ao arquivar:', e.message);
+    return res.status(500).json({ error: 'Erro ao arquivar fornecedor' });
   }
 });
 

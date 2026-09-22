@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { AppProvider } from '../context/AppContext';
 import { Fornecedores } from '../pages/Fornecedores';
 
@@ -35,6 +35,17 @@ describe('Fornecedores (estados honestos)', () => {
     expect(
       await screen.findByText('Nenhum fornecedor salvo ainda. Busque empresas públicas acima ou cadastre manualmente.')
     ).toBeTruthy();
+  });
+
+  it('aba Favoritos tem estado vazio próprio', async () => {
+    render(
+      <AppProvider>
+        <Fornecedores />
+      </AppProvider>
+    );
+    await screen.findByText('Nenhum fornecedor salvo ainda. Busque empresas públicas acima ou cadastre manualmente.');
+    fireEvent.click(screen.getByRole('tab', { name: 'Favoritos' }));
+    expect(await screen.findByText('Nenhum favorito ainda. Marque ★ nos fornecedores.')).toBeTruthy();
   });
 
   it('não exibe métricas inventadas sem dados', async () => {

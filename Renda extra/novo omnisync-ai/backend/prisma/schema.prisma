@@ -174,6 +174,8 @@ model Fornecedor {
   categoria            String?
   fonte                String   @default("Google Places")
   verificado           Boolean  @default(false)
+  favorito             Boolean  @default(false)
+  arquivado            Boolean  @default(false)
   vendeAtacado         Boolean?
   aceitaRevenda        Boolean?
   possuiNotaFiscal     Boolean?

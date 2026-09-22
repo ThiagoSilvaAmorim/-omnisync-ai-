@@ -12,6 +12,7 @@ import { Select } from '../components/ui/Select';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ImagemProduto } from '../components/ui/ImagemProduto';
+import { AiActionButton } from '../components/ui/AiActionButton';
 
 // ============================================
 // Tela 03 — Radar de Mercado.
@@ -174,7 +175,6 @@ export function RadarMercado() {
   const [carregandoML, setCarregandoML] = useState(false);
   const [erroML, setErroML] = useState('');
   const [analiseML, setAnaliseML] = useState(null);
-  const [analisandoML, setAnalisandoML] = useState(false);
   const [ordenarML, setOrdenarML] = useState('vendidos');
   // Acompanhamento de preços (watchlist local do navegador).
   const [watchlist, setWatchlist] = useState(() => {
@@ -218,24 +218,16 @@ export function RadarMercado() {
 
   // Análise Gemini somente sobre os cards reais visíveis (nunca DummyJSON).
   // Margem indisponível: custo de aquisição não existe nesses cards.
+  // O AiActionButton exibe loading/erro/insuficiente; o painel abaixo exibe o resultado.
   const analisarML = async () => {
-    setAnalisandoML(true);
-    setAnaliseML(null);
-    try {
-      const produtos = resultadosMLOrdenados.slice(0, 12).map(p => ({
-        nome: p.nome,
-        preco: p.preco,
-        moeda: p.moeda,
-        fonte: 'Mercado Livre (busca autenticada)',
-        vendidos: p.vendidos,
-      }));
-      const r = await api.analisarDominio('market', { produtos });
-      setAnaliseML(r);
-    } catch (e) {
-      setAnaliseML({ ok: false, code: 'ANALYZE_FAILED', message: e.message || 'Falha na análise.' });
-    } finally {
-      setAnalisandoML(false);
-    }
+    const produtos = resultadosMLOrdenados.slice(0, 12).map(p => ({
+      nome: p.nome,
+      preco: p.preco,
+      moeda: p.moeda,
+      fonte: 'Mercado Livre (busca autenticada)',
+      vendidos: p.vendidos,
+    }));
+    return api.analisarDominio('market', { produtos });
   };
 
   // Moeda explícita via helper compartilhado: USD original sem conversão inventada.
@@ -471,14 +463,12 @@ export function RadarMercado() {
             <Button onClick={buscarML} disabled={carregandoML}>
               <Search className="h-4 w-4" /> {carregandoML ? 'Buscando...' : 'Buscar no ML'}
             </Button>
-            <Button
-              variant="secondary"
-              onClick={analisarML}
-              disabled={carregandoML || analisandoML || resultadosMLOrdenados.length === 0}
-              title="Analisa somente os cards reais visíveis"
-            >
-              {analisandoML ? 'Analisando...' : 'Analisar com Gemini'}
-            </Button>
+            <AiActionButton
+              label="Analisar com Gemini"
+              disabled={carregandoML || resultadosMLOrdenados.length === 0}
+              onRun={analisarML}
+              onResult={setAnaliseML}
+            />
           </div>
         </CardHeader>
         <CardContent>

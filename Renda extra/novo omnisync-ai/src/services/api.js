@@ -193,6 +193,12 @@ export const api = {
   excluirFornecedor: id => (API_URL
     ? request(`/fornecedores/${id}`, { method: 'DELETE' })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  favoritarFornecedor: (id, favorito) => (API_URL
+    ? request(`/fornecedores/${id}/favorito`, { method: 'PATCH', ...json({ favorito }) })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  arquivarFornecedor: (id, arquivado) => (API_URL
+    ? request(`/fornecedores/${id}/arquivar`, { method: 'PATCH', ...json({ arquivado }) })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
 
   // ---------- Marketplaces ----------
   getMarketplaces: () => get('/marketplaces', mock.integracoes.filter(i => i.categoria === 'Marketplace')),
