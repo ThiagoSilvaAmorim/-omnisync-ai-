@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Globe, MapPin, Phone, ShieldCheck, Star } from 'lucide-react';
 import { api } from '../services/api';
+import { useToast } from '../hooks/useToast';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -27,6 +28,19 @@ const BRL = v => Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', cur
 export function FornecedorDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
+
+  // Marca a OC como enviada ao fornecedor (ação manual explícita).
+  // Não compra, não paga e não acessa sites externos.
+  const marcarEnviada = async (ordemId) => {
+    try {
+      const r = await api.marcarOcEnviada(ordemId);
+      setOrdens(prev => prev.map(o => (o.id === ordemId ? { ...o, status: r?.ordem?.status || 'enviado_ao_fornecedor' } : o)));
+      toast('Ordem marcada como enviada ao fornecedor');
+    } catch (e) {
+      toast(`Erro ao marcar envio: ${e.message}`);
+    }
+  };
   const [fornecedor, setFornecedor] = useState(null);
   const [produtos, setProdutos] = useState([]);
   const [ordens, setOrdens] = useState([]);
@@ -245,6 +259,7 @@ export function FornecedorDetalhe() {
                     <th className="px-5 py-3 text-right font-medium">Total</th>
                     <th className="px-5 py-3 font-medium">Status</th>
                     <th className="px-5 py-3 font-medium">Rastreio</th>
+                    <th className="px-5 py-3 font-medium">Ação</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -255,6 +270,17 @@ export function FornecedorDetalhe() {
                     <td className="px-5 py-3 text-right font-medium text-slate-800 dark:text-slate-100">{BRL(o.total)}</td>
                     <td className="px-5 py-3"><Badge variant="slate">{o.status}</Badge></td>
                     <td className="px-5 py-3 font-mono text-xs text-slate-500">{o.rastreio || '—'}</td>
+                    <td className="px-5 py-3">
+                      {o.status === 'compra_aprovada' && (
+                        <button
+                          type="button"
+                          onClick={() => marcarEnviada(o.id)}
+                          className="text-xs font-medium text-primary-600 hover:underline"
+                        >
+                          Marcar como enviado
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

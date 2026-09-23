@@ -77,10 +77,86 @@ function CatalogoProdutos() {
   const [modalNovo, setModalNovo] = useState(false);
   // Rascunho de anúncio via Gemini (nunca publica sozinho).
   const [rascunho, setRascunho] = useState(null);
+  // Fluxo de publicação com aprovação: solicitar → aprovar na Central de IA → publicar.
+  const [aprovacao, setAprovacao] = useState(null);
+  const [apLoading, setApLoading] = useState(false);
+  const [categoriaMl, setCategoriaMl] = useState('');
+  const [publicadoId, setPublicadoId] = useState(null);
 
   const gerarRascunho = async (p) => {
     const r = await api.gerarRascunhoAnuncio(p.id);
     return r;
+  };
+
+  const abrirRascunho = (p, r) => {
+    if (r?.ok) {
+      setRascunho({ produto: p, resultado: r });
+      setAprovacao(null);
+      setPublicadoId(null);
+      setCategoriaMl('');
+    }
+  };
+
+  const solicitarAprovacao = async () => {
+    if (!rascunho?.produto || apLoading) return;
+    setApLoading(true);
+    try {
+      const r = await api.solicitarAprovacao({
+        agente: 'MarketRadar',
+        action: 'ml.publish',
+        entityType: 'anuncio',
+        entityId: String(rascunho.produto.sku || rascunho.produto.id),
+        payload: { produtoId: rascunho.produto.id, rascunho: rascunho.resultado?.draft || null },
+        motivo: `Publicar "${rascunho.produto.nome}" no Mercado Livre`,
+      });
+      setAprovacao({ id: r.id, status: r.status });
+      toast(`Aprovação ${r.id} criada — aprove na Central de IA`);
+    } catch (e) {
+      toast(`Erro ao solicitar aprovação: ${e.message}`);
+    } finally {
+      setApLoading(false);
+    }
+  };
+
+  const verificarAprovacao = async () => {
+    if (!aprovacao?.id || apLoading) return;
+    setApLoading(true);
+    try {
+      const r = await api.getAprovacao(aprovacao.id);
+      setAprovacao({ id: r.id, status: r.status });
+    } catch (e) {
+      toast(`Erro ao verificar aprovação: ${e.message}`);
+    } finally {
+      setApLoading(false);
+    }
+  };
+
+  const publicarAnuncio = async () => {
+    if (!rascunho?.produto || !aprovacao || apLoading) return;
+    if (!categoriaMl.trim()) {
+      toast('Informe a categoria oficial do ML (ID) para publicar');
+      return;
+    }
+    setApLoading(true);
+    try {
+      const p = rascunho.produto;
+      const r = await api.publicarAnuncioML(aprovacao.id, {
+        title: p.nome,
+        category_id: categoriaMl.trim(),
+        price: Number(p.preco) || 0,
+        currency_id: 'BRL',
+        available_quantity: Number(p.estoque ?? 0),
+        buying_mode: 'buy_it_now',
+        listing_type_id: 'free',
+        condition: 'new',
+      });
+      setPublicadoId(r?.item?.id ?? true);
+      toast('Anúncio publicado no Mercado Livre');
+    } catch (e) {
+      toast(`Falha ao publicar: ${e.message}`);
+    } finally {
+      setApLoading(false);
+    }
   };
   const [salvando, setSalvando] = useState(false);
   const [form, setForm] = useState({ nome: '', sku: '', categoria: '', preco: '', estoque: '', minimo: '', fornecedor: '' });
@@ -358,7 +434,7 @@ function CatalogoProdutos() {
                         <AiActionButton
                           label="Rascunho"
                           onRun={() => gerarRascunho(p)}
-                          onResult={(r) => { if (r?.ok) setRascunho({ produto: p, resultado: r }); }}
+                          onResult={(r) => abrirRascunho(p, r)}
                         />
                       </td>
                     </tr>
@@ -446,6 +522,46 @@ function CatalogoProdutos() {
             <p className="rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
               Rascunho — nada foi publicado. Publicação exige aprovação manual.
             </p>
+            {!publicadoId ? (
+              <div className="space-y-2 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Publicar no Mercado Livre</p>
+                {!aprovacao ? (
+                  <Button size="sm" onClick={solicitarAprovacao} disabled={apLoading}>
+                    {apLoading ? 'Solicitando...' : 'Solicitar aprovação'}
+                  </Button>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-slate-500">
+                      Aprovação {aprovacao.id}: <span className="font-medium">{aprovacao.status}</span>
+                      {aprovacao.status !== 'aprovada' && ' — aprove na Central de IA'}
+                    </p>
+                    <Input
+                      label="Categoria oficial do ML (ID)"
+                      value={categoriaMl}
+                      onChange={e => setCategoriaMl(e.target.value)}
+                      placeholder="Ex: MLB1234"
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="secondary" onClick={verificarAprovacao} disabled={apLoading}>
+                        Verificar status
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={publicarAnuncio}
+                        disabled={apLoading || aprovacao.status !== 'aprovada'}
+                        title={aprovacao.status !== 'aprovada' ? 'Aguarde aprovação na Central de IA' : 'Publicar anúncio real'}
+                      >
+                        {apLoading ? 'Publicando...' : 'Publicar no ML'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="rounded-lg bg-teal-50 p-2 text-xs font-medium text-teal-700 dark:bg-teal-500/10 dark:text-teal-300">
+                Anúncio publicado{typeof publicadoId === 'string' ? `: ${publicadoId}` : ''}.
+              </p>
+            )}
           </div>
         )}
         <div className="mt-5 flex justify-end gap-2">

@@ -303,11 +303,19 @@ export const api = {
   // Sem isso, o botão navegaria para ".../undefined" (chave inexistente).
   // Inicia fluxo OAuth — retorna { authUrl, state }
   mlStartOAuth: async () => normalizarInicioOAuth(await get('/auth/ml/start', { authUrl: '#', state: 'mock-state' })),
-  // Status da integração ML para a empresa autenticada
-  mlGetStatus: () => get('/auth/ml/status', { status: 'nao_configurado', provedor: 'mercadolivre', empresaId: 1 }),
-  // Desconecta a integração ML
-  mlDisconnect: () => {
-    if (API_URL) return request('/auth/ml/disconnect', { method: 'POST' });
+  // Status da integração ML (mlUserId opcional foca uma loja específica).
+  mlGetStatus: (mlUserId) => get(
+    mlUserId ? `/auth/ml/status?mlUserId=${encodeURIComponent(mlUserId)}` : '/auth/ml/status',
+    { status: 'nao_configurado', provedor: 'mercadolivre', empresaId: 1 },
+  ),
+  // Desconecta a integração ML (mlUserId opcional desconecta só aquela loja).
+  mlDisconnect: (mlUserId) => {
+    if (API_URL) {
+      return request('/auth/ml/disconnect', {
+        method: 'POST',
+        ...json(mlUserId != null ? { mlUserId: String(mlUserId) } : {}),
+      });
+    }
     return delay().then(() => ({ ok: true, status: 'desconectado' }));
   },
   // ---------- Análises Gemini sobre dados reais (somente leitura + rascunho) ----------
@@ -317,6 +325,20 @@ export const api = {
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   gerarRascunhoAnuncio: (produtoId) => (API_URL
     ? request('/ai/generate/listing', json({ produtoId }))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  // ---------- Publicação ML (sempre com aprovação prévia, nunca automática) ----------
+  solicitarAprovacao: (body) => (API_URL
+    ? request('/approvals', json(body))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  getAprovacao: (id) => (API_URL
+    ? request(`/approvals/${id}`)
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  publicarAnuncioML: (approvalId, item) => (API_URL
+    ? request('/ml/items', json({ approvalId, item }))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  // ---------- Ordens de compra: avanço manual ----------
+  marcarOcEnviada: (id) => (API_URL
+    ? request(`/purchase-orders/${id}/enviar`, { method: 'POST' })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   // Health check do backend
   healthCheck: () => get('/health', { status: 'online', timestamp: new Date().toISOString(), environment: 'development', ml_configured: false }),

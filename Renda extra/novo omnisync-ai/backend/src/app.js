@@ -454,7 +454,14 @@ app.post('/api/risk/limites', (req, res) => {
 });
 
 // ---------- Approval Engine ----------
-app.get('/api/approvals', (req, res) => {
+// Exige JWT válido (não usa o requireAuth simulado deste arquivo).
+function exigirJwt(req, res, next) {
+  const user = usuarioDoRequest(req);
+  if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
+  next();
+}
+
+app.get('/api/approvals', exigirJwt, (req, res) => {
   const { status, agente, limit } = req.query;
   let approvals;
   if (status === 'pendente') approvals = approvalEngine.getPendentes(limit ? Number(limit) : 100);
@@ -464,13 +471,13 @@ app.get('/api/approvals', (req, res) => {
   res.json(approvals);
 });
 
-app.get('/api/approvals/:id', (req, res) => {
+app.get('/api/approvals/:id', exigirJwt, (req, res) => {
   const aprovacao = approvalEngine.getSolicitacao(req.params.id);
   if (!aprovacao) return res.status(404).json({ error: 'Aprovação não encontrada' });
   res.json(aprovacao);
 });
 
-app.post('/api/approvals', (req, res) => {
+app.post('/api/approvals', exigirJwt, (req, res) => {
   const { agente, action, entityType, entityId, payload, valorEstimado, impactoMensal, impactoAnual, risco, confianca, premissas, motivo, prioridade, expiracaoHoras } = req.body;
   if (!agente || !action) {
     return res.status(400).json({ error: 'agente e action são obrigatórios' });
@@ -485,28 +492,28 @@ app.post('/api/approvals', (req, res) => {
   res.status(201).json(solicitacao);
 });
 
-app.post('/api/approvals/:id/aprovar', (req, res) => {
+app.post('/api/approvals/:id/aprovar', exigirJwt, (req, res) => {
   const { aprovador } = req.body;
   const result = approvalEngine.aprovar(req.params.id, aprovador || 'api');
   if (!result.success) return res.status(400).json(result);
   res.json(result);
 });
 
-app.post('/api/approvals/:id/rejeitar', (req, res) => {
+app.post('/api/approvals/:id/rejeitar', exigirJwt, (req, res) => {
   const { rejeitadoPor, motivo } = req.body;
   const result = approvalEngine.rejeitar(req.params.id, rejeitadoPor || 'api', motivo);
   if (!result.success) return res.status(400).json(result);
   res.json(result);
 });
 
-app.post('/api/approvals/:id/executar', (req, res) => {
+app.post('/api/approvals/:id/executar', exigirJwt, (req, res) => {
   const { resultado } = req.body;
   const result = approvalEngine.marcarExecutada(req.params.id, resultado || {});
   if (!result.success) return res.status(400).json(result);
   res.json(result);
 });
 
-app.get('/api/approvals/estatisticas', (_req, res) => {
+app.get('/api/approvals/estatisticas', exigirJwt, (_req, res) => {
   res.json(approvalEngine.getEstatisticas());
 });
 

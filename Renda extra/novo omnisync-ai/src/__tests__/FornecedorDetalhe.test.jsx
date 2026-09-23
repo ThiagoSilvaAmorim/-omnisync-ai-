@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AppProvider } from '../context/AppContext';
 import { api } from '../services/api';
@@ -10,6 +10,7 @@ vi.mock('../services/api', () => ({
     getFornecedor: vi.fn(),
     getProdutos: vi.fn(async () => ({ produtos: [] })),
     listarOrdensCompra: vi.fn(async () => []),
+    marcarOcEnviada: vi.fn(),
   },
 }));
 
@@ -49,5 +50,17 @@ describe('FornecedorDetalhe (dados reais)', () => {
     ]);
     renderizar('5');
     expect(await screen.findByText('BR123456')).toBeTruthy();
+  });
+
+  it('marcar como enviado atualiza o status da ordem', async () => {
+    api.getFornecedor.mockResolvedValue({ id: 5, nome: 'Distribuidora Real', fonte: 'Manual', verificado: false });
+    api.listarOrdensCompra.mockResolvedValue([
+      { id: 'OC-2', fornecedor: 'Distribuidora Real', data: '2026-09-02', total: 50, status: 'compra_aprovada', rastreio: null },
+    ]);
+    api.marcarOcEnviada.mockResolvedValue({ ok: true, ordem: { id: 'OC-2', status: 'enviado_ao_fornecedor' } });
+    renderizar('5');
+    fireEvent.click(await screen.findByText('Marcar como enviado'));
+    expect(api.marcarOcEnviada).toHaveBeenCalledWith('OC-2');
+    expect(await screen.findByText('enviado_ao_fornecedor')).toBeTruthy();
   });
 });

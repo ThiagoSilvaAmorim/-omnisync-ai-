@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppProvider } from '../context/AppContext';
 import { api } from '../services/api';
@@ -54,5 +54,23 @@ describe('Integracao — card Mercado Livre', () => {
     renderizar();
     expect(await screen.findByText('Desconectar')).toBeTruthy();
     expect(await screen.findByText('@lojateste')).toBeTruthy();
+  });
+
+  it('duas lojas exibem seletor e troca recarrega o status', async () => {
+    api.mlGetStatus.mockResolvedValue({
+      status: 'conectado',
+      conta: { mlUser: { nickname: 'loja-a' } },
+      sellers: [
+        { mlUserId: '11', nickname: 'loja-a', ativo: true },
+        { mlUserId: '22', nickname: 'loja-b', ativo: true },
+      ],
+    });
+    renderizar();
+    const select = await screen.findByLabelText('Loja:');
+    expect(select).toBeTruthy();
+    fireEvent.change(select, { target: { value: '22' } });
+    await waitFor(() => {
+      expect(api.mlGetStatus).toHaveBeenCalledWith('22');
+    });
   });
 });

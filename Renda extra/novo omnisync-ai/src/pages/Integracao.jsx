@@ -27,6 +27,8 @@ export function Integracao() {
   // ML OAuth state
   const [mlStatus, setMlStatus] = useState(null);
   const [mlLoading, setMlLoading] = useState(false);
+  // Loja selecionada (multi-loja); vazio = atual.
+  const [lojaSel, setLojaSel] = useState('');
 
   const carregarDados = useCallback(async () => {
     setLoading(true);
@@ -52,10 +54,11 @@ export function Integracao() {
     }
   }, [toast]);
 
-  const carregarMlStatus = useCallback(async () => {
+  const carregarMlStatus = useCallback(async (mlUserId) => {
     try {
-      const status = await api.mlGetStatus();
+      const status = await api.mlGetStatus(mlUserId || undefined);
       setMlStatus(status);
+      if (!mlUserId) setLojaSel('');
     } catch (e) {
       console.error('Erro ao buscar status ML:', e);
       setMlStatus({ status: 'erro_sincronizacao' });
@@ -98,10 +101,15 @@ export function Integracao() {
     }
   };
 
+  const trocarLoja = (mlUserId) => {
+    setLojaSel(mlUserId);
+    carregarMlStatus(mlUserId || undefined);
+  };
+
   const handleDesconectarML = async () => {
     setMlLoading(true);
     try {
-      await api.mlDisconnect();
+      await api.mlDisconnect(lojaSel || undefined);
       toast('Mercado Livre desconectado');
       carregarMlStatus();
     } catch (e) {
@@ -287,6 +295,24 @@ export function Integracao() {
                 <div className="text-xs text-slate-500">
                   Token expira em: {formatDate(new Date(mlStatus.expiresAt))}
                   {mlStatus.isExpired && <span className="text-red-500 ml-2">(expirado)</span>}
+                </div>
+              )}
+
+              {Array.isArray(mlStatus?.sellers) && mlStatus.sellers.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <label htmlFor="ml-loja" className="text-xs font-medium text-slate-500">Loja:</label>
+                  <select
+                    id="ml-loja"
+                    value={lojaSel}
+                    onChange={e => trocarLoja(e.target.value)}
+                    className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 outline-none focus:border-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    {mlStatus.sellers.map(s => (
+                      <option key={s.mlUserId} value={s.mlUserId}>
+                        {(s.nickname ? `@${s.nickname}` : `Loja ${s.mlUserId}`)}{s.ativo ? '' : ' (desconectada)'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
 
