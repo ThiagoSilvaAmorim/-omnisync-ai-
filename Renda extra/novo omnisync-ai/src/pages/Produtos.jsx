@@ -9,6 +9,7 @@ import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
+import { AiActionButton } from '../components/ui/AiActionButton';
 import { Skeleton } from '../components/ui/Skeleton';
 import { AcessoRestrito } from '../components/ui/AcessoRestrito';
 import { useAuth } from '../context/AuthContext';
@@ -74,6 +75,13 @@ function CatalogoProdutos() {
   const [selecionados, setSelecionados] = useState([]);
   const [pill, setPill] = useState('Todos');
   const [modalNovo, setModalNovo] = useState(false);
+  // Rascunho de anúncio via Gemini (nunca publica sozinho).
+  const [rascunho, setRascunho] = useState(null);
+
+  const gerarRascunho = async (p) => {
+    const r = await api.gerarRascunhoAnuncio(p.id);
+    return r;
+  };
   const [salvando, setSalvando] = useState(false);
   const [form, setForm] = useState({ nome: '', sku: '', categoria: '', preco: '', estoque: '', minimo: '', fornecedor: '' });
 
@@ -300,18 +308,19 @@ function CatalogoProdutos() {
                   <th className="px-5 py-3 text-right font-medium">Estoque</th>
                   <th className="px-5 py-3 font-medium">Categoria</th>
                   <th className="px-5 py-3 font-medium">Status</th>
+                  <th className="px-5 py-3 font-medium">IA</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-3">
+                    <td colSpan={8} className="px-5 py-3">
                       <Skeleton className="h-12 rounded-lg" />
                     </td>
                   </tr>
                 ) : paginaAtual.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-8 text-center">
+                    <td colSpan={8} className="px-5 py-8 text-center">
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Nenhum produto encontrado</p>
                       <p className="mt-1 text-xs text-slate-500">Ajuste os filtros ou cadastre o primeiro item do catálogo.</p>
                       <div className="mt-3 flex justify-center gap-2">
@@ -345,6 +354,13 @@ function CatalogoProdutos() {
                       <td className="px-5 py-3 text-right text-slate-700 dark:text-slate-200">{estoqueAtual}</td>
                       <td className="px-5 py-3 text-slate-700 dark:text-slate-200">{p.categoria}</td>
                       <td className="px-5 py-3"><Badge variant={s.variant}>{s.label}</Badge></td>
+                      <td className="px-5 py-3">
+                        <AiActionButton
+                          label="Rascunho"
+                          onRun={() => gerarRascunho(p)}
+                          onResult={(r) => { if (r?.ok) setRascunho({ produto: p, resultado: r }); }}
+                        />
+                      </td>
                     </tr>
                   );
                 })}
@@ -406,6 +422,38 @@ function CatalogoProdutos() {
           </Card>
         </div>
       </div>
+
+      <Modal open={!!rascunho} onClose={() => setRascunho(null)} title={`Rascunho — ${rascunho?.produto?.nome ?? ''}`}>
+        {rascunho?.resultado && (
+          <div className="space-y-3 text-sm">
+            <p className="whitespace-pre-wrap text-slate-700 dark:text-slate-200">{rascunho.resultado.draft?.analysis}</p>
+            {(rascunho.resultado.draft?.recommendations || []).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Rascunho gerado</p>
+                <ul className="list-disc pl-5 text-slate-600 dark:text-slate-300">
+                  {rascunho.resultado.draft.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+                </ul>
+              </div>
+            )}
+            {(rascunho.resultado.draft?.risks || []).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Campos ausentes / riscos</p>
+                <ul className="list-disc pl-5 text-slate-600 dark:text-slate-300">
+                  {rascunho.resultado.draft.risks.map((r, i) => <li key={i}>{r}</li>)}
+                </ul>
+              </div>
+            )}
+            <p className="rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+              Rascunho — nada foi publicado. Publicação exige aprovação manual.
+            </p>
+          </div>
+        )}
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setRascunho(null)}>
+            Fechar
+          </Button>
+        </div>
+      </Modal>
 
       <Modal open={modalNovo} onClose={() => setModalNovo(false)} title="Novo produto">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

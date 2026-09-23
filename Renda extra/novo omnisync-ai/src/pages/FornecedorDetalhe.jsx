@@ -240,10 +240,11 @@ export function FornecedorDetalhe() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500 dark:border-slate-800">
-                  <th className="px-5 py-3 font-medium">Ordem</th>
-                  <th className="px-5 py-3 font-medium">Data</th>
-                  <th className="px-5 py-3 text-right font-medium">Total</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
+                    <th className="px-5 py-3 font-medium">Ordem</th>
+                    <th className="px-5 py-3 font-medium">Data</th>
+                    <th className="px-5 py-3 text-right font-medium">Total</th>
+                    <th className="px-5 py-3 font-medium">Status</th>
+                    <th className="px-5 py-3 font-medium">Rastreio</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -253,6 +254,7 @@ export function FornecedorDetalhe() {
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{o.data || '—'}</td>
                     <td className="px-5 py-3 text-right font-medium text-slate-800 dark:text-slate-100">{BRL(o.total)}</td>
                     <td className="px-5 py-3"><Badge variant="slate">{o.status}</Badge></td>
+                    <td className="px-5 py-3 font-mono text-xs text-slate-500">{o.rastreio || '—'}</td>
                   </tr>
                 ))}
               </tbody>
