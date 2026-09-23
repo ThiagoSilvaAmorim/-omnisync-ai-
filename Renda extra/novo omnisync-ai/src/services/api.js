@@ -197,6 +197,8 @@ export const api = {
   criarOrdemCompra: body => (API_URL
     ? request('/purchase-orders', json(body))
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  getFornecedor: id => get(`/fornecedores/${id}`, null),
+  listarOrdensCompra: () => get('/purchase-orders', []),
   favoritarFornecedor: (id, favorito) => (API_URL
     ? request(`/fornecedores/${id}/favorito`, { method: 'PATCH', ...json({ favorito }) })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),

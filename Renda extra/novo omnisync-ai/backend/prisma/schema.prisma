@@ -158,7 +158,9 @@ model ContaIntegracao {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([provedor, empresaId])
+  // Multi-loja: uma linha por (provedor, empresa, seller).
+  // Segunda loja cria nova linha em vez de sobrescrever a primeira.
+  @@unique([provedor, empresaId, mlUserId])
   @@map("ContaIntegracao")
 }
 

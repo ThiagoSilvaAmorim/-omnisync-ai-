@@ -133,13 +133,16 @@ async function saveIntegration({ empresaId, userId, tokens, mlUser }) {
   const payload = buildTokenPayload(tokens, mlUser);
   const encrypted = criptografar(JSON.stringify(payload));
 
-  const sellerId = tokens.user_id != null ? String(tokens.user_id) : null;
+  // Multi-loja: seller desconhecido não pode salvar (evita linha órfã).
+  if (tokens.user_id == null) {
+    throw new Error('Resposta do Mercado Livre sem user_id');
+  }
+  const sellerId = String(tokens.user_id);
   const integration = await prisma.contaIntegracao.upsert({
-    where: { provedor_empresaId: { provedor: 'mercadolivre', empresaId } },
+    where: { provedor_empresaId_mlUserId: { provedor: 'mercadolivre', empresaId, mlUserId: sellerId } },
     update: {
       segredo: encrypted,
       ativo: true,
-      mlUserId: sellerId,
       updatedAt: new Date(),
     },
     create: {
@@ -156,10 +159,22 @@ async function saveIntegration({ empresaId, userId, tokens, mlUser }) {
   return integration;
 }
 
-async function getIntegration(empresaId) {
-  const record = await prisma.contaIntegracao.findUnique({
-    where: { provedor_empresaId: { provedor: 'mercadolivre', empresaId } },
-  });
+// Busca a integração de um seller específico ou, sem mlUserId,
+// a mais recentemente atualizada (compatível com conta única).
+async function getIntegration(empresaId, mlUserId) {
+  let record = null;
+  if (mlUserId != null) {
+    record = await prisma.contaIntegracao.findUnique({
+      where: { provedor_empresaId_mlUserId: { provedor: 'mercadolivre', empresaId, mlUserId: String(mlUserId) } },
+    });
+  } else {
+    const lista = await prisma.contaIntegracao.findMany({
+      where: { provedor: 'mercadolivre', empresaId },
+      orderBy: { updatedAt: 'desc' },
+      take: 1,
+    });
+    record = lista[0] || null;
+  }
   if (!record || !record.ativo) return null;
   try {
     const decrypted = JSON.parse(descriptografar(record.segredo));
@@ -185,8 +200,8 @@ async function getIntegration(empresaId) {
   }
 }
 
-async function getValidAccessToken(empresaId) {
-  const integration = await getIntegration(empresaId);
+async function getValidAccessToken(empresaId, mlUserId) {
+  const integration = await getIntegration(empresaId, mlUserId);
   if (!integration) return null;
 
   if (!integration.isExpired) return integration.accessToken;
@@ -218,6 +233,31 @@ function getIntegrationStatus(integration) {
   return 'conectado';
 }
 
+// Lista todas as lojas conectadas da empresa (multi-loja),
+// sem expor segredos: só identidade, status e sincronização.
+async function listarIntegracoes(empresaId) {
+  const registros = await prisma.contaIntegracao.findMany({
+    where: { provedor: 'mercadolivre', empresaId },
+    orderBy: { updatedAt: 'desc' },
+  });
+  return registros.map(r => {
+    let nickname = null;
+    try {
+      const dados = JSON.parse(descriptografar(r.segredo));
+      nickname = dados?.ml_user?.nickname ?? null;
+    } catch {
+      nickname = null;
+    }
+    return {
+      mlUserId: r.mlUserId,
+      nickname,
+      ativo: r.ativo,
+      status: r.ativo ? 'conectado' : 'desconectado',
+      updatedAt: r.updatedAt,
+    };
+  });
+}
+
 export const mlOAuth = {
   checkEnv,
   generateState,
@@ -231,6 +271,7 @@ export const mlOAuth = {
   getIntegration,
   getValidAccessToken,
   getIntegrationStatus,
+  listarIntegracoes,
   ML_AUTH_URL,
   ML_TOKEN_URL,
 };

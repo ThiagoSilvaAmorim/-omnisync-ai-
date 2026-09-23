@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Download, ExternalLink, Globe, MapPin, Phone, Plus, Radar, Star, Trash2, ShieldCheck } from 'lucide-react';
 import { api } from '../services/api';
 import { useToast } from '../hooks/useToast';
@@ -475,7 +476,11 @@ export function Fornecedores() {
                         {(f.nome || '?').charAt(0)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <CardTitle>{f.nome}</CardTitle>
+                        <CardTitle>
+                          <Link to={`/fornecedores/${f.id}`} className="hover:text-primary-600 hover:underline">
+                            {f.nome}
+                          </Link>
+                        </CardTitle>
                         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                           <Badge variant="slate">{f.categoria || 'Geral'}</Badge>
                           <Badge variant={f.verificado ? 'teal' : 'amber'}>

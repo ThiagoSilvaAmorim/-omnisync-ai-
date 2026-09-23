@@ -6,6 +6,7 @@ vi.mock('../src/prisma/client.js', () => ({
     contaIntegracao: {
       upsert: vi.fn(),
       findUnique: vi.fn(),
+      findMany: vi.fn(async () => []),
       update: vi.fn(),
     },
   },
@@ -186,6 +187,7 @@ describe('mlOAuth service', () => {
 
     it('integração expõe identidade do seller para futura operação multi-loja', async () => {
       const { prisma } = await import('../src/prisma/client.js');
+      prisma.contaIntegracao.findMany.mockResolvedValue([]);
       const payload = {
         access_token: 'tok',
         refresh_token: 'ref',
@@ -196,14 +198,15 @@ describe('mlOAuth service', () => {
         ml_user: { id: 777, nickname: 'loja-b', email: null },
         obtained_at: Date.now(),
       };
-      prisma.contaIntegracao.findUnique.mockResolvedValue({
+      const registro = {
         id: 2,
         empresaId: 1,
         ativo: true,
         mlUserId: '777',
         segredo: `encrypted:${JSON.stringify(payload)}`,
         updatedAt: new Date(),
-      });
+      };
+      prisma.contaIntegracao.findMany.mockResolvedValue([registro]);
       const integration = await mlOAuth.getIntegration(1);
       expect(integration.mlUserId).toBe('777');
     });
@@ -220,13 +223,13 @@ describe('mlOAuth service', () => {
         ml_user: { id: 123, nickname: 'lojateste', email: null },
         obtained_at: Date.now(),
       };
-      prisma.contaIntegracao.findUnique.mockResolvedValue({
+      prisma.contaIntegracao.findMany.mockResolvedValue([{
         id: 1,
         empresaId: 1,
         ativo: true,
         segredo: `encrypted:${JSON.stringify(payload)}`,
         updatedAt: new Date(),
-      });
+      }]);
       const integration = await mlOAuth.getIntegration(1);
       expect(integration.ativo).toBe(true);
       expect(mlOAuth.getIntegrationStatus(integration)).toBe('conectado');

@@ -43,6 +43,17 @@ router.get('/', requireAuth, async (_req, res) => {
   }
 });
 
+// GET /api/purchase-orders — lista.
+router.get('/', requireAuth, async (_req, res) => {
+  try {
+    const lista = await prisma.purchaseOrder.findMany({ orderBy: { id: 'desc' } });
+    return res.json(lista.map(paraPublico));
+  } catch (e) {
+    console.error('[PurchaseOrders] Erro ao listar:', e.message);
+    return res.status(500).json({ error: 'Erro ao listar ordens de compra' });
+  }
+});
+
 // POST /api/purchase-orders — cria rascunho (idempotente por idExterno).
 router.post('/', requireAuth, async (req, res) => {
   const b = req.body || {};
