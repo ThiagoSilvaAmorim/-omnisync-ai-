@@ -30,7 +30,7 @@ export function normalizarPerfil(perfil) {
 const MATRIZ_ACESSO = {
   Diretor: ['*'],
   Comercial: ['dashboard', 'vendas', 'pedidos', 'clientes', 'marketing', 'publicacoes', 'conteudo-ia', 'calendario', 'relatorios', 'atividade'],
-  Estoquista: ['dashboard', 'produtos', 'produto-intel', 'estoque', 'compras', 'fornecedores', 'logistica', 'relatorios', 'atividade'],
+  Estoquista: ['dashboard', 'produtos', 'produto-intel', 'estoque', 'compras', 'fornecedores', 'logistica', 'relatorios', 'atividade', 'ean'],
 };
 
 // Rotas sensíveis exclusivas da direção (mesmo Comercial/Estoquista não entram).
@@ -56,7 +56,7 @@ export function podeAcessar(perfil, modulo) {
 export const MODULOS_EDITAVEIS = [
   'dashboard', 'vendas', 'pedidos', 'clientes', 'produtos', 'estoque',
   'compras', 'fornecedores', 'logistica', 'financeiro', 'fiscal',
-  'marketing', 'relatorios', 'atividade',
+  'marketing', 'relatorios', 'atividade', 'ean',
 ];
 
 // Atalho usado nas telas exclusivas da direção.

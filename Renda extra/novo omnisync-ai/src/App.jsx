@@ -33,7 +33,8 @@ const Fiscal = lazy(() => import('./pages/Fiscal').then(m => ({ default: m.Fisca
 const Logistica = lazy(() => import('./pages/Logistica').then(m => ({ default: m.Logistica })));
 const CentralBO = lazy(() => import('./pages/CentralBO').then(m => ({ default: m.CentralBO })));
 const Tarefas = lazy(() => import('./pages/Tarefas').then(m => ({ default: m.Tarefas })));
-const Onboarding = lazy(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));const Diretor = lazy(() => import('./pages/Diretor').then(m => ({ default: m.Diretor })));
+const Onboarding = lazy(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
+const GeradorEan = lazy(() => import('./pages/GeradorEan').then(m => ({ default: m.GeradorEan })));const Diretor = lazy(() => import('./pages/Diretor').then(m => ({ default: m.Diretor })));
 const Metas = lazy(() => import('./pages/Metas').then(m => ({ default: m.Metas })));
 const Relatorios = lazy(() => import('./pages/Relatorios').then(m => ({ default: m.Relatorios })));
 const Atividade = lazy(() => import('./pages/Atividade').then(m => ({ default: m.Atividade })));
@@ -105,6 +106,7 @@ export default function App() {
             <Route path="/central-bo" element={<CentralBO />} />
             <Route path="/tarefas" element={<Tarefas />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/ean" element={<GeradorEan />} />
             <Route path="/diretor" element={<Diretor />} />
             <Route path="/metas" element={<Metas />} />
             <Route path="/relatorios" element={<Relatorios />} />

@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { Bot, ImagePlus, Loader2, Send, X } from 'lucide-react';
 import { askAssistant } from '../../lib/gemini';
+import { api } from '../../services/api';
+import { vendasDoMes, baixoEstoque, promocoesVencendo, resumoFinanceiro } from '../../lib/assistenteRespostas';
 
 // ============================================
 // AssistantChat — widget flutuante do OmniAdvisor
-// (Gemini). Permite conversar e enviar imagens
-// (prints/fotos) para receber conselhos.
+// (Gemini). Atalhos respondem com DADOS REAIS do
+// backend; texto livre vai para o Gemini. Também
+// aceita imagens (prints/fotos) para conselhos.
 // ============================================
 
 const SUGESTOES = [
-  'Como posso melhorar minha margem de lucro?',
-  'Analise este print do meu dashboard.',
-  'Que produtos devo repor com urgência?',
+  { rotulo: 'Quantas vendas fiz esse mês?', responder: () => vendasDoMes(api) },
+  { rotulo: 'Produtos com baixo estoque', responder: () => baixoEstoque(api) },
+  { rotulo: 'Promoções prestes a vencer', responder: () => promocoesVencendo(api) },
+  { rotulo: 'Resumo financeiro', responder: () => resumoFinanceiro(api) },
 ];
 
 export function AssistantChat({ embedded = false, mensagemInicial = '' }) {
@@ -41,6 +45,21 @@ export function AssistantChat({ embedded = false, mensagemInicial = '' }) {
         ]);
       reader.readAsDataURL(f);
     });
+  };
+
+  // Atalho com dados reais: pergunta e responde sem passar pelo Gemini.
+  const atalho = async (s) => {
+    if (loading) return;
+    setMessages(prev => [...prev, { role: 'user', text: s.rotulo }]);
+    setLoading(true);
+    try {
+      const resposta = await s.responder();
+      setMessages(prev => [...prev, { role: 'assistant', text: resposta, dadosReais: true }]);
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', text: 'Não consegui consultar seus dados agora.', error: true }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const send = async (textoForcado) => {
@@ -107,8 +126,8 @@ export function AssistantChat({ embedded = false, mensagemInicial = '' }) {
           {messages.length === 0 && (
             <div className="space-y-3">
               <p className="text-sm text-slate-500">
-                Olá! Sou o OmniAdvisor. Posso te ajudar com conselhos de vendas, estoque, preço e
-                muito mais. Você também pode me enviar prints ou fotos para análise.
+                Olá! Sou o OmniAdvisor. Os atalhos abaixo respondem com seus dados reais;
+                texto livre vai para o Gemini. Você também pode me enviar prints ou fotos.
               </p>
               {iaEstado === 'nao-configurado' && (
                 <p className="rounded-lg bg-slate-50 p-3 text-xs text-slate-400 dark:bg-slate-800 dark:text-slate-500">
@@ -118,12 +137,12 @@ export function AssistantChat({ embedded = false, mensagemInicial = '' }) {
               <div className="flex flex-wrap gap-2">
                 {SUGESTOES.map(s => (
                   <button
-                    key={s}
+                    key={s.rotulo}
                     type="button"
-                    onClick={() => setInput(s)}
+                    onClick={() => atalho(s)}
                     className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 transition-colors hover:border-primary-500 hover:text-primary-600 dark:border-slate-700 dark:text-slate-300"
                   >
-                    {s}
+                    {s.rotulo}
                   </button>
                 ))}
               </div>
