@@ -19,6 +19,7 @@ const STATUS_VARIANT = {
   aguardando_aprovacao: 'amber',
   compra_aprovada: 'teal',
   enviado_ao_fornecedor: 'sky',
+  recebido: 'teal',
   cancelado: 'red',
   erro: 'red',
 };
@@ -26,10 +27,11 @@ const STATUS_LABEL = {
   aguardando_aprovacao: 'Aguardando aprovação',
   compra_aprovada: 'Aprovada',
   enviado_ao_fornecedor: 'Enviada ao fornecedor',
+  recebido: 'Recebida',
   cancelado: 'Cancelada',
   erro: 'Erro',
 };
-const FILTROS_STATUS = ['todas', 'aguardando_aprovacao', 'compra_aprovada', 'enviado_ao_fornecedor', 'cancelado'];
+const FILTROS_STATUS = ['todas', 'aguardando_aprovacao', 'compra_aprovada', 'enviado_ao_fornecedor', 'recebido', 'cancelado'];
 
 export function Compras() {
   const toast = useToast();
@@ -297,6 +299,10 @@ export function Compras() {
                         <Button size="sm" variant="secondary" onClick={() => marcarEnviada(c.id)}>
                           Marcar como enviado
                         </Button>
+                      ) : c.status === 'enviado_ao_fornecedor' ? (
+                        <Button size="sm" variant="secondary" onClick={() => marcarRecebida(c.id)}>
+                          Marcar como recebido
+                        </Button>
                       ) : (
                         <span className="text-xs text-slate-400">—</span>
                       )}
@@ -350,6 +356,16 @@ export function Compras() {
       carregarOrdens();
     } catch (e) {
       toast(`Erro ao marcar envio: ${e.message}`);
+    }
+  }
+
+  async function marcarRecebida(id) {
+    try {
+      await api.receberOrdemCompra(id);
+      toast('Recebimento confirmado');
+      carregarOrdens();
+    } catch (e) {
+      toast(`Erro ao confirmar recebimento: ${e.message}`);
     }
   }
 

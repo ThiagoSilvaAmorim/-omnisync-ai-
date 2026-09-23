@@ -12,6 +12,7 @@ vi.mock('../services/api', () => ({
     aprovarOrdemCompra: vi.fn(),
     rejeitarOrdemCompra: vi.fn(),
     marcarOcEnviada: vi.fn(),
+    receberOrdemCompra: vi.fn(),
     getProdutos: vi.fn(async () => ({ produtos: [] })),
   },
 }));
@@ -29,6 +30,19 @@ function renderizar() {
 describe('Compras (ordens reais)', () => {
   it('lista vazia honesta sem dados', async () => {
     renderizar();
+    expect(await screen.findByText('Nenhuma ordem de compra encontrada.')).toBeTruthy();
+  });
+
+  it('marca como recebido apenas após envio', async () => {
+    api.listarOrdensCompra
+      .mockResolvedValueOnce([
+        { id: 'OC-9', fornecedor: 'D', data: '2026-09-01', total: 10, status: 'enviado_ao_fornecedor', rastreio: null },
+      ])
+      .mockResolvedValue([]);
+    api.receberOrdemCompra.mockResolvedValue({ ok: true });
+    renderizar();
+    fireEvent.click(await screen.findByText('Marcar como recebido'));
+    expect(api.receberOrdemCompra).toHaveBeenCalledWith('OC-9');
     expect(await screen.findByText('Nenhuma ordem de compra encontrada.')).toBeTruthy();
   });
 

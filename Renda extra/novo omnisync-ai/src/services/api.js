@@ -150,8 +150,14 @@ export const api = {
 
   // ---------- Clientes ----------
   getClientes: () => get('/clientes', mock.clientes),
-  getNegocios: () => get('/negocios', mock.negocios),
-  getEstagios: () => get('/estagios', mock.estagiosPipeline),
+  getNegocios: () => get('/negocios', []),
+  getEstagios: () => get('/estagios', []),
+  criarNegocio: body => (API_URL
+    ? request('/negocios', json(body))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  moverNegocio: (id, estagio) => (API_URL
+    ? request(`/negocios/${id}/estagio`, { method: 'PATCH', ...json({ estagio }) })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   criarCliente: body => (API_URL ? request('/clientes', json(body)) : Promise.resolve(body)),
 
   // ---------- Dashboard ----------
@@ -352,6 +358,21 @@ export const api = {
   // ---------- Ordens de compra: avanço manual ----------
   marcarOcEnviada: (id) => (API_URL
     ? request(`/purchase-orders/${id}/enviar`, { method: 'POST' })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  receberOrdemCompra: (id) => (API_URL
+    ? request(`/purchase-orders/${id}/receber`, { method: 'POST' })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  receberOrdemCompra: (id) => (API_URL
+    ? request(`/purchase-orders/${id}/receber`, { method: 'POST' })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  // ---------- Pipeline de negócios real ----------
+  getNegociosReais: () => get('/negocios', []),
+  getEstagiosReais: () => get('/estagios', []),
+  criarNegocio: (body) => (API_URL
+    ? request('/negocios', json(body))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  moverNegocio: (id, estagio) => (API_URL
+    ? request(`/negocios/${id}/estagio`, { method: 'PATCH', ...json({ estagio }) })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   // Health check do backend
   healthCheck: () => get('/health', { status: 'online', timestamp: new Date().toISOString(), environment: 'development', ml_configured: false }),

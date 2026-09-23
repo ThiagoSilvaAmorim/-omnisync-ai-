@@ -159,6 +159,46 @@ router.post('/:id/enviar', requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/purchase-orders/:id/receber — confirma recebimento (manual).
+// Somente de enviado_ao_fornecedor. Não debita nada automaticamente.
+router.post('/:id/receber', requireAuth, async (req, res) => {
+  try {
+    const atual = await prisma.purchaseOrder.findUnique({ where: { id: req.params.id } });
+    if (!atual) return res.status(404).json({ error: 'Ordem de compra não encontrada' });
+    if (atual.status !== 'enviado_ao_fornecedor') {
+      return res.status(409).json({ code: 'INVALID_TRANSITION', message: `Transição inválida a partir de ${atual.status}.` });
+    }
+    const atualizada = await prisma.purchaseOrder.update({
+      where: { id: req.params.id },
+      data: { status: 'recebido' },
+    });
+    return res.json({ ok: true, ordem: paraPublico(atualizada) });
+  } catch (e) {
+    console.error('[PurchaseOrders] Erro ao confirmar recebimento:', e.message);
+    return res.status(500).json({ error: 'Erro ao confirmar recebimento' });
+  }
+});
+
+// POST /api/purchase-orders/:id/receber — confirma recebimento (manual).
+// Somente de enviado_ao_fornecedor. Não debita nada automaticamente.
+router.post('/:id/receber', requireAuth, async (req, res) => {
+  try {
+    const atual = await prisma.purchaseOrder.findUnique({ where: { id: req.params.id } });
+    if (!atual) return res.status(404).json({ error: 'Ordem de compra não encontrada' });
+    if (atual.status !== 'enviado_ao_fornecedor') {
+      return res.status(409).json({ code: 'INVALID_TRANSITION', message: `Transição inválida a partir de ${atual.status}.` });
+    }
+    const atualizada = await prisma.purchaseOrder.update({
+      where: { id: req.params.id },
+      data: { status: 'recebido' },
+    });
+    return res.json({ ok: true, ordem: paraPublico(atualizada) });
+  } catch (e) {
+    console.error('[PurchaseOrders] Erro ao confirmar recebimento:', e.message);
+    return res.status(500).json({ error: 'Erro ao confirmar recebimento' });
+  }
+});
+
 // PATCH /api/purchase-orders/:id/rastreio — salva código (sem reenviar; idempotente).
 router.patch('/:id/rastreio', requireAuth, async (req, res) => {
   const codigo = String(req.body?.codigo || '').trim();

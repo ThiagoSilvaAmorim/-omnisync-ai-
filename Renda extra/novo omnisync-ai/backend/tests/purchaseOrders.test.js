@@ -133,6 +133,21 @@ describe('ordens de compra (aprovação manual)', () => {
     expect(res.status).toBe(409);
   });
 
+  it('receber move enviado_ao_fornecedor para recebido', async () => {
+    prisma.purchaseOrder.findUnique.mockResolvedValue({ ...OC_BASE, status: 'enviado_ao_fornecedor' });
+    prisma.purchaseOrder.update.mockImplementation(async ({ data }) => ({ ...OC_BASE, ...data }));
+    const res = await request(app).post('/api/purchase-orders/OC-1/receber').set(auth()).send({});
+    expect(res.status).toBe(200);
+    expect(res.body.ordem.status).toBe('recebido');
+  });
+
+  it('receber rascunho retorna 409 sem mexer no banco', async () => {
+    prisma.purchaseOrder.findUnique.mockResolvedValue(OC_BASE);
+    const res = await request(app).post('/api/purchase-orders/OC-1/receber').set(auth()).send({});
+    expect(res.status).toBe(409);
+    expect(prisma.purchaseOrder.update).not.toHaveBeenCalled();
+  });
+
   it('enviar move compra_aprovada para enviado_ao_fornecedor', async () => {
     prisma.purchaseOrder.findUnique.mockResolvedValue({ ...OC_BASE, status: 'compra_aprovada' });
     prisma.purchaseOrder.update.mockImplementation(async ({ data }) => ({ ...OC_BASE, ...data }));

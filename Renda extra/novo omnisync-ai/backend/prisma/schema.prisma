@@ -205,3 +205,18 @@ model Fornecedor {
   @@map("Fornecedor")
 }
 
+
+model Negocio {
+  id        Int      @id @default(autoincrement())
+  titulo    String
+  cliente   String   @default("")
+  valor     Float    @default(0)
+  estagio   String   @default("lead")
+  data      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@index([estagio])
+  @@map("Negocio")
+}
+

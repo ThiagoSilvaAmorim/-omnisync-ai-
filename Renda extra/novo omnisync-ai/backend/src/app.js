@@ -15,6 +15,7 @@ import supplierRoutes from './routes/suppliers.js';
 import mlAuthRoutes from './routes/mlAuth.js';
 import mlItemsRoutes from './routes/mlItems.js';
 import purchaseOrderRoutes from './routes/purchaseOrders.js';
+import negocioRoutes, { ESTAGIOS as negocioEstagios } from './routes/negocios.js';
 import shopeeAuthRoutes from './routes/shopeeAuth.js';
 import tiktokShopAuthRoutes from './routes/tiktokShopAuth.js';
 import aiAnalysisRoutes from './routes/aiAnalysis.js';
@@ -224,8 +225,11 @@ app.get('/api/integracoes', send(data.integracoes));
 // Fornecedores reais (Google Places + salvamento manual). Substitui o mock estático.
 app.use('/api/fornecedores', supplierRoutes);
 app.get('/api/problemas', send(data.problemas));
-app.get('/api/negocios', send(data.negocios));
-app.get('/api/estagios', send(data.estagiosPipeline));
+app.use('/api/negocios', negocioRoutes);
+// Estágios são vocabulário fixo do domínio (fonte única no router de negócios).
+app.get('/api/estagios', (_req, res) => {
+  res.json(negocioEstagios);
+});
 // ---------- Dashboard analytics (agregados reais do banco) ----------
 // Sem período comparável definido: delta sempre null → UI exibe
 // "Sem histórico" em vez de percentual inventado. Sem pedidos, os
