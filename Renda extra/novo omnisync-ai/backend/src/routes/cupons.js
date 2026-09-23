@@ -9,7 +9,8 @@ import { prisma } from '../prisma/client.js';
 
 const router = Router();
 
-const TIPOS_VALIDOS = ['percentual', 'fixo'];
+// 'valor' é alias legado de 'fixo' (há cupons assim na base de produção).
+const TIPOS_VALIDOS = ['percentual', 'fixo', 'valor'];
 
 function normalizarCodigo(v) {
   return String(v || '').trim().toUpperCase();
