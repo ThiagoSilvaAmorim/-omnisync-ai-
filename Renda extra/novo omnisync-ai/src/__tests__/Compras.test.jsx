@@ -13,6 +13,7 @@ vi.mock('../services/api', () => ({
     rejeitarOrdemCompra: vi.fn(),
     marcarOcEnviada: vi.fn(),
     receberOrdemCompra: vi.fn(),
+    vincularEnvioOc: vi.fn(),
     getProdutos: vi.fn(async () => ({ produtos: [] })),
   },
 }));
@@ -57,5 +58,19 @@ describe('Compras (ordens reais)', () => {
     fireEvent.click(await screen.findByText('Aprovar'));
     expect(api.aprovarOrdemCompra).toHaveBeenCalledWith('OC-1', 'manual');
     expect(await screen.findByText('Nenhuma ordem de compra encontrada.')).toBeTruthy();
+  });
+
+  it('vincula envio ML no detalhe da ordem', async () => {
+    api.listarOrdensCompra
+      .mockResolvedValueOnce([
+        { id: 'OC-9', fornecedor: 'D', data: '2026-09-01', total: 10, status: 'enviado_ao_fornecedor', rastreio: null, mlShipmentId: null },
+      ])
+      .mockResolvedValue([]);
+    api.vincularEnvioOc.mockResolvedValue({ ok: true, ordem: { id: 'OC-9', mlShipmentId: 'SHP-1', mlStatus: 'ready_to_ship' } });
+    renderizar();
+    fireEvent.click(await screen.findByTitle('Abrir detalhes'));
+    fireEvent.change(await screen.findByPlaceholderText('ID do envio (shipment)'), { target: { value: 'SHP-1' } });
+    fireEvent.click(screen.getByText('Vincular'));
+    expect(api.vincularEnvioOc).toHaveBeenCalledWith('OC-9', 'SHP-1');
   });
 });

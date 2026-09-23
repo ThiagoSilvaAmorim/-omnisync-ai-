@@ -62,6 +62,8 @@ model PurchaseOrder {
   aprovadoEm    DateTime?
   motivo        String?
   rastreio      String?
+  mlShipmentId  String?
+  mlStatus      String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt @default(now())
 }

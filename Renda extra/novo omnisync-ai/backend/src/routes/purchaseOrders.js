@@ -6,13 +6,25 @@
 import { Router } from 'express';
 import { prisma } from '../prisma/client.js';
 import { usuarioDoRequest } from '../auth.js';
+import { emitEvent } from '../eventBus.js';
+import { mlOAuth } from '../services/mlOAuth.js';
+import { lerEnvio } from '../services/mlListings.js';
 
 const router = Router();
 
 function requireAuth(req, res, next) {
   const user = usuarioDoRequest(req);
   if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
+  req.empresaId = user.empresaId || 1;
   next();
+}
+
+async function auditar(type, ordem, req) {
+  try {
+    await emitEvent(type, { ordemId: ordem?.id ?? null, fornecedor: ordem?.fornecedor ?? null, total: ordem?.total ?? null, status: ordem?.status ?? null }, 'api', { entityType: 'purchase_order', entityId: ordem?.id ?? null, metadata: { ator: req.authUser?.email || 'sistema' } });
+  } catch (e) {
+    console.error('[Audit] Falha ao registrar evento (sem impacto na operação):', e.message);
+  }
 }
 
 function paraPublico(o) {
@@ -29,19 +41,10 @@ function paraPublico(o) {
     aprovadoEm: o.aprovadoEm ?? null,
     motivo: o.motivo ?? null,
     rastreio: o.rastreio ?? null,
+    mlShipmentId: o.mlShipmentId ?? null,
+    mlStatus: o.mlStatus ?? null,
   };
 }
-
-// GET /api/purchase-orders — lista.
-router.get('/', requireAuth, async (_req, res) => {
-  try {
-    const lista = await prisma.purchaseOrder.findMany({ orderBy: { id: 'desc' } });
-    return res.json(lista.map(paraPublico));
-  } catch (e) {
-    console.error('[PurchaseOrders] Erro ao listar:', e.message);
-    return res.status(500).json({ error: 'Erro ao listar ordens de compra' });
-  }
-});
 
 // GET /api/purchase-orders — lista.
 router.get('/', requireAuth, async (_req, res) => {
@@ -85,6 +88,7 @@ router.post('/', requireAuth, async (req, res) => {
         idExterno,
       },
     });
+    await auditar('purchase.created', criada, req);
     return res.status(201).json({ ok: true, ordem: paraPublico(criada) });
   } catch (e) {
     console.error('[PurchaseOrders] Erro ao criar:', e.message);
@@ -172,26 +176,7 @@ router.post('/:id/receber', requireAuth, async (req, res) => {
       where: { id: req.params.id },
       data: { status: 'recebido' },
     });
-    return res.json({ ok: true, ordem: paraPublico(atualizada) });
-  } catch (e) {
-    console.error('[PurchaseOrders] Erro ao confirmar recebimento:', e.message);
-    return res.status(500).json({ error: 'Erro ao confirmar recebimento' });
-  }
-});
-
-// POST /api/purchase-orders/:id/receber — confirma recebimento (manual).
-// Somente de enviado_ao_fornecedor. Não debita nada automaticamente.
-router.post('/:id/receber', requireAuth, async (req, res) => {
-  try {
-    const atual = await prisma.purchaseOrder.findUnique({ where: { id: req.params.id } });
-    if (!atual) return res.status(404).json({ error: 'Ordem de compra não encontrada' });
-    if (atual.status !== 'enviado_ao_fornecedor') {
-      return res.status(409).json({ code: 'INVALID_TRANSITION', message: `Transição inválida a partir de ${atual.status}.` });
-    }
-    const atualizada = await prisma.purchaseOrder.update({
-      where: { id: req.params.id },
-      data: { status: 'recebido' },
-    });
+    await auditar('purchase.received', atualizada, req);
     return res.json({ ok: true, ordem: paraPublico(atualizada) });
   } catch (e) {
     console.error('[PurchaseOrders] Erro ao confirmar recebimento:', e.message);
@@ -222,6 +207,46 @@ router.patch('/:id/rastreio', requireAuth, async (req, res) => {
   } catch (e) {
     console.error('[PurchaseOrders] Erro ao salvar rastreio:', e.message);
     return res.status(500).json({ error: 'Erro ao salvar rastreio' });
+  }
+});
+
+// POST /api/purchase-orders/:id/vincular-envio — conciliação com envio real do ML.
+// Lê o envio oficial (somente leitura, sem aprovação) e grava na OC:
+// mlShipmentId, mlStatus e rastreio (somente se a OC ainda não tiver um).
+// Sem token ML válido, responde 401 sem alterar nada.
+router.post('/:id/vincular-envio', requireAuth, async (req, res) => {
+  const shipmentId = String(req.body?.shipmentId || '').trim();
+  if (!shipmentId) {
+    return res.status(400).json({ code: 'INVALID_SHIPMENT', message: 'Informe o identificador do envio.' });
+  }
+  try {
+    const atual = await prisma.purchaseOrder.findUnique({ where: { id: req.params.id } });
+    if (!atual) return res.status(404).json({ error: 'Ordem de compra não encontrada' });
+    if (atual.status === 'cancelado') {
+      return res.status(409).json({ code: 'INVALID_TRANSITION', message: 'Ordem cancelada não recebe vínculo de envio.' });
+    }
+    const token = await mlOAuth.getValidAccessToken(req.empresaId);
+    if (!token) {
+      return res.status(401).json({ error: 'Conta do Mercado Livre não conectada' });
+    }
+    let envio;
+    try {
+      envio = await lerEnvio(token, shipmentId);
+    } catch (e) {
+      return res.status(502).json({ error: 'Falha ao ler o envio no Mercado Livre', detail: e?.message ?? null });
+    }
+    const atualizada = await prisma.purchaseOrder.update({
+      where: { id: req.params.id },
+      data: {
+        mlShipmentId: envio?.id ?? shipmentId,
+        mlStatus: envio?.status ?? null,
+        rastreio: atual.rastreio ?? envio?.trackingNumber ?? null,
+      },
+    });
+    return res.json({ ok: true, ordem: paraPublico(atualizada) });
+  } catch (e) {
+    console.error('[PurchaseOrders] Erro ao vincular envio:', e.message);
+    return res.status(500).json({ error: 'Erro ao vincular envio' });
   }
 });
 

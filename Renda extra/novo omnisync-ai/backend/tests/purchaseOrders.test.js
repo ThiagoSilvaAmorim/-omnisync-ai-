@@ -15,6 +15,18 @@ vi.mock('../src/prisma/client.js', () => ({
 }));
 
 import { prisma } from '../src/prisma/client.js';
+import { mlOAuth } from '../src/services/mlOAuth.js';
+import { lerEnvio } from '../src/services/mlListings.js';
+
+vi.mock('../src/services/mlOAuth.js', async (importOriginal) => ({
+  ...(await importOriginal()),
+  mlOAuth: { getValidAccessToken: vi.fn() },
+}));
+
+vi.mock('../src/services/mlListings.js', async (importOriginal) => ({
+  ...(await importOriginal()),
+  lerEnvio: vi.fn(),
+}));
 
 function tokenValido() {
   return assinarToken({ email: 'teste@omnisync.ai', nome: 'Teste', perfil: 'Diretor' });
@@ -160,6 +172,66 @@ describe('ordens de compra (aprovação manual)', () => {
     prisma.purchaseOrder.findUnique.mockResolvedValue(OC_BASE);
     const res = await request(app).post('/api/purchase-orders/OC-1/enviar').set(auth()).send({});
     expect(res.status).toBe(409);
+    expect(prisma.purchaseOrder.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('vincular envio ML à OC (conciliação)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sem shipmentId retorna 400', async () => {
+    const res = await request(app).post('/api/purchase-orders/OC-1/vincular-envio').set(auth()).send({});
+    expect(res.status).toBe(400);
+    expect(prisma.purchaseOrder.update).not.toHaveBeenCalled();
+  });
+
+  it('sem token ML retorna 401 sem alterar a OC', async () => {
+    prisma.purchaseOrder.findUnique.mockResolvedValue({ ...OC_BASE, status: 'enviado_ao_fornecedor' });
+    mlOAuth.getValidAccessToken.mockResolvedValue(null);
+    const res = await request(app).post('/api/purchase-orders/OC-1/vincular-envio').set(auth()).send({ shipmentId: 'SHP-1' });
+    expect(res.status).toBe(401);
+    expect(prisma.purchaseOrder.update).not.toHaveBeenCalled();
+  });
+
+  it('vincula envio real e preenche rastreio ausente', async () => {
+    prisma.purchaseOrder.findUnique.mockResolvedValue({ ...OC_BASE, status: 'enviado_ao_fornecedor', rastreio: null });
+    mlOAuth.getValidAccessToken.mockResolvedValue('tok');
+    lerEnvio.mockResolvedValue({ id: 'SHP-1', status: 'ready_to_ship', trackingNumber: 'BR123' });
+    prisma.purchaseOrder.update.mockImplementation(async ({ data }) => ({ ...OC_BASE, ...data }));
+    const res = await request(app).post('/api/purchase-orders/OC-1/vincular-envio').set(auth()).send({ shipmentId: 'SHP-1' });
+    expect(res.status).toBe(200);
+    expect(lerEnvio).toHaveBeenCalledWith('tok', 'SHP-1');
+    expect(res.body.ordem.mlShipmentId).toBe('SHP-1');
+    expect(res.body.ordem.mlStatus).toBe('ready_to_ship');
+    expect(res.body.ordem.rastreio).toBe('BR123');
+  });
+
+  it('rastreio manual existente é preservado', async () => {
+    prisma.purchaseOrder.findUnique.mockResolvedValue({ ...OC_BASE, status: 'enviado_ao_fornecedor', rastreio: 'MEU' });
+    mlOAuth.getValidAccessToken.mockResolvedValue('tok');
+    lerEnvio.mockResolvedValue({ id: 'SHP-2', status: 'shipped', trackingNumber: 'BR999' });
+    prisma.purchaseOrder.update.mockImplementation(async ({ data }) => ({ ...OC_BASE, ...data }));
+    const res = await request(app).post('/api/purchase-orders/OC-1/vincular-envio').set(auth()).send({ shipmentId: 'SHP-2' });
+    expect(res.status).toBe(200);
+    expect(res.body.ordem.rastreio).toBe('MEU');
+    expect(res.body.ordem.mlStatus).toBe('shipped');
+  });
+
+  it('ordem cancelada retorna 409', async () => {
+    prisma.purchaseOrder.findUnique.mockResolvedValue({ ...OC_BASE, status: 'cancelado' });
+    const res = await request(app).post('/api/purchase-orders/OC-1/vincular-envio').set(auth()).send({ shipmentId: 'SHP-1' });
+    expect(res.status).toBe(409);
+    expect(lerEnvio).not.toHaveBeenCalled();
+  });
+
+  it('falha no ML retorna 502 sem alterar a OC', async () => {
+    prisma.purchaseOrder.findUnique.mockResolvedValue({ ...OC_BASE, status: 'enviado_ao_fornecedor' });
+    mlOAuth.getValidAccessToken.mockResolvedValue('tok');
+    lerEnvio.mockRejectedValue(new Error('ML fora do ar'));
+    const res = await request(app).post('/api/purchase-orders/OC-1/vincular-envio').set(auth()).send({ shipmentId: 'SHP-9' });
+    expect(res.status).toBe(502);
     expect(prisma.purchaseOrder.update).not.toHaveBeenCalled();
   });
 });

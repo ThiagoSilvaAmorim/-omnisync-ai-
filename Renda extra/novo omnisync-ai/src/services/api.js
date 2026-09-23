@@ -362,8 +362,8 @@ export const api = {
   receberOrdemCompra: (id) => (API_URL
     ? request(`/purchase-orders/${id}/receber`, { method: 'POST' })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
-  receberOrdemCompra: (id) => (API_URL
-    ? request(`/purchase-orders/${id}/receber`, { method: 'POST' })
+  vincularEnvioOc: (id, shipmentId) => (API_URL
+    ? request(`/purchase-orders/${id}/vincular-envio`, { method: 'POST', ...json({ shipmentId }) })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   // ---------- Pipeline de negócios real ----------
   getNegociosReais: () => get('/negocios', []),

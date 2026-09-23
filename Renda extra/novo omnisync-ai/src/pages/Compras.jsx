@@ -42,6 +42,7 @@ export function Compras() {
   const [busca, setBusca] = useState('');
   const [statusFiltro, setStatusFiltro] = useState('todas');
   const [rastreio, setRastreio] = useState(null);
+  const [shipmentId, setShipmentId] = useState('');
   const [modalNova, setModalNova] = useState(false);
   const [formCompra, setFormCompra] = useState({ fornecedor: '', total: '' });
   const [reposicao, setReposicao] = useState([]);
@@ -271,7 +272,7 @@ export function Compras() {
                     <td className="px-5 py-3">
                       <button
                         type="button"
-                        onClick={() => setRastreio(c)}
+                        onClick={() => { setRastreio(c); setShipmentId(''); }}
                         title="Abrir detalhes"
                         className="font-mono text-xs text-primary-600 hover:underline"
                       >
@@ -338,6 +339,27 @@ export function Compras() {
                 <p className="text-slate-500">Rastreio</p>
                 <p className="font-mono font-medium text-slate-800 dark:text-slate-100">{rastreio.rastreio || 'Ainda sem código'}</p>
               </div>
+              <div className="text-sm">
+                <p className="text-slate-500">Envio Mercado Livre</p>
+                {rastreio.mlShipmentId ? (
+                  <p className="font-mono font-medium text-slate-800 dark:text-slate-100">
+                    {rastreio.mlShipmentId}{rastreio.mlStatus ? ` • ${rastreio.mlStatus}` : ''}
+                  </p>
+                ) : rastreio.status === 'cancelado' ? (
+                  <p className="text-slate-500">Ordem cancelada</p>
+                ) : (
+                  <div className="mt-1 flex gap-2">
+                    <Input
+                      value={shipmentId}
+                      onChange={e => setShipmentId(e.target.value)}
+                      placeholder="ID do envio (shipment)"
+                    />
+                    <Button variant="secondary" onClick={() => vincularEnvio(rastreio.id)}>
+                      Vincular
+                    </Button>
+                  </div>
+                )}
+              </div>
               <div className="rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800">
                 <p className="text-slate-500">Total</p>
                 <p className="font-semibold text-slate-800 dark:text-slate-100">R$ {Number(rastreio.total).toFixed(2).replace('.', ',')}</p>
@@ -366,6 +388,22 @@ export function Compras() {
       carregarOrdens();
     } catch (e) {
       toast(`Erro ao confirmar recebimento: ${e.message}`);
+    }
+  }
+
+  async function vincularEnvio(id) {
+    if (!shipmentId.trim()) {
+      toast('Informe o ID do envio');
+      return;
+    }
+    try {
+      const r = await api.vincularEnvioOc(id, shipmentId.trim());
+      if (r?.ordem) setRastreio(r.ordem);
+      setShipmentId('');
+      toast('Envio do Mercado Livre vinculado à ordem');
+      carregarOrdens();
+    } catch (e) {
+      toast(`Erro ao vincular envio: ${e.message}`);
     }
   }
 
