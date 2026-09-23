@@ -133,16 +133,19 @@ async function saveIntegration({ empresaId, userId, tokens, mlUser }) {
   const payload = buildTokenPayload(tokens, mlUser);
   const encrypted = criptografar(JSON.stringify(payload));
 
+  const sellerId = tokens.user_id != null ? String(tokens.user_id) : null;
   const integration = await prisma.contaIntegracao.upsert({
     where: { provedor_empresaId: { provedor: 'mercadolivre', empresaId } },
     update: {
       segredo: encrypted,
       ativo: true,
+      mlUserId: sellerId,
       updatedAt: new Date(),
     },
     create: {
       provedor: 'mercadolivre',
       empresaId,
+      mlUserId: sellerId,
       rotulo: `MercadoLivre - ${mlUser?.nickname || tokens.user_id}`,
       segredo: encrypted,
       ativo: true,
@@ -167,7 +170,8 @@ async function getIntegration(empresaId) {
       // Necessário: getIntegrationStatus decide por `ativo`; sem ele,
       // toda integração salva era lida como 'desconectado'.
       ativo: record.ativo,
-      mlUserId: decrypted.user_id,
+      // Identidade do seller (coluna + fallback do payload criptografado).
+      mlUserId: record.mlUserId ?? (decrypted.user_id != null ? String(decrypted.user_id) : null),
       mlUser: decrypted.ml_user,
       accessToken: decrypted.access_token,
       refreshToken: decrypted.refresh_token,

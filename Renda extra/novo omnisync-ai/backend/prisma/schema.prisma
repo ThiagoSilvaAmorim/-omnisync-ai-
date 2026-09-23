@@ -55,7 +55,15 @@ model PurchaseOrder {
   fornecedor    String
   data          String
   total         Float
-  status        String
+  status        String   @default("aguardando_aprovacao")
+  pedidoId      String?
+  idExterno     String?  @unique
+  aprovador     String?
+  aprovadoEm    DateTime?
+  motivo        String?
+  rastreio      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt @default(now())
 }
 
 model NotaFiscal {
@@ -139,6 +147,10 @@ model ContaIntegracao {
   id        Int      @id @default(autoincrement())
   provedor  String
   empresaId Int
+  // Identidade do seller para futura operação multi-loja.
+  // O vínculo único continua (provedor, empresaId) até a migração
+  // dedicada; segunda loja hoje atualizaria a mesma linha.
+  mlUserId  String?
   rotulo    String   @default("")
   segredo   String   @default("")
   metadados Json     @default("{}")

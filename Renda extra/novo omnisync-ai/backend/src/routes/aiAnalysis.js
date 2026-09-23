@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { usuarioDoRequest } from '../auth.js';
 import { analisarDominio, gerarRascunhoAnuncio } from '../services/geminiAnalysis.js';
+import { executarAgente, listarAgentes } from '../services/agentOrchestrator.js';
 
 const router = Router();
 
@@ -62,6 +63,28 @@ router.post('/generate/listing', requireAuth, async (req, res) => {
 // Lista os domínios suportados (sem executar nada).
 router.get('/analyze', requireAuth, (_req, res) => {
   res.json({ dominios: DOMINIOS });
+});
+
+// POST /api/ai/agent/:agente — executa um agente sobre seu domínio de dados.
+// Nunca executa ação externa; registra a execução de forma estruturada.
+router.post('/agent/:agente', requireAuth, async (req, res) => {
+  try {
+    const registro = await executarAgente(req.params.agente, req.body?.task, {
+      empresaId: req.empresaId,
+      payload: req.body?.payload || {},
+    });
+    if (registro.status === 'failed' && registro.code === 'UNKNOWN_AGENT') {
+      return res.status(400).json(registro);
+    }
+    return res.json(registro);
+  } catch (e) {
+    return responderErro(res, e);
+  }
+});
+
+// GET /api/ai/agents — agentes disponíveis e seus domínios.
+router.get('/agents', requireAuth, (_req, res) => {
+  res.json({ agentes: listarAgentes() });
 });
 
 export default router;

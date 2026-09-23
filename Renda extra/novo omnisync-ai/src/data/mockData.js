@@ -607,9 +607,9 @@ export const integracoes = [
   { id: 'ml', nome: 'Mercado Livre', categoria: 'Marketplace', descricao: 'Publica e sincroniza anúncios e vendas.', status: 'conectado', authUrl: '/api/auth/ml/start' },
   { id: 'shopee', nome: 'Shopee', categoria: 'Marketplace', descricao: 'Venda e gestão de pedidos na plataforma.', status: 'conectado', authUrl: 'https://seller.shopee.com.br/login' },
   { id: 'amazon', nome: 'Amazon', categoria: 'Marketplace', descricao: 'Marketplace com logística FBA.', status: 'desconectado', authUrl: 'https://sellercentral.amazon.com.br/home' },
-  { id: 'stripe', nome: 'Stripe', categoria: 'Pagamentos', descricao: 'Cobranças e gateway de pagamento.', status: 'desconectado', authUrl: 'https://connect.stripe.com/oauth/authorize?response_type=code&client_id=SEU_CLIENT_ID&scope=read_write' },
+  { id: 'stripe', nome: 'Stripe', categoria: 'Pagamentos', descricao: 'Cobranças e gateway de pagamento.', status: 'desconectado', authUrl: '#' },
   { id: 'sendgrid', nome: 'SendGrid', categoria: 'E-mail', descricao: 'Envio de e-mails transacionais.', status: 'desconectado', authUrl: 'https://app.sendgrid.com/login' },
-  { id: 'meta', nome: 'Instagram / Meta', categoria: 'Social', descricao: 'Publicações e mensagens do Instagram.', status: 'conectado', authUrl: 'https://www.facebook.com/v12.0/dialog/oauth?client_id=SEU_CLIENT_ID&redirect_uri=https://omnisync.local/callback&scope=instagram_basic,pages_manage_posts' },
+  { id: 'meta', nome: 'Instagram / Meta', categoria: 'Social', descricao: 'Publicações e mensagens do Instagram.', status: 'desconectado', authUrl: '#' },
   { id: 'tiktok', nome: 'TikTok', categoria: 'Social', descricao: 'Vídeos e campanhas no TikTok.', status: 'desconectado', authUrl: 'https://www.tiktok.com/v2/auth/authorize/' },
 ];
 

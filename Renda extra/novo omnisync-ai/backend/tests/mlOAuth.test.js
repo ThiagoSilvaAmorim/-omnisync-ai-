@@ -20,13 +20,14 @@ vi.mock('../src/cripto.js', () => ({
   descriptografar: vi.fn((data) => data.replace('encrypted:', '')),
 }));
 
-vi.mock('node:crypto', () => ({
-  randomBytes: vi.fn(() => Buffer.from('test-nonce')),
-  createHash: vi.fn(() => ({
+vi.mock('node:crypto', () => {
+  const randomBytes = vi.fn(() => Buffer.from('test-nonce'));
+  const createHash = vi.fn(() => ({
     update: vi.fn().mockReturnThis(),
     digest: vi.fn(() => 'test-challenge'),
-  })),
-}));
+  }));
+  return { default: { randomBytes, createHash }, randomBytes, createHash };
+});
 
 global.fetch = vi.fn();
 
@@ -125,11 +126,10 @@ describe('mlOAuth service', () => {
       expect(tokens).toEqual(mockTokens);
       expect(global.fetch).toHaveBeenCalledWith(
         'https://api.mercadolibre.com/oauth/token',
-        expect.objectContaining({
-          method: 'POST',
-          body: expect.stringContaining('grant_type=authorization_code'),
-        })
+        expect.objectContaining({ method: 'POST' })
       );
+      const [, opts] = global.fetch.mock.calls[0];
+      expect(String(opts.body)).toContain('grant_type=authorization_code');
     });
 
     it('deve lançar erro se ML retornar erro', async () => {
@@ -182,6 +182,30 @@ describe('mlOAuth service', () => {
 
     it('deve retornar conectado para integração válida', () => {
       expect(mlOAuth.getIntegrationStatus({ ativo: true, isExpired: false })).toBe('conectado');
+    });
+
+    it('integração expõe identidade do seller para futura operação multi-loja', async () => {
+      const { prisma } = await import('../src/prisma/client.js');
+      const payload = {
+        access_token: 'tok',
+        refresh_token: 'ref',
+        expires_in: 21600,
+        token_type: 'Bearer',
+        scope: 'read write',
+        user_id: 777,
+        ml_user: { id: 777, nickname: 'loja-b', email: null },
+        obtained_at: Date.now(),
+      };
+      prisma.contaIntegracao.findUnique.mockResolvedValue({
+        id: 2,
+        empresaId: 1,
+        ativo: true,
+        mlUserId: '777',
+        segredo: `encrypted:${JSON.stringify(payload)}`,
+        updatedAt: new Date(),
+      });
+      const integration = await mlOAuth.getIntegration(1);
+      expect(integration.mlUserId).toBe('777');
     });
 
     it('integração vinda do banco deve incluir ativo para não cair em desconectado', async () => {

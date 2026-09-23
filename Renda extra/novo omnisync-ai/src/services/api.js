@@ -193,6 +193,10 @@ export const api = {
   excluirFornecedor: id => (API_URL
     ? request(`/fornecedores/${id}`, { method: 'DELETE' })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  // ---------- Ordens de compra (rascunho + aprovação manual, sem envio automático) ----------
+  criarOrdemCompra: body => (API_URL
+    ? request('/purchase-orders', json(body))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   favoritarFornecedor: (id, favorito) => (API_URL
     ? request(`/fornecedores/${id}/favorito`, { method: 'PATCH', ...json({ favorito }) })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),

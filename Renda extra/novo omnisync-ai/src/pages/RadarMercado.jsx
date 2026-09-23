@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Download, RefreshCw, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Download, RefreshCw, Search, X } from 'lucide-react';
 // radarProdutos removido — usar dados reais do Mercado Livre
-import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { api } from '../services/api';
 import { CATEGORIAS_INTERNET, buscarMercadoLivre, buscarProdutosInternet, formatPrecoRadar } from '../services/marketplace';
@@ -16,62 +15,12 @@ import { AiActionButton } from '../components/ui/AiActionButton';
 
 // ============================================
 // Tela 03 — Radar de Mercado.
-// Filtros + 3 seções de produtos (em alta,
-// emergentes, alta margem) com Opportunity Score.
+// Busca pública (DummyJSON/OpenFoodFacts) + busca
+// autenticada no Mercado Livre, com moeda e fonte
+// explícitas. Sem margem sem custo real.
 // ============================================
 
-const SECOES = [
-  { id: 'emAlta', titulo: 'Produtos em alta' },
-  { id: 'emergentes', titulo: 'Produtos emergentes' },
-  { id: 'altaMargem', titulo: 'Alta margem' },
-];
-
-// radarProdutos removido — usar dados reais do Mercado Livre
-// const SECOES = [...]
-
-// Anel de Opportunity Score (0-100).
-function ScoreRing({ score, color }) {
-  const r = 22;
-  const circ = 2 * Math.PI * r;
-  const dash = (Math.min(score, 100) / 100) * circ;
-
-  return (
-    <div className="relative h-14 w-14 shrink-0">
-      <svg viewBox="0 0 56 56" className="h-14 w-14 -rotate-90">
-        <circle cx="28" cy="28" r={r} fill="none" strokeWidth="5" className="stroke-slate-200 dark:stroke-slate-700" />
-        <circle
-          cx="28"
-          cy="28"
-          r={r}
-          fill="none"
-          strokeWidth="5"
-          strokeLinecap="round"
-          stroke={color}
-          strokeDasharray={`${dash} ${circ}`}
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-800 dark:text-slate-100">
-        {score}
-      </span>
-    </div>
-  );
-}
-
-function varianteDemanda(d) {
-  return { Alta: 'teal', Média: 'amber', Baixa: 'slate' }[d] ?? 'slate';
-}
-function varianteConcorrencia(c) {
-  return { Alta: 'red', Média: 'amber', Baixa: 'teal' }[c] ?? 'slate';
-}
-function varianteOportunidade(o) {
-  return o === 'Excelente' ? 'teal' : 'indigo';
-}
-
 export function RadarMercado() {
-  const { primaryColor } = useApp();
-
-  const [draft, setDraft] = useState({ demanda: 'Todas', concorrencia: 'Todas', margem: 'Todas', preco: 'Todos' });
-  const [filtros, setFiltros] = useState(draft);
 
   // Radar ao vivo — produtos reais da internet (API gratuita, sob demanda).
   const [categoriaInternet, setCategoriaInternet] = useState('beauty');
@@ -261,68 +210,12 @@ export function RadarMercado() {
     setProdutosInternet(todosProdutos);
   };
 
-  const aplicar = p => {
-    if (filtros.demanda !== 'Todas' && p.demanda !== filtros.demanda) return false;
-    if (filtros.concorrencia !== 'Todas' && p.concorrencia !== filtros.concorrencia) return false;
-    if (filtros.margem !== 'Todas' && p.margemEstimada < Number(filtros.margem)) return false;
-    if (filtros.preco !== 'Todos' && p.preco > Number(filtros.preco)) return false;
-    return true;
-  };
-
-  // radarProdutos removido — secoes mock não são mais usadas
-  const secoes = [];
-  const total = 0;
-
-  const scoreColor = score => (score >= 80 ? '#10b981' : score >= 70 ? primaryColor : '#f59e0b');
-
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Radar de Mercado</h1>
         <p className="text-sm text-slate-500">Descubra produtos com potencial de crescimento</p>
       </div>
-
-      {/* Filtros */}
-      <Card>
-        <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
-          <Select
-            label="Demanda"
-            value={draft.demanda}
-            onChange={v => setDraft(d => ({ ...d, demanda: v }))}
-            options={[
-              { value: 'Todas', label: 'Todas' },
-              { value: 'Alta', label: 'Alta demanda' },
-              { value: 'Média', label: 'Média demanda' },
-              { value: 'Baixa', label: 'Baixa demanda' },
-            ]}
-          />
-          <Select
-            label="Faixa de preço"
-            value={draft.preco}
-            onChange={v => setDraft(d => ({ ...d, preco: v }))}
-            options={[
-              { value: 'Todos', label: 'Todos' },
-              { value: '100', label: 'Até R$ 100' },
-              { value: '200', label: 'Até R$ 200' },
-              { value: '400', label: 'Até R$ 400' },
-            ]}
-          />
-          <Select
-            label="Concorrência"
-            value={draft.concorrencia}
-            onChange={v => setDraft(d => ({ ...d, concorrencia: v }))}
-            options={[
-              { value: 'Todas', label: 'Todas' },
-              { value: 'Alta', label: 'Alta' },
-              { value: 'Média', label: 'Média' },
-              { value: 'Baixa', label: 'Baixa' },
-            ]}
-          />
-          <Button className="lg:mb-0" onClick={() => setFiltros(draft)}>
-            <SlidersHorizontal className="h-4 w-4" /> Aplicar filtros
-          </Button>
-        </div>
-      </Card>
 
       {/* Radar ao vivo — produtos reais da internet */}
       <Card>

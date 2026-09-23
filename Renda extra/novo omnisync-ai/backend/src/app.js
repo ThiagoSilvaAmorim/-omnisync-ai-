@@ -13,6 +13,8 @@ import productRoutes from './routes/products.js';
 import stockRoutes from './routes/stock.js';
 import supplierRoutes from './routes/suppliers.js';
 import mlAuthRoutes from './routes/mlAuth.js';
+import mlItemsRoutes from './routes/mlItems.js';
+import purchaseOrderRoutes from './routes/purchaseOrders.js';
 import shopeeAuthRoutes from './routes/shopeeAuth.js';
 import tiktokShopAuthRoutes from './routes/tiktokShopAuth.js';
 import aiAnalysisRoutes from './routes/aiAnalysis.js';
@@ -273,6 +275,12 @@ app.get('/api/auth/me', (req, res) => {
 
 // ---------- Mercado Livre OAuth ----------
 app.use('/api/auth/ml', mlAuthRoutes);
+
+// ---------- Mercado Livre escrita (sempre com aprovação prévia) ----------
+app.use('/api/ml', mlItemsRoutes);
+
+// ---------- Ordens de compra (rascunho + aprovação manual, sem envio automático) ----------
+app.use('/api/purchase-orders', purchaseOrderRoutes);
 
 // ---------- Análises Gemini sobre dados reais (somente leitura + rascunho) ----------
 app.use('/api/ai', aiAnalysisRoutes);
