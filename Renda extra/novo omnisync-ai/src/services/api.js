@@ -427,6 +427,33 @@ export const api = {
   emitirEvento: (type, payload, source_agent = 'web') => (API_URL ? request('/events', json({ type, payload, source_agent })) : Promise.resolve({ ok: true })),
   // Cria tarefa real na fila do backend (usada pelas ações de IA das telas).
   criarTarefa: body => (API_URL ? request('/tasks', json(body)) : delay().then(() => ({ taskId: `local-${Date.now().toString(36)}` }))),
+  // ---------- Tarefas: fila real do backend ----------
+  getTarefas: (status) => get(status ? `/tasks?status=${encodeURIComponent(status)}` : '/tasks', []),
+  repetirTarefa: (id) => (API_URL
+    ? request(`/tasks/${id}/retry`, { method: 'POST' })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  cancelarTarefa: (id) => (API_URL
+    ? request(`/tasks/${id}/cancel`, { method: 'POST' })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  // ---------- Central de B.O. real ----------
+  getProblemas: () => get('/problemas', []),
+  criarProblema: (body) => (API_URL
+    ? request('/problemas', json(body))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  avancarProblema: (id) => (API_URL
+    ? request(`/problemas/${id}/avancar`, { method: 'PATCH' })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  anexarNotaProblema: (id, texto) => (API_URL
+    ? request(`/problemas/${id}/notas`, { method: 'POST', ...json({ texto }) })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  removerProblema: (id) => (API_URL
+    ? request(`/problemas/${id}`, { method: 'DELETE' })
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  // ---------- Metas reais ----------
+  getMetas: () => get('/metas', []),
+  criarMeta: (body) => (API_URL
+    ? request('/metas', json(body))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   fetchImpactoFinanceiro: () => get('/dashboard/analytics', { impactoMensal: 0, impactoAnual: 0, economia: 0, custoApi: 0 }),
   fetchAuditoria: () => get('/audit', { eventos: [], ultimasAcoes: [] }),
 triggerKillSwitch: () => {

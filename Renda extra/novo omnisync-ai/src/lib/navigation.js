@@ -17,11 +17,13 @@ import {
   FileText,
   FlaskConical,
   LayoutDashboard,
+  ListTodo,
   Package,
   PackageSearch,
   PieChart,
   Plug,
   Radar,
+  Rocket,
   Send,
   Shield,
   ShoppingBag,
@@ -62,6 +64,7 @@ const NAV_SECTIONS = [
       { nome: 'Fiscal', rota: '/fiscal', Icone: FileText },
       { nome: 'Logística', rota: '/logistica', Icone: Truck },
       { nome: 'Central de B.O.', rota: '/central-bo', Icone: AlertTriangle },
+      { nome: 'Tarefas', rota: '/tarefas', Icone: ListTodo },
     ],
   },
   {
@@ -85,6 +88,7 @@ const NAV_SECTIONS = [
   {
     titulo: 'Configurações',
     itens: [
+      { nome: 'Comece por aqui', rota: '/onboarding', Icone: Rocket },
       { nome: 'Integrações', rota: '/integracao', Icone: Plug },
       { nome: 'Segurança', rota: '/seguranca', Icone: Shield },
       { nome: 'Usuários', rota: '/usuarios', Icone: UserCog },

@@ -4,6 +4,7 @@ import { Download, RefreshCw, Search, X } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { api } from '../services/api';
 import { CATEGORIAS_INTERNET, buscarMercadoLivre, buscarProdutosInternet, formatPrecoRadar } from '../services/marketplace';
+import { agruparPorCampo, topVendidos, topAvaliados, menorPreco } from '../lib/radarAgregacoes';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -125,6 +126,9 @@ export function RadarMercado() {
   const [erroML, setErroML] = useState('');
   const [analiseML, setAnaliseML] = useState(null);
   const [ordenarML, setOrdenarML] = useState('vendidos');
+  // Aba de agregação sobre os itens reais visíveis (internet + ML).
+  // Vendedores = campo marca (no ML, marca é o nickname do vendedor).
+  const [abaRadar, setAbaRadar] = useState('vendedores');
   // Acompanhamento de preços (watchlist local do navegador).
   const [watchlist, setWatchlist] = useState(() => {
     try {
@@ -164,6 +168,16 @@ export function RadarMercado() {
   const resultadosMLOrdenados = [...resultadosML].sort((a, b) => (
     ordenarML === 'vendidos' ? b.vendidos - a.vendidos : a.preco - b.preco
   ));
+
+  // Agregações calculadas dos itens reais visíveis (internet + ML).
+  const itensAgregados = [...produtosVisiveis, ...resultadosML];
+  const gruposVendedores = agruparPorCampo(itensAgregados, 'marca');
+  const gruposCategorias = agruparPorCampo(itensAgregados, 'categoria');
+  const ABAS_RADAR = [
+    { value: 'vendedores', label: 'Vendedores' },
+    { value: 'categorias', label: 'Categorias' },
+    { value: 'tendencias', label: 'Tendências' },
+  ];
 
   // Análise Gemini somente sobre os cards reais visíveis (nunca DummyJSON).
   // Margem indisponível: custo de aquisição não existe nesses cards.
@@ -493,7 +507,107 @@ export function RadarMercado() {
         </CardContent>
       </Card>
 
-      {/* Seções mock removidas — use a busca "Mercado Livre ao vivo" acima para dados reais */}
+      {/* Agregações dos itens reais (vendedores, categorias, tendências) */}
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Agregações do Radar</CardTitle>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Calculadas dos {itensAgregados.length} item(ns) reais visíveis acima (internet + ML). Vendedores = campo marca (no ML, é o nickname do vendedor). Preço médio em moeda mista das fontes.
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4 flex flex-wrap gap-2">
+            {ABAS_RADAR.map(a => (
+              <button
+                key={a.value}
+                type="button"
+                onClick={() => setAbaRadar(a.value)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${abaRadar === a.value ? 'bg-primary-600 text-white' : 'border border-slate-200 text-slate-600 hover:border-primary-500 hover:text-primary-600 dark:border-slate-700 dark:text-slate-300'}`}
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
+          {itensAgregados.length === 0 ? (
+            <EmptyState title="Sem itens para agregar" description="Busque produtos acima para ver vendedores, categorias e tendências." />
+          ) : abaRadar === 'vendedores' ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500 dark:border-slate-800">
+                    <th className="px-5 py-3 font-medium">Vendedor / Marca</th>
+                    <th className="px-5 py-3 font-medium">Anúncios</th>
+                    <th className="px-5 py-3 font-medium">Preço médio</th>
+                    <th className="px-5 py-3 font-medium">Vendidos</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {gruposVendedores.map(g => (
+                    <tr key={g.chave} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{g.chave}</td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{g.qtd}</td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{g.precoMedio != null ? g.precoMedio.toFixed(2) : 'Sem preço'}</td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{g.vendidosTotal.toLocaleString('pt-BR')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : abaRadar === 'categorias' ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500 dark:border-slate-800">
+                    <th className="px-5 py-3 font-medium">Categoria</th>
+                    <th className="px-5 py-3 font-medium">Anúncios</th>
+                    <th className="px-5 py-3 font-medium">Preço médio</th>
+                    <th className="px-5 py-3 font-medium">Vendidos</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {gruposCategorias.map(g => (
+                    <tr key={g.chave} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{g.chave}</td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{g.qtd}</td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{g.precoMedio != null ? g.precoMedio.toFixed(2) : 'Sem preço'}</td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{g.vendidosTotal.toLocaleString('pt-BR')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Mais vendidos</p>
+                {topVendidos(itensAgregados).map(p => (
+                  <p key={p.id} className="truncate py-1 text-sm text-slate-700 dark:text-slate-200" title={p.nome}>
+                    {p.nome} <span className="text-slate-400">• {Number(p.vendidos).toLocaleString('pt-BR')}</span>
+                  </p>
+                ))}
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Melhor avaliados</p>
+                {topAvaliados(itensAgregados).map(p => (
+                  <p key={p.id} className="truncate py-1 text-sm text-slate-700 dark:text-slate-200" title={p.nome}>
+                    {p.nome} <span className="text-slate-400">• {p.avaliacao}</span>
+                  </p>
+                ))}
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Menor preço</p>
+                {menorPreco(itensAgregados).map(p => (
+                  <p key={p.id} className="truncate py-1 text-sm text-slate-700 dark:text-slate-200" title={p.nome}>
+                    {p.nome} <span className="text-slate-400">• {formatPrecoRadar(p)}</span>
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

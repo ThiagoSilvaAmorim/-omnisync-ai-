@@ -19,6 +19,9 @@ import negocioRoutes, { ESTAGIOS as negocioEstagios } from './routes/negocios.js
 import shopeeAuthRoutes from './routes/shopeeAuth.js';
 import tiktokShopAuthRoutes from './routes/tiktokShopAuth.js';
 import aiAnalysisRoutes from './routes/aiAnalysis.js';
+import cupomRoutes from './routes/cupons.js';
+import problemaRoutes from './routes/problemas.js';
+import metaRoutes from './routes/metas.js';
 
 // ============================================
 // app.js — Express app com as rotas da API.
@@ -167,6 +170,15 @@ app.post('/api/clientes', async (req, res) => {
   res.status(201).json(cliente);
 });
 
+app.delete('/api/clientes/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'ID inválido' });
+  const atual = await prisma.customer.findUnique({ where: { id } });
+  if (!atual) return res.status(404).json({ error: 'Cliente não encontrado' });
+  await prisma.customer.delete({ where: { id } });
+  res.json({ ok: true, id });
+});
+
 // ---------- Dashboard (resumo) ----------
 app.get('/api/dashboard', async (req, res) => {
   const [produtos, pedidos, clientes] = await Promise.all([
@@ -224,7 +236,7 @@ app.get('/api/eventos', send(data.eventosCalendario));
 app.get('/api/integracoes', send(data.integracoes));
 // Fornecedores reais (Google Places + salvamento manual). Substitui o mock estático.
 app.use('/api/fornecedores', supplierRoutes);
-app.get('/api/problemas', send(data.problemas));
+// B.O.s reais (router de problemas com auth). Substitui o mock estático.
 app.use('/api/negocios', negocioRoutes);
 // Estágios são vocabulário fixo do domínio (fonte única no router de negócios).
 app.get('/api/estagios', (_req, res) => {
@@ -267,6 +279,10 @@ app.post('/api/auth/login', (req, res) => {
     const user = { nome: 'Carlos Menezes', email: 'admin@omnisync.ai', perfil: 'Diretor' };
     return res.json({ token: assinarToken(user), user });
   }
+  if (email?.toLowerCase() === 't.bruno000@gmail.com' && senha === '123456') {
+    const user = { nome: 'Thiago Amorim', email: 't.bruno000@gmail.com', perfil: 'Diretor' };
+    return res.json({ token: assinarToken(user), user });
+  }
   res.status(401).json({ error: 'E-mail ou senha inválidos' });
 });
 
@@ -288,6 +304,15 @@ app.use('/api/purchase-orders', purchaseOrderRoutes);
 
 // ---------- Análises Gemini sobre dados reais (somente leitura + rascunho) ----------
 app.use('/api/ai', aiAnalysisRoutes);
+
+// ---------- Cupons de desconto (Promoções) ----------
+app.use('/api/cupons', cupomRoutes);
+
+// ---------- Central de B.O. (problemas operacionais) ----------
+app.use('/api/problemas', problemaRoutes);
+
+// ---------- Metas do negócio ----------
+app.use('/api/metas', metaRoutes);
 
 // ---------- Shopee / TikTok Shop (somente preparação) ----------
 app.use('/api/auth/shopee', shopeeAuthRoutes);

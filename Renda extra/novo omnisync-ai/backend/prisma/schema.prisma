@@ -222,3 +222,32 @@ model Negocio {
   @@map("Negocio")
 }
 
+model Problema {
+  id         String   @id
+  titulo     String
+  descricao  String   @default("")
+  categoria  String   @default("Operacional")
+  prioridade String   @default("media")
+  data       String   @default("")
+  status     String   @default("aberto")
+  historico  Json     @default("[]")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt @default(now())
+
+  @@index([status])
+  @@map("Problema")
+}
+
+model Meta {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  meta      Float
+  atual     Float    @default(0)
+  tipo      String   @default("number")
+  setor     String   @default("Geral")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@map("Meta")
+}
+

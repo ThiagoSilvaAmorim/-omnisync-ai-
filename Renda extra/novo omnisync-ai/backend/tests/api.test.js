@@ -60,9 +60,16 @@ describe('API — Produtos', () => {
 
 describe('API — Pedidos', () => {
   it('lista pedidos', async () => {
-    const res = await request(app).get('/api/pedidos');
-    expect(res.status).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
+    const criado = await request(app).post('/api/pedidos').send({ id: 'PED-TEST-LISTA', cliente: 'Cliente Teste', total: 100, itens: 1, status: 'pendente' });
+    expect(criado.status).toBe(201);
+    try {
+      const res = await request(app).get('/api/pedidos');
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body.some(p => p.id === 'PED-TEST-LISTA')).toBe(true);
+    } finally {
+      await request(app).delete('/api/pedidos/PED-TEST-LISTA');
+    }
   });
 
   it('filtra por status', async () => {
@@ -74,10 +81,17 @@ describe('API — Pedidos', () => {
 
 describe('API — Clientes', () => {
   it('lista clientes', async () => {
-    const res = await request(app).get('/api/clientes');
-    expect(res.status).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
-    expect(res.body[0]).toHaveProperty('email');
+    const criado = await request(app).post('/api/clientes').send({ nome: 'Cliente Teste Lista', email: 'lista-teste@exemplo.com' });
+    expect(criado.status).toBe(201);
+    try {
+      const res = await request(app).get('/api/clientes');
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body[0]).toHaveProperty('email');
+      expect(res.body.some(c => c.email === 'lista-teste@exemplo.com')).toBe(true);
+    } finally {
+      await request(app).delete(`/api/clientes/${criado.body.id}`);
+    }
   });
 });
 
@@ -156,10 +170,16 @@ describe('API — Auth (token assinado)', () => {
 
 describe('API — Cupons (Ofertas)', () => {
   it('lista cupons', async () => {
-    const res = await request(app).get('/api/cupons');
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThan(0);
+    const criado = await request(app).post('/api/cupons').send({ codigo: 'CUP-LISTA', tipo: 'percentual', valor: 5 });
+    expect(criado.status).toBe(201);
+    try {
+      const res = await request(app).get('/api/cupons');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.some(c => c.codigo === 'CUP-LISTA')).toBe(true);
+    } finally {
+      await request(app).delete(`/api/cupons/${criado.body.id}`);
+    }
   });
 
   it('cria, atualiza e exclui um cupom', async () => {
@@ -176,8 +196,14 @@ describe('API — Cupons (Ofertas)', () => {
   });
 
   it('rejeita código duplicado', async () => {
-    const res = await request(app).post('/api/cupons').send({ codigo: 'BEMVINDO10', tipo: 'percentual', valor: 10 });
-    expect(res.status).toBe(409);
+    const primeiro = await request(app).post('/api/cupons').send({ codigo: 'BEMVINDO10', tipo: 'percentual', valor: 10 });
+    expect(primeiro.status).toBe(201);
+    try {
+      const res = await request(app).post('/api/cupons').send({ codigo: 'BEMVINDO10', tipo: 'percentual', valor: 10 });
+      expect(res.status).toBe(409);
+    } finally {
+      await request(app).delete(`/api/cupons/${primeiro.body.id}`);
+    }
   });
 });
 
