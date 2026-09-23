@@ -102,6 +102,24 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/fornecedores/:id — detalhe da própria empresa.
+router.get('/:id', requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ code: 'INVALID_ID', message: 'Identificador inválido.' });
+  }
+  try {
+    const f = await prisma.fornecedor.findFirst({ where: { id, empresaId: req.empresaId } });
+    if (!f) {
+      return res.status(404).json({ error: 'Fornecedor não encontrado' });
+    }
+    return res.json(paraPublico(f));
+  } catch (e) {
+    console.error('[Suppliers] Erro ao buscar:', e.message);
+    return res.status(500).json({ error: 'Erro ao buscar fornecedor' });
+  }
+});
+
 // POST /api/fornecedores — salva empresa manualmente (sempre não verificada).
 router.post('/', requireAuth, async (req, res) => {
   const b = req.body || {};

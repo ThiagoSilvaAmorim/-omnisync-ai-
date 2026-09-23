@@ -132,6 +132,31 @@ describe('GET /api/fornecedores/buscar', () => {
   });
 });
 
+describe('GET /api/fornecedores/:id', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('retorna o fornecedor da própria empresa', async () => {
+    prisma.fornecedor.findFirst.mockResolvedValue({ id: 5, empresaId: 1, nome: 'Real', verificado: false });
+    const res = await request(app).get('/api/fornecedores/5').set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: 5, nome: 'Real' });
+  });
+
+  it('fornecedor de outra empresa retorna 404', async () => {
+    prisma.fornecedor.findFirst.mockResolvedValue(null);
+    const res = await request(app).get('/api/fornecedores/5').set(auth());
+    expect(res.status).toBe(404);
+  });
+
+  it('id inválido retorna 400 sem tocar no banco', async () => {
+    const res = await request(app).get('/api/fornecedores/abc').set(auth());
+    expect(res.status).toBe(400);
+    expect(prisma.fornecedor.findFirst).not.toHaveBeenCalled();
+  });
+});
+
 describe('POST /api/fornecedores', () => {
   beforeEach(() => {
     vi.clearAllMocks();

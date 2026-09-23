@@ -76,12 +76,15 @@ router.get('/callback', async (req, res) => {
 });
 
 // GET /api/auth/ml/status
-// Status da conexão Mercado Livre
+// Status da conexão Mercado Livre + lojas da empresa (multi-loja).
+// ?mlUserId= opcional: foca uma loja específica.
 router.get('/status', requireAuth, async (req, res) => {
   try {
-    const integration = await mlOAuth.getIntegration(req.empresaId);
+    const mlUserId = req.query.mlUserId != null ? String(req.query.mlUserId) : undefined;
+    const integration = await mlOAuth.getIntegration(req.empresaId, mlUserId);
     const status = mlOAuth.getIntegrationStatus(integration);
-    
+    const sellers = await mlOAuth.listarIntegracoes(req.empresaId);
+
     res.json({
       status,
       conta: integration ? {
@@ -90,6 +93,7 @@ router.get('/status', requireAuth, async (req, res) => {
         mlUser: integration.mlUser,
         updatedAt: integration.updatedAt,
       } : null,
+      sellers,
     });
   } catch (error) {
     console.error('[MLAuth] Erro ao buscar status:', error);
@@ -98,15 +102,26 @@ router.get('/status', requireAuth, async (req, res) => {
 });
 
 // POST /api/auth/ml/disconnect
-// Desconecta conta Mercado Livre
+// Desconecta conta Mercado Livre (uma loja via mlUserId, ou a atual).
 router.post('/disconnect', requireAuth, async (req, res) => {
   try {
     const { prisma } = await import('../prisma/client.js');
-    
-    await prisma.contaIntegracao.update({
-      where: { provedor_empresaId: { provedor: 'mercadolivre', empresaId: req.empresaId } },
-      data: { ativo: false },
-    });
+    const mlUserId = req.body?.mlUserId != null ? String(req.body.mlUserId) : undefined;
+
+    const alvo = mlUserId
+      ? await prisma.contaIntegracao.findUnique({
+        where: { provedor_empresaId_mlUserId: { provedor: 'mercadolivre', empresaId: req.empresaId, mlUserId } },
+      })
+      : (await prisma.contaIntegracao.findMany({
+        where: { provedor: 'mercadolivre', empresaId: req.empresaId },
+        orderBy: { updatedAt: 'desc' },
+        take: 1,
+      }))[0];
+
+    if (!alvo) {
+      return res.status(404).json({ error: 'Integração não encontrada' });
+    }
+    await prisma.contaIntegracao.update({ where: { id: alvo.id }, data: { ativo: false } });
 
     res.json({ ok: true, message: 'Conta desconectada' });
   } catch (error) {
