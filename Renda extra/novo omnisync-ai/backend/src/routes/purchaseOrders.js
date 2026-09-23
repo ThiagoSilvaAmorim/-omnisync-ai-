@@ -138,6 +138,27 @@ router.post('/:id/rejeitar', requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/purchase-orders/:id/enviar — marca como enviada ao fornecedor.
+// Ação manual explícita: somente de compra_aprovada. Não compra, não paga,
+// não acessa site de terceiros; apenas registra o envio manual.
+router.post('/:id/enviar', requireAuth, async (req, res) => {
+  try {
+    const atual = await prisma.purchaseOrder.findUnique({ where: { id: req.params.id } });
+    if (!atual) return res.status(404).json({ error: 'Ordem de compra não encontrada' });
+    if (atual.status !== 'compra_aprovada') {
+      return res.status(409).json({ code: 'INVALID_TRANSITION', message: `Transição inválida a partir de ${atual.status}.` });
+    }
+    const atualizada = await prisma.purchaseOrder.update({
+      where: { id: req.params.id },
+      data: { status: 'enviado_ao_fornecedor' },
+    });
+    return res.json({ ok: true, ordem: paraPublico(atualizada) });
+  } catch (e) {
+    console.error('[PurchaseOrders] Erro ao marcar envio:', e.message);
+    return res.status(500).json({ error: 'Erro ao marcar envio da ordem' });
+  }
+});
+
 // PATCH /api/purchase-orders/:id/rastreio — salva código (sem reenviar; idempotente).
 router.patch('/:id/rastreio', requireAuth, async (req, res) => {
   const codigo = String(req.body?.codigo || '').trim();

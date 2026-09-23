@@ -132,4 +132,19 @@ describe('ordens de compra (aprovação manual)', () => {
       .send({ codigo: 'BR999' });
     expect(res.status).toBe(409);
   });
+
+  it('enviar move compra_aprovada para enviado_ao_fornecedor', async () => {
+    prisma.purchaseOrder.findUnique.mockResolvedValue({ ...OC_BASE, status: 'compra_aprovada' });
+    prisma.purchaseOrder.update.mockImplementation(async ({ data }) => ({ ...OC_BASE, ...data }));
+    const res = await request(app).post('/api/purchase-orders/OC-1/enviar').set(auth()).send({});
+    expect(res.status).toBe(200);
+    expect(res.body.ordem.status).toBe('enviado_ao_fornecedor');
+  });
+
+  it('enviar rascunho retorna 409 sem mexer no banco', async () => {
+    prisma.purchaseOrder.findUnique.mockResolvedValue(OC_BASE);
+    const res = await request(app).post('/api/purchase-orders/OC-1/enviar').set(auth()).send({});
+    expect(res.status).toBe(409);
+    expect(prisma.purchaseOrder.update).not.toHaveBeenCalled();
+  });
 });
