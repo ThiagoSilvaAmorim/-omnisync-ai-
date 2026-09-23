@@ -197,6 +197,19 @@ export const api = {
   criarOrdemCompra: body => (API_URL
     ? request('/purchase-orders', json(body))
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  aprovarOrdemCompra: (id, aprovador) => (API_URL
+    ? request(`/purchase-orders/${id}/aprovar`, json({ aprovador }))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  rejeitarOrdemCompra: (id, motivo) => (API_URL
+    ? request(`/purchase-orders/${id}/rejeitar`, json({ motivo }))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  // ---------- Alteração de preço/estoque no ML (sempre com aprovação prévia) ----------
+  atualizarPrecoML: (approvalId, itemId, price) => (API_URL
+    ? request(`/ml/items/${itemId}/price`, json({ approvalId, price }))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
+  atualizarEstoqueML: (approvalId, itemId, quantity) => (API_URL
+    ? request(`/ml/items/${itemId}/stock`, json({ approvalId, quantity }))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   getFornecedor: id => get(`/fornecedores/${id}`, null),
   listarOrdensCompra: () => get('/purchase-orders', []),
   favoritarFornecedor: (id, favorito) => (API_URL

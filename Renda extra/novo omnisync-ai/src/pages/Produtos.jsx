@@ -10,6 +10,7 @@ import { Select } from '../components/ui/Select';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { AiActionButton } from '../components/ui/AiActionButton';
+import { ProductDetailPanel } from '../components/produtos/ProductDetailPanel';
 import { Skeleton } from '../components/ui/Skeleton';
 import { AcessoRestrito } from '../components/ui/AcessoRestrito';
 import { useAuth } from '../context/AuthContext';
@@ -77,6 +78,8 @@ function CatalogoProdutos() {
   const [modalNovo, setModalNovo] = useState(false);
   // Rascunho de anúncio via Gemini (nunca publica sozinho).
   const [rascunho, setRascunho] = useState(null);
+  // Painel lateral de detalhes do produto.
+  const [produtoSel, setProdutoSel] = useState(null);
   // Fluxo de publicação com aprovação: solicitar → aprovar na Central de IA → publicar.
   const [aprovacao, setAprovacao] = useState(null);
   const [apLoading, setApLoading] = useState(false);
@@ -425,7 +428,16 @@ function CatalogoProdutos() {
                         />
                       </td>
                       <td className="px-5 py-3 font-mono text-xs text-slate-500">{p.sku}</td>
-                      <td className="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{p.nome}</td>
+                      <td className="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => setProdutoSel(p)}
+                          className="hover:text-primary-600 hover:underline"
+                          title="Abrir detalhes"
+                        >
+                          {p.nome}
+                        </button>
+                      </td>
                       <td className="px-5 py-3 text-right text-slate-700 dark:text-slate-200">{formatCurrency(p.preco ?? 0)}</td>
                       <td className="px-5 py-3 text-right text-slate-700 dark:text-slate-200">{estoqueAtual}</td>
                       <td className="px-5 py-3 text-slate-700 dark:text-slate-200">{p.categoria}</td>
@@ -570,6 +582,10 @@ function CatalogoProdutos() {
           </Button>
         </div>
       </Modal>
+
+      {produtoSel && (
+        <ProductDetailPanel produto={produtoSel} onClose={() => setProdutoSel(null)} />
+      )}
 
       <Modal open={modalNovo} onClose={() => setModalNovo(false)} title="Novo produto">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
