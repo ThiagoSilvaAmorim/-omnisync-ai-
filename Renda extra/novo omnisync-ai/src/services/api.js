@@ -189,13 +189,21 @@ export const api = {
   getEventos: () => get('/eventos', mock.eventosCalendario),
   getIntegracoes: () => get('/integracoes', mock.integracoes),
   getFornecedores: () => get('/fornecedores', mock.fornecedores),
-  // ---------- Fornecedores reais (Google Places + salvamento manual) ----------
-  // Busca pública e escrita exigem backend; sem API configurada, rejeitam
-  // com erro explícito em vez de fallback silencioso.
-  buscarFornecedoresPublicos: (query, cidade) => {
-    const params = new URLSearchParams({ query, cidade });
-    return request(`/fornecedores/buscar?${params.toString()}`);
+  // ---------- Fornecedores públicos OSM (base local suppliers) ----------
+  // Busca é local (banco); importação chama Nominatim/Overpass no backend.
+  // Sem backend, rejeitam com erro explícito (sem mock de resultados).
+  getSuppliers: (params = {}) => {
+    const sp = new URLSearchParams();
+    if (params.q) sp.append('q', params.q);
+    if (params.uf) sp.append('uf', params.uf);
+    if (params.cidade) sp.append('cidade', params.cidade);
+    const query = sp.toString();
+    return request(`/suppliers${query ? `?${query}` : ''}`);
   },
+  getSuppliersCidades: (uf) => request(`/suppliers/cidades?uf=${encodeURIComponent(uf)}`),
+  importSuppliersOsm: (body) => (API_URL
+    ? request('/suppliers/import-osm', json(body))
+    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   getFornecedoresSalvos: () => get('/fornecedores', []),
   salvarFornecedor: body => (API_URL
     ? request('/fornecedores', json(body))

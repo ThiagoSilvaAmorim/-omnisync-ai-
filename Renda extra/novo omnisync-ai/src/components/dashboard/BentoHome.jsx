@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Bot, Boxes, PackageSearch, Wallet } from 'lucide-react';
+import { ArrowUpRight, Bot, Boxes, PackageSearch, Ticket, TrendingUp, Wallet } from 'lucide-react';
 import { api } from '../../services/api';
 import { isValidDelta } from '../../lib/utils';
 import { useTheme } from '../../hooks/useTheme';
+import { MetricCard } from '../ui/MetricCard';
+import { AiActionButton } from '../ui/AiActionButton';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Skeleton } from '../ui/Skeleton';
 import { AreaChart } from '../charts/AreaChart';
@@ -18,48 +20,63 @@ const ATALHOS = [
   { nome: 'Estoque', rota: '/estoque', Icone: Boxes },
 ];
 
+const ICONE_KPI = {
+  pedidos: null,
+  ticketMedio: Ticket,
+  lucro: TrendingUp,
+};
+
+function kpisDoAnalytics(analytics) {
+  const porId = new Map((analytics?.kpis || []).map(k => [k.id, k]));
+  const fat = porId.get('faturamento');
+  const ped = porId.get('pedidos');
+  const tik = porId.get('ticketMedio');
+  const luc = porId.get('lucroEstimado') || porId.get('lucro');
+  return [
+    { id: 'faturamento', label: 'Faturamento', value: fat?.value ?? 0, format: 'currency', delta: fat?.delta ?? null },
+    { id: 'pedidos', label: 'Pedidos', value: ped?.value ?? 0, format: 'number', delta: ped?.delta ?? null },
+    { id: 'ticketMedio', label: 'Ticket médio', value: tik?.value ?? 0, format: 'currency', delta: tik?.delta ?? null },
+    {
+      id: 'lucro',
+      label: 'Lucro real',
+      value: luc ? luc.value : null,
+      format: 'currency',
+      delta: luc?.delta ?? null,
+      emptyHint: 'Sem base de custo',
+    },
+  ];
+}
+
 export function BentoHome({ period, customRange }) {
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
   const [pedidos, setPedidos] = useState([]);
   const [error, setError] = useState(null);
+  const [analise, setAnalise] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [dash, peds] = await Promise.all([
-          api.getDashboardResumo().catch(() => null),
+        const [ana, peds] = await Promise.all([
+          api.getDashboardAnalytics().catch(() => null),
           api.getPedidos().catch(() => []),
         ]);
-        setDashboardData(dash);
+        setAnalytics(ana);
         setPedidos(Array.isArray(peds) ? peds : []);
       } catch (e) {
         console.error('Erro ao carregar BentoHome:', e);
         setError(e.message);
       } finally {
-        setTimeout(() => setLoading(false), 500);
+        setTimeout(() => setLoading(false), 400);
       }
     };
     loadData();
   }, []);
 
-  const kpis = dashboardData
-    ? [
-        { id: 'faturamento', label: 'Faturamento', value: dashboardData.faturamento, format: 'currency' },
-        { id: 'pedidos', label: 'Pedidos', value: dashboardData.pedidos, format: 'number' },
-        { id: 'produtos', label: 'Produtos', value: dashboardData.produtos, format: 'number' },
-        { id: 'clientes', label: 'Clientes', value: dashboardData.clientes, format: 'number' },
-      ]
-    : [
-        { id: 'faturamento', label: 'Faturamento', value: 0, format: 'currency' },
-        { id: 'pedidos', label: 'Pedidos', value: 0, format: 'number' },
-        { id: 'produtos', label: 'Produtos', value: 0, format: 'number' },
-        { id: 'clientes', label: 'Clientes', value: 0, format: 'number' },
-      ];
-
+  const kpis = kpisDoAnalytics(analytics);
   const receita = kpis[0];
 
   const serie = pedidos.slice(0, 30).map(p => ({
@@ -83,6 +100,14 @@ export function BentoHome({ period, customRange }) {
 
   const donut = canais.map(c => ({ name: c.canal, valor: c.valor }));
 
+  const analisarPeriodo = async () => {
+    setAnalise(null);
+    return api.analisarDominio('dashboard', {
+      period: period || 'mes-atual',
+      customRange: customRange || null,
+    });
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
       <div className="flex flex-col justify-between rounded-2xl bg-gradient-to-r from-primary-50 to-primary-100 p-6 dark:from-primary-500/10 dark:to-primary-500/10 lg:col-span-2 lg:row-span-2">
@@ -94,7 +119,7 @@ export function BentoHome({ period, customRange }) {
             <Skeleton className="mt-3 h-12 w-56 rounded-lg" />
           ) : (
             <p className="mt-2 text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
-              {receita.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
+              {Number(receita.value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
             </p>
           )}
           {!loading && (
@@ -132,6 +157,22 @@ export function BentoHome({ period, customRange }) {
           )}
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:col-span-4">
+        {loading
+          ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
+          : kpis.slice(1).map(kpi => (
+              <MetricCard
+                key={kpi.id}
+                label={kpi.label}
+                value={kpi.value}
+                delta={kpi.delta}
+                format={kpi.format}
+                emptyHint={kpi.emptyHint}
+                Icone={ICONE_KPI[kpi.id]}
+              />
+            ))}
+      </div>
 
       <div className="grid grid-cols-2 gap-4 lg:col-span-2">
         {[
@@ -193,19 +234,48 @@ export function BentoHome({ period, customRange }) {
       </Card>
 
       <div className="rounded-2xl border border-primary-500/30 bg-gradient-to-r from-primary-50 to-primary-100 p-6 dark:border-primary-500/30 dark:from-primary-500/10 dark:to-primary-500/10 lg:col-span-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Bot className="h-5 w-5 text-primary-600 dark:text-primary-400" />
           <h2 className="font-semibold text-slate-800 dark:text-slate-100">Insight IA — OmniAdvisor</h2>
-          <Link
-            to="/central-ia"
-            className="ml-auto inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:underline dark:text-primary-400"
-          >
-            Abrir Central de IA <ArrowUpRight className="h-4 w-4" />
-          </Link>
+          <div className="ml-auto flex items-center gap-3">
+            <AiActionButton
+              label="Analisar este período com Gemini"
+              variant="primary"
+              onRun={analisarPeriodo}
+              onResult={setAnalise}
+            />
+            <Link
+              to="/central-ia"
+              className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:underline dark:text-primary-400"
+            >
+              Abrir Central de IA <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
-        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-          Conecte sua conta do Mercado Livre e aguarde a sincronização para gerar insights personalizados baseados em dados reais.
-        </p>
+        {analise ? (
+          <div className="mt-3 rounded-xl bg-white/70 p-4 text-sm text-slate-700 dark:bg-slate-900/50 dark:text-slate-200">
+            {analise.ok === false ? (
+              <p>{analise.message || 'Dados insuficientes para análise confiável deste período.'}</p>
+            ) : (
+              <div className="space-y-2">
+                <p className="whitespace-pre-wrap">{analise.analysis}</p>
+                {analise.recommendations?.length > 0 && (
+                  <p className="text-xs"><span className="font-semibold">Recomendações:</span> {analise.recommendations.join(' • ')}</p>
+                )}
+                {analise.risks?.length > 0 && (
+                  <p className="text-xs text-amber-700 dark:text-amber-300"><span className="font-semibold">Riscos:</span> {analise.risks.join(' • ')}</p>
+                )}
+                <p className="text-xs text-slate-400">
+                  Confiança {Math.round((analise.confidence ?? 0) * 100)}% • Qualidade {analise.dataQuality}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+            Peça uma leitura do período selecionado com base nos pedidos e produtos reais da base.
+          </p>
+        )}
       </div>
     </div>
   );

@@ -1,12 +1,12 @@
 // backend/src/routes/suppliers.js
-// Fornecedores reais: busca pública (Google Places) + salvamento manual
-// + verificação comercial. Resultados públicos nunca nascem verificados;
-// sem API oficial do fornecedor, a compra segue com aprovação manual.
+// Lista salva de fornecedores + salvamento manual + verificação comercial.
+// Resultados públicos do OSM ficam em /api/suppliers (suppliersOsm.js);
+// quem nasce daqui nunca nasce verificado; sem API do fornecedor, a compra
+// segue com aprovação manual.
 
 import { Router } from 'express';
 import { prisma } from '../prisma/client.js';
 import { usuarioDoRequest } from '../auth.js';
-import { searchGooglePlaces } from '../services/googlePlaces.js';
 
 const router = Router();
 
@@ -26,7 +26,6 @@ function paraPublico(f) {
     endereco: f.endereco,
     telefone: f.telefone,
     site: f.site,
-    mapsUrl: f.mapsUrl,
     avaliacao: f.avaliacao,
     quantidadeAvaliacoes: f.quantidadeAvaliacoes,
     categoria: f.categoria,
@@ -41,52 +40,11 @@ function paraPublico(f) {
     prazoInformado: f.prazoInformado,
     custoNegociado: f.custoNegociado,
     observacao: f.observacao,
+    historicoVerificacoes: Array.isArray(f.historicoVerificacoes) ? f.historicoVerificacoes : [],
     createdAt: f.createdAt,
     updatedAt: f.updatedAt,
   };
 }
-
-// GET /api/fornecedores/buscar?query=...&cidade=...
-router.get('/buscar', requireAuth, async (req, res) => {
-  const query = String(req.query.query || '').trim();
-  const cidade = String(req.query.cidade || '').trim();
-
-  if (query.length < 3 || cidade.length < 2) {
-    return res.status(400).json({
-      code: 'INVALID_SEARCH',
-      message: 'Informe o tipo de fornecedor e a cidade.',
-    });
-  }
-
-  try {
-    const fornecedores = await searchGooglePlaces({ query, cidade });
-    return res.json({ ok: true, fonte: 'Google Places', verificado: false, fornecedores });
-  } catch (error) {
-    if (error.code === 'GOOGLE_PLACES_NOT_CONFIGURED') {
-      return res.status(503).json({
-        code: error.code,
-        message: 'A busca pública de fornecedores ainda não está configurada.',
-      });
-    }
-    if (error.code === 'GOOGLE_PLACES_RATE_LIMIT') {
-      return res.status(429).json({
-        code: error.code,
-        message: 'Limite temporário de busca atingido. Tente novamente mais tarde.',
-      });
-    }
-    if (error.code === 'GOOGLE_PLACES_UNAUTHORIZED') {
-      return res.status(502).json({
-        code: error.code,
-        message: 'A API Google Places recusou a configuração atual.',
-      });
-    }
-    console.error('Erro Google Places:', { code: error.code, message: error.message });
-    return res.status(502).json({
-      code: 'GOOGLE_PLACES_REQUEST_FAILED',
-      message: 'Não foi possível consultar empresas públicas agora.',
-    });
-  }
-});
 
 // GET /api/fornecedores — lista salva da empresa (substitui o mock estático).
 router.get('/', requireAuth, async (req, res) => {
@@ -135,14 +93,14 @@ router.post('/', requireAuth, async (req, res) => {
     endereco: b.endereco ? String(b.endereco) : null,
     telefone: b.telefone ? String(b.telefone) : null,
     site: b.site ? String(b.site) : null,
-    mapsUrl: b.mapsUrl ? String(b.mapsUrl) : null,
     avaliacao: Number.isFinite(Number(b.avaliacao)) ? Number(b.avaliacao) : null,
     quantidadeAvaliacoes: Number.isFinite(Number(b.quantidadeAvaliacoes)) ? Number(b.quantidadeAvaliacoes) : 0,
     categoria: b.categoria ? String(b.categoria) : null,
     fonte: b.fonte ? String(b.fonte) : 'Manual',
     // Nunca aceitar verificado=true do frontend: toda entrada nasce não verificada.
-    verificado: false,
-    vendeAtacado: typeof b.vendeAtacado === 'boolean' ? b.vendeAtacado : null,
+        verificado: false,
+        historicoVerificacoes: [],
+        vendeAtacado: typeof b.vendeAtacado === 'boolean' ? b.vendeAtacado : null,
     aceitaRevenda: typeof b.aceitaRevenda === 'boolean' ? b.aceitaRevenda : null,
     possuiNotaFiscal: typeof b.possuiNotaFiscal === 'boolean' ? b.possuiNotaFiscal : null,
     possuiApi: typeof b.possuiApi === 'boolean' ? b.possuiApi : null,
@@ -193,17 +151,29 @@ router.patch('/:id/verificar', requireAuth, async (req, res) => {
     if (!existente) {
       return res.status(404).json({ error: 'Fornecedor não encontrado' });
     }
+    const entradaHistorico = {
+      quando: new Date().toISOString(),
+      vendeAtacado: b.vendeAtacado,
+      aceitaRevenda: b.aceitaRevenda,
+      possuiNotaFiscal: b.possuiNotaFiscal,
+      possuiApi: typeof b.possuiApi === 'boolean' ? b.possuiApi : existente.possuiApi,
+      prazoInformado: b.prazoInformado.trim(),
+      custoNegociado: Number.isFinite(Number(b.custoNegociado)) ? Number(b.custoNegociado) : existente.custoNegociado,
+      observacao: typeof b.observacao === 'string' ? b.observacao : existente.observacao,
+    };
+    const historicoAtual = Array.isArray(existente.historicoVerificacoes) ? existente.historicoVerificacoes : [];
     const atualizado = await prisma.fornecedor.update({
       where: { id },
       data: {
         vendeAtacado: b.vendeAtacado,
         aceitaRevenda: b.aceitaRevenda,
         possuiNotaFiscal: b.possuiNotaFiscal,
-        possuiApi: typeof b.possuiApi === 'boolean' ? b.possuiApi : existente.possuiApi,
+        possuiApi: entradaHistorico.possuiApi,
         prazoInformado: b.prazoInformado.trim(),
         custoNegociado: Number.isFinite(Number(b.custoNegociado)) ? Number(b.custoNegociado) : existente.custoNegociado,
         observacao: typeof b.observacao === 'string' ? b.observacao : existente.observacao,
         verificado: true,
+        historicoVerificacoes: [...historicoAtual, entradaHistorico].slice(-20),
       },
     });
     return res.json({ ok: true, fornecedor: paraPublico(atualizado) });

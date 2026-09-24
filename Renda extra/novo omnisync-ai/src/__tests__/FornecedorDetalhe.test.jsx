@@ -30,7 +30,7 @@ describe('FornecedorDetalhe (dados reais)', () => {
   it('exibe fornecedor real com métricas da base', async () => {
     api.getFornecedor.mockResolvedValue({
       id: 5, nome: 'Distribuidora Real', categoria: 'Atacado',
-      telefone: '11 99999-0000', fonte: 'Google Places', verificado: false,
+      telefone: '11 99999-0000', fonte: 'OpenStreetMap', verificado: false,
     });
     renderizar('5');
     expect(await screen.findByText('Distribuidora Real')).toBeTruthy();

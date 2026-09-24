@@ -119,3 +119,23 @@ export function exportarCsv(nomeArquivo, colunas, linhas) {
   const conteudo = '\uFEFF' + [cabecalho, corpo].join('\r\n');
   downloadFile(nomeArquivo, conteudo, 'text/csv;charset=utf-8;');
 }
+
+// Debounce simples de valor (ex.: campo de busca → GET local).
+export function debounce(fn, waitMs = 400) {
+  let t = null;
+  return (...args) => {
+    if (t) clearTimeout(t);
+    t = setTimeout(() => fn(...args), waitMs);
+  };
+}
+
+// Link OSM público (sem chave) a partir de lat/lng ou texto de busca.
+export function openStreetMapUrl({ lat, lng, query } = {}) {
+  if (Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
+    return `https://www.openstreetmap.org/?mlat=${Number(lat)}&mlon=${Number(lng)}#map=16/${Number(lat)}/${Number(lng)}`;
+  }
+  if (query) {
+    return `https://www.openstreetmap.org/search?query=${encodeURIComponent(query)}`;
+  }
+  return null;
+}

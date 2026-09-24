@@ -1,0 +1,627 @@
+﻿
+> omnisync-backend@0.1.0 test
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mC:/Users/Thiago Amorim/OneDrive/Desktop/Projetos/Renda extra/novo omnisync-ai/backend[39m
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2msem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:49:48.952Z POST /api/ai/analyze/sales
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Health[2m > [22m[2mretorna status ok
+[22m[39m[LOG] 2026-09-24T14:49:48.972Z GET /api/health
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2mdom├¡nio desconhecido retorna 400
+[22m[39m[LOG] 2026-09-24T14:49:49.015Z POST /api/ai/analyze/inventado
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Produtos[2m > [22m[2mlista produtos (contrato paginado)
+[22m[39m[LOG] 2026-09-24T14:49:49.028Z GET /api/produtos
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2mchave ausente retorna 503 estruturado
+[22m[39m[LOG] 2026-09-24T14:49:49.032Z POST /api/ai/analyze/sales
+
+[90mstdout[2m | tests/static.test.js[2m > [22m[2mAPI ÔÇö Auth[2m > [22m[2mfaz login com credenciais v├ílidas
+[22m[39m[LOG] 2026-09-24T14:49:49.025Z POST /api/auth/login
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2msales com pedidos retorna an├ílise estruturada
+[22m[39m[LOG] 2026-09-24T14:49:49.075Z POST /api/ai/analyze/sales
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2msales sem pedidos retorna INSUFFICIENT_DATA
+[22m[39m[LOG] 2026-09-24T14:49:49.098Z POST /api/ai/analyze/sales
+
+[90mstdout[2m | tests/static.test.js[2m > [22m[2mAPI ÔÇö Auth[2m > [22m[2mrejeita credenciais inv├ílidas
+[22m[39m[LOG] 2026-09-24T14:49:49.106Z POST /api/auth/login
+
+[90mstdout[2m | tests/static.test.js[2m > [22m[2mAPI ÔÇö Endpoints est├íticos[2m > [22m[2mradar de mercado
+[22m[39m[LOG] 2026-09-24T14:49:49.124Z GET /api/radar-mercado
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2mmarket sem produtos v├ílidos retorna INSUFFICIENT_DATA
+[22m[39m[LOG] 2026-09-24T14:49:49.130Z POST /api/ai/analyze/market
+
+[90mstdout[2m | tests/static.test.js[2m > [22m[2mAPI ÔÇö Endpoints est├íticos[2m > [22m[2mestoque
+[22m[39m[LOG] 2026-09-24T14:49:49.140Z GET /api/estoque
+
+[90mstdout[2m | tests/static.test.js[2m > [22m[2mAPI ÔÇö Endpoints est├íticos[2m > [22m[2magentes
+[22m[39m[LOG] 2026-09-24T14:49:49.197Z GET /api/agentes
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2mmarket com produtos reais retorna an├ílise sem margem inventada
+[22m[39m[LOG] 2026-09-24T14:49:49.211Z POST /api/ai/analyze/market
+
+[90mstdout[2m | tests/static.test.js[2m > [22m[2mAPI ÔÇö Endpoints est├íticos[2m > [22m[2musu├írios
+[22m[39m[LOG] 2026-09-24T14:49:49.212Z GET /api/usuarios
+
+[90mstdout[2m | tests/static.test.js[2m > [22m[2mAPI ÔÇö Endpoints est├íticos[2m > [22m[2mproduto destaque
+[22m[39m[LOG] 2026-09-24T14:49:49.225Z GET /api/produtos/destaque
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2mconvers├úo s├│ com taxa, fonte e timestamp expl├¡citos
+[22m[39m[LOG] 2026-09-24T14:49:49.251Z POST /api/ai/analyze/market
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2msem fx a moeda original ├® preservada e convertedAmount ├® nulo
+[22m[39m[LOG] 2026-09-24T14:49:49.283Z POST /api/ai/analyze/market
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2mBRL com fx n├úo sofre convers├úo
+[22m[39m[LOG] 2026-09-24T14:49:49.340Z POST /api/ai/analyze/market
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2msegredos no payload n├úo chegam ao Gemini
+[22m[39m[LOG] 2026-09-24T14:49:49.350Z POST /api/ai/analyze/market
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2msupplier desconhecido retorna INSUFFICIENT_DATA
+[22m[39m[LOG] 2026-09-24T14:49:49.360Z POST /api/ai/analyze/supplier
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2morder desconhecido retorna 404
+[22m[39m[LOG] 2026-09-24T14:49:49.396Z POST /api/ai/analyze/order
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2m429 do Gemini vira 429
+[22m[39m[LOG] 2026-09-24T14:49:49.408Z POST /api/ai/analyze/sales
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2mtimeout vira 504
+[22m[39m[LOG] 2026-09-24T14:49:49.426Z POST /api/ai/analyze/sales
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/analyze/:dominio[2m > [22m[2mresposta inv├ílida do Gemini vira 500
+[22m[39m[LOG] 2026-09-24T14:49:49.467Z POST /api/ai/analyze/sales
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/generate/listing[2m > [22m[2mproduto inexistente retorna 404
+[22m[39m[LOG] 2026-09-24T14:49:49.480Z POST /api/ai/generate/listing
+
+[90mstdout[2m | tests/aiAnalysis.test.js[2m > [22m[2mPOST /api/ai/generate/listing[2m > [22m[2mproduto real retorna rascunho marcado como rascunho
+[22m[39m[LOG] 2026-09-24T14:49:49.495Z POST /api/ai/generate/listing
+
+ [32mÔ£ô[39m tests/aiAnalysis.test.js [2m([22m[2m18 tests[22m[2m)[22m[33m 665[2mms[22m[39m
+[90mstdout[2m | tests/static.test.js[2m > [22m[2mAPI ÔÇö Marketplaces[2m > [22m[2mlista marketplaces
+[22m[39m[LOG] 2026-09-24T14:49:51.191Z GET /api/marketplaces
+
+[90mstdout[2m | tests/static.test.js[2m > [22m[2mAPI ÔÇö Marketplaces[2m > [22m[2msincroniza marketplace
+[22m[39m[LOG] 2026-09-24T14:49:51.206Z POST /api/marketplaces/ml/sync
+
+ [32mÔ£ô[39m tests/static.test.js [2m([22m[2m9 tests[22m[2m)[22m[33m 2361[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m produto destaque [33m 1965[2mms[22m[39m
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mstart gera URL oficial com state/PKCE
+[22m[39m[LOG] 2026-09-24T14:49:51.927Z GET /api/auth/ml/start
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mcallback v├ílido persiste e status fica conectado
+[22m[39m[LOG] 2026-09-24T14:49:51.976Z GET /api/auth/ml/start
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mcallback v├ílido persiste e status fica conectado
+[22m[39m[LOG] 2026-09-24T14:49:51.993Z GET /api/auth/ml/callback?code=abc&state=eyJlbXByZXNhSWQiOjEsInVzZXJJZCI6MSwidHMiOjE3OTAyNjEzOTE5NzcsIm5vbmNlIjoiY2I0MjI4NGZiMzg5ZGZhOWQ2ZTRiZDU5ZGVmMzUwMTAiLCJjb2RlVmVyaWZpZXIiOiJ3RWM2ai1UeFZUZU9CVDRXbDZBdmthNWRublpncFpjdV9jcWVRZHdiemFFIn0
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mcallback v├ílido persiste e status fica conectado
+[22m[39m[LOG] 2026-09-24T14:49:52.028Z GET /api/auth/ml/status
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2msegunda autoriza├º├úo atualiza a mesma conex├úo (sem duplicar)
+[22m[39m[LOG] 2026-09-24T14:49:52.053Z GET /api/auth/ml/start
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2msegunda autoriza├º├úo atualiza a mesma conex├úo (sem duplicar)
+[22m[39m[LOG] 2026-09-24T14:49:52.064Z GET /api/auth/ml/callback?code=a&state=eyJlbXByZXNhSWQiOjEsInVzZXJJZCI6MSwidHMiOjE3OTAyNjEzOTIwNTQsIm5vbmNlIjoiNWVlMTJjNGNhNWQ5YmRkOGY0Yjc5NGUwOWJhZTkyMGQiLCJjb2RlVmVyaWZpZXIiOiIteTN5UGRlZVBnalVycmZnMk9rVGEyTTBNRVZaMEs2RDEzRGVta0RFNVg0In0
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2msegunda autoriza├º├úo atualiza a mesma conex├úo (sem duplicar)
+[22m[39m[LOG] 2026-09-24T14:49:52.088Z GET /api/auth/ml/start
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2msegunda autoriza├º├úo atualiza a mesma conex├úo (sem duplicar)
+[22m[39m[LOG] 2026-09-24T14:49:52.128Z GET /api/auth/ml/callback?code=b&state=eyJlbXByZXNhSWQiOjEsInVzZXJJZCI6MSwidHMiOjE3OTAyNjEzOTIwODksIm5vbmNlIjoiNjNlZGZlM2FhOGU0N2EzNzdiMjVkMzNmYjZmOWI2YzYiLCJjb2RlVmVyaWZpZXIiOiJjVzJUSUZ4alYwVU93a2dOdEw4STBaeW1TelhOZWRaMEthMEdmYUxMYTJJIn0
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2msegunda autoriza├º├úo atualiza a mesma conex├úo (sem duplicar)
+[22m[39m[LOG] 2026-09-24T14:49:52.163Z GET /api/auth/ml/status
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mdisconnect ÔåÆ status sai de conectado ÔåÆ start funciona de novo
+[22m[39m[LOG] 2026-09-24T14:49:52.190Z GET /api/auth/ml/start
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mdisconnect ÔåÆ status sai de conectado ÔåÆ start funciona de novo
+[22m[39m[LOG] 2026-09-24T14:49:52.225Z GET /api/auth/ml/callback?code=a&state=eyJlbXByZXNhSWQiOjEsInVzZXJJZCI6MSwidHMiOjE3OTAyNjEzOTIxOTEsIm5vbmNlIjoiOTA2M2EwNDJmNzEyMjBiNmJiMzk2MDAxOTU1ZDc3ZDQiLCJjb2RlVmVyaWZpZXIiOiI2R1FBWVI5MURuN3Z1NGJ4V2NZdk50MklCQkQ1NXlJcHlLY25OUzRHeVJFIn0
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mdisconnect ÔåÆ status sai de conectado ÔåÆ start funciona de novo
+[22m[39m[LOG] 2026-09-24T14:49:52.248Z GET /api/auth/ml/status
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mdisconnect ÔåÆ status sai de conectado ÔåÆ start funciona de novo
+[22m[39m[LOG] 2026-09-24T14:49:52.264Z POST /api/auth/ml/disconnect
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mdisconnect ÔåÆ status sai de conectado ÔåÆ start funciona de novo
+[22m[39m[LOG] 2026-09-24T14:49:52.280Z GET /api/auth/ml/status
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mdisconnect ÔåÆ status sai de conectado ÔåÆ start funciona de novo
+[22m[39m[LOG] 2026-09-24T14:49:52.313Z GET /api/auth/ml/start
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mcallback com state inv├ílido retorna 400 sem salvar nada
+[22m[39m[LOG] 2026-09-24T14:49:52.330Z GET /api/auth/ml/callback?code=a&state=invalido
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mcallback com code ausente retorna 400
+[22m[39m[LOG] 2026-09-24T14:49:52.362Z GET /api/auth/ml/start
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mciclo desconectar ÔåÆ reconectar (TESTE A)[2m > [22m[2mcallback com code ausente retorna 400
+[22m[39m[LOG] 2026-09-24T14:49:52.375Z GET /api/auth/ml/callback?state=eyJlbXByZXNhSWQiOjEsInVzZXJJZCI6MSwidHMiOjE3OTAyNjEzOTIzNjIsIm5vbmNlIjoiMjE4ZDAzMTAzN2NhN2FiYTA4ZGU4NjFkNTQzMGEzYmUiLCJjb2RlVmVyaWZpZXIiOiI2WHRPMHpVLWVfWExCeHJPUmNkSTNvRVhXV01DUnNQWHJRVXd4R0ZxRnRFIn0
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mmulti-loja (sellers isolados)[2m > [22m[2mstatus lista sellers sem segredos
+[22m[39m[LOG] 2026-09-24T14:49:52.440Z GET /api/auth/ml/start
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mmulti-loja (sellers isolados)[2m > [22m[2mstatus lista sellers sem segredos
+[22m[39m[LOG] 2026-09-24T14:49:52.493Z GET /api/auth/ml/callback?code=c&state=eyJlbXByZXNhSWQiOjEsInVzZXJJZCI6MSwidHMiOjE3OTAyNjEzOTI0NDEsIm5vbmNlIjoiNzExZGY2Yzg2OTM4ZTk0MDY3Y2VlNzI4MjJmM2EwZGEiLCJjb2RlVmVyaWZpZXIiOiJBT21JZ2pQalhHZnFUVl9iMzNvWkQ4cFZMWFkwLV8wVEpRbFJGdlR0VEtnIn0
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mmulti-loja (sellers isolados)[2m > [22m[2mstatus lista sellers sem segredos
+[22m[39m[LOG] 2026-09-24T14:49:52.506Z GET /api/auth/ml/status
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Produtos[2m > [22m[2mfiltra por categoria
+[22m[39m[LOG] 2026-09-24T14:49:52.558Z GET /api/produtos?categoria=Marcenaria
+
+[90mstdout[2m | tests/mlOAuthCycle.test.js[2m > [22m[2mmulti-loja (sellers isolados)[2m > [22m[2mdisconnect com mlUserId desativa s├│ aquela loja
+[22m[39m[LOG] 2026-09-24T14:49:52.656Z POST /api/auth/ml/disconnect
+
+ [32mÔ£ô[39m tests/mlOAuthCycle.test.js [2m([22m[2m10 tests[22m[2m)[22m[33m 774[2mms[22m[39m
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Produtos[2m > [22m[2mretorna 404 para produto inexistente
+[22m[39m[LOG] 2026-09-24T14:49:53.032Z GET /api/produtos/999999
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Produtos[2m > [22m[2mcria um produto
+[22m[39m[LOG] 2026-09-24T14:49:53.547Z POST /api/produtos
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Produtos[2m > [22m[2mcria um produto
+[22m[39m[LOG] 2026-09-24T14:49:54.001Z DELETE /api/produtos/49
+
+[90mstdout[2m | tests/problemas.test.js[2m > [22m[2mcentral de B.O. (problemas reais)[2m > [22m[2msem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:49:53.973Z GET /api/problemas
+
+[90mstdout[2m | tests/problemas.test.js[2m > [22m[2mcentral de B.O. (problemas reais)[2m > [22m[2mlista B.O.s reais
+[22m[39m[LOG] 2026-09-24T14:49:54.059Z GET /api/problemas
+
+[90mstdout[2m | tests/problemas.test.js[2m > [22m[2mcentral de B.O. (problemas reais)[2m > [22m[2mabre B.O. com status aberto
+[22m[39m[LOG] 2026-09-24T14:49:54.122Z POST /api/problemas
+
+[90mstdout[2m | tests/problemas.test.js[2m > [22m[2mcentral de B.O. (problemas reais)[2m > [22m[2mt├¡tulo vazio retorna 400 sem criar
+[22m[39m[LOG] 2026-09-24T14:49:54.303Z POST /api/problemas
+
+[90mstdout[2m | tests/problemas.test.js[2m > [22m[2mcentral de B.O. (problemas reais)[2m > [22m[2mavan├ºa aberto para em andamento
+[22m[39m[LOG] 2026-09-24T14:49:54.313Z PATCH /api/problemas/BO-1/avancar
+
+[90mstdout[2m | tests/problemas.test.js[2m > [22m[2mcentral de B.O. (problemas reais)[2m > [22m[2mresolvido n├úo avan├ºa (409)
+[22m[39m[LOG] 2026-09-24T14:49:54.379Z PATCH /api/problemas/BO-1/avancar
+
+[90mstdout[2m | tests/problemas.test.js[2m > [22m[2mcentral de B.O. (problemas reais)[2m > [22m[2manexa nota ao hist├│rico
+[22m[39m[LOG] 2026-09-24T14:49:54.394Z POST /api/problemas/BO-1/notas
+
+[90mstdout[2m | tests/problemas.test.js[2m > [22m[2mcentral de B.O. (problemas reais)[2m > [22m[2mexclui B.O. existente
+[22m[39m[LOG] 2026-09-24T14:49:54.412Z DELETE /api/problemas/BO-1
+
+ [32mÔ£ô[39m tests/problemas.test.js [2m([22m[2m8 tests[22m[2m)[22m[33m 582[2mms[22m[39m
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Pedidos[2m > [22m[2mlista pedidos
+[22m[39m[LOG] 2026-09-24T14:49:54.645Z POST /api/pedidos
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Pedidos[2m > [22m[2mlista pedidos
+[22m[39m[LOG] 2026-09-24T14:49:55.034Z GET /api/pedidos
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Pedidos[2m > [22m[2mlista pedidos
+[22m[39m[LOG] 2026-09-24T14:49:55.442Z DELETE /api/pedidos/PED-TEST-LISTA
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2msem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:49:55.591Z POST /api/purchase-orders
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2mcria rascunho aguardando_aprovacao, sem enviar nada
+[22m[39m[LOG] 2026-09-24T14:49:55.664Z POST /api/purchase-orders
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2midExterno duplicado retorna a existente sem duplicar
+[22m[39m[LOG] 2026-09-24T14:49:55.717Z POST /api/purchase-orders
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2mtotal inv├ílido retorna 400
+[22m[39m[LOG] 2026-09-24T14:49:55.728Z POST /api/purchase-orders
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2maprova somente de aguardando_aprovacao com aprovador
+[22m[39m[LOG] 2026-09-24T14:49:55.739Z POST /api/purchase-orders/OC-1/aprovar
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2maprovar sem aprovador retorna 400
+[22m[39m[LOG] 2026-09-24T14:49:55.799Z POST /api/purchase-orders/OC-1/aprovar
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2maprovar fora do estado inicial retorna 409
+[22m[39m[LOG] 2026-09-24T14:49:55.813Z POST /api/purchase-orders/OC-1/aprovar
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2mrejeitar exige motivo e cancela
+[22m[39m[LOG] 2026-09-24T14:49:55.823Z POST /api/purchase-orders/OC-1/rejeitar
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2mrejeitar exige motivo e cancela
+[22m[39m[LOG] 2026-09-24T14:49:55.878Z POST /api/purchase-orders/OC-1/rejeitar
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2mrastreio idempotente: mesmo c├│digo n├úo regrava
+[22m[39m[LOG] 2026-09-24T14:49:55.893Z PATCH /api/purchase-orders/OC-1/rastreio
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2mrastreio em ordem cancelada retorna 409
+[22m[39m[LOG] 2026-09-24T14:49:55.931Z PATCH /api/purchase-orders/OC-1/rastreio
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2mreceber move enviado_ao_fornecedor para recebido
+[22m[39m[LOG] 2026-09-24T14:49:55.945Z POST /api/purchase-orders/OC-1/receber
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2mreceber rascunho retorna 409 sem mexer no banco
+[22m[39m[LOG] 2026-09-24T14:49:55.994Z POST /api/purchase-orders/OC-1/receber
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2menviar move compra_aprovada para enviado_ao_fornecedor
+[22m[39m[LOG] 2026-09-24T14:49:56.003Z POST /api/purchase-orders/OC-1/enviar
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mordens de compra (aprova├º├úo manual)[2m > [22m[2menviar rascunho retorna 409 sem mexer no banco
+[22m[39m[LOG] 2026-09-24T14:49:56.041Z POST /api/purchase-orders/OC-1/enviar
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mvincular envio ML ├á OC (concilia├º├úo)[2m > [22m[2msem shipmentId retorna 400
+[22m[39m[LOG] 2026-09-24T14:49:56.096Z POST /api/purchase-orders/OC-1/vincular-envio
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mvincular envio ML ├á OC (concilia├º├úo)[2m > [22m[2msem token ML retorna 401 sem alterar a OC
+[22m[39m[LOG] 2026-09-24T14:49:56.107Z POST /api/purchase-orders/OC-1/vincular-envio
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mvincular envio ML ├á OC (concilia├º├úo)[2m > [22m[2mvincula envio real e preenche rastreio ausente
+[22m[39m[LOG] 2026-09-24T14:49:56.115Z POST /api/purchase-orders/OC-1/vincular-envio
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mvincular envio ML ├á OC (concilia├º├úo)[2m > [22m[2mrastreio manual existente ├® preservado
+[22m[39m[LOG] 2026-09-24T14:49:56.132Z POST /api/purchase-orders/OC-1/vincular-envio
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mvincular envio ML ├á OC (concilia├º├úo)[2m > [22m[2mordem cancelada retorna 409
+[22m[39m[LOG] 2026-09-24T14:49:56.159Z POST /api/purchase-orders/OC-1/vincular-envio
+
+[90mstdout[2m | tests/purchaseOrders.test.js[2m > [22m[2mvincular envio ML ├á OC (concilia├º├úo)[2m > [22m[2mfalha no ML retorna 502 sem alterar a OC
+[22m[39m[LOG] 2026-09-24T14:49:56.168Z POST /api/purchase-orders/OC-1/vincular-envio
+
+ [32mÔ£ô[39m tests/purchaseOrders.test.js [2m([22m[2m20 tests[22m[2m)[22m[33m 658[2mms[22m[39m
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Pedidos[2m > [22m[2mfiltra por status
+[22m[39m[LOG] 2026-09-24T14:49:56.233Z GET /api/pedidos?status=entregue
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Clientes[2m > [22m[2mlista clientes
+[22m[39m[LOG] 2026-09-24T14:49:56.581Z POST /api/clientes
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Clientes[2m > [22m[2mlista clientes
+[22m[39m[LOG] 2026-09-24T14:49:56.946Z GET /api/clientes
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Clientes[2m > [22m[2mlista clientes
+[22m[39m[LOG] 2026-09-24T14:49:57.385Z DELETE /api/clientes/15
+
+[90mstdout[2m | tests/aiChat.test.js[2m > [22m[2mPOST /api/ai[2m > [22m[2msem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:49:57.630Z POST /api/ai
+
+[90mstdout[2m | tests/aiChat.test.js[2m > [22m[2mPOST /api/ai[2m > [22m[2mtoken inv├ílido retorna 401
+[22m[39m[LOG] 2026-09-24T14:49:57.792Z POST /api/ai
+
+[90mstdout[2m | tests/aiChat.test.js[2m > [22m[2mPOST /api/ai[2m > [22m[2mJWT expirado retorna 401
+[22m[39m[LOG] 2026-09-24T14:49:57.856Z POST /api/ai
+
+[90mstdout[2m | tests/aiChat.test.js[2m > [22m[2mPOST /api/ai[2m > [22m[2mchave ausente retorna 503 GEMINI_NOT_CONFIGURED
+[22m[39m[LOG] 2026-09-24T14:49:57.873Z POST /api/ai
+
+[90mstdout[2m | tests/aiChat.test.js[2m > [22m[2mPOST /api/ai[2m > [22m[2mchave presente e resposta v├ílida retorna answer normalizado
+[22m[39m[LOG] 2026-09-24T14:49:57.889Z POST /api/ai
+
+[90mstdout[2m | tests/aiChat.test.js[2m > [22m[2mPOST /api/ai[2m > [22m[2mresposta 403 do Gemini vira 403
+[22m[39m[LOG] 2026-09-24T14:49:57.932Z POST /api/ai
+
+[90mstdout[2m | tests/aiChat.test.js[2m > [22m[2mPOST /api/ai[2m > [22m[2mresposta 429 do Gemini vira 429
+[22m[39m[LOG] 2026-09-24T14:49:57.957Z POST /api/ai
+
+[90mstdout[2m | tests/aiChat.test.js[2m > [22m[2mPOST /api/ai[2m > [22m[2merro 500 do Gemini vira 500 gen├®rico sem vazar detalhe
+[22m[39m[LOG] 2026-09-24T14:49:57.978Z POST /api/ai
+
+[90mstdout[2m | tests/aiChat.test.js[2m > [22m[2mPOST /api/ai[2m > [22m[2mtimeout vira 504
+[22m[39m[LOG] 2026-09-24T14:49:57.990Z POST /api/ai
+
+[90mstdout[2m | tests/aiChat.test.js[2m > [22m[2mPOST /api/ai[2m > [22m[2mresposta vazia do Gemini vira 500
+[22m[39m[LOG] 2026-09-24T14:49:58.025Z POST /api/ai
+
+ [32mÔ£ô[39m tests/aiChat.test.js [2m([22m[2m10 tests[22m[2m)[22m[33m 490[2mms[22m[39m
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Estoque (KPIs reais do Neon)[2m > [22m[2mretorna KPIs de estoque
+[22m[39m[LOG] 2026-09-24T14:49:58.327Z GET /api/estoque/kpis
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Estoque (KPIs reais do Neon)[2m > [22m[2mretorna previs├úo de 60 dias
+[22m[39m[LOG] 2026-09-24T14:49:58.759Z GET /api/estoque/previsao
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Estoque (KPIs reais do Neon)[2m > [22m[2mretorna faixas de estoque parado
+[22m[39m[LOG] 2026-09-24T14:49:59.161Z GET /api/estoque/parado
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Fiscal e Transa├º├Áes (Neon)[2m > [22m[2mlista notas fiscais
+[22m[39m[LOG] 2026-09-24T14:49:59.392Z GET /api/fiscal
+
+[90mstdout[2m | tests/mlItems.test.js[2m > [22m[2mescrita ML exige aprova├º├úo (nunca autom├ítica)[2m > [22m[2msem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:49:59.677Z POST /api/ml/items
+
+[90mstdout[2m | tests/mlItems.test.js[2m > [22m[2mescrita ML exige aprova├º├úo (nunca autom├ítica)[2m > [22m[2msem approvalId retorna 403 e n├úo chama o ML
+[22m[39m[LOG] 2026-09-24T14:49:59.715Z POST /api/ml/items
+
+[90mstdout[2m | tests/mlItems.test.js[2m > [22m[2mescrita ML exige aprova├º├úo (nunca autom├ítica)[2m > [22m[2maprova├º├úo de outra a├º├úo retorna 403 sem executar
+[22m[39m[LOG] 2026-09-24T14:49:59.769Z PUT /api/ml/items/MLB1/price
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Fiscal e Transa├º├Áes (Neon)[2m > [22m[2mlista compras
+[22m[39m[LOG] 2026-09-24T14:49:59.783Z GET /api/compras
+
+[90mstdout[2m | tests/mlItems.test.js[2m > [22m[2mescrita ML exige aprova├º├úo (nunca autom├ítica)[2m > [22m[2mpublicar com aprova├º├úo cria e marca executada
+[22m[39m[LOG] 2026-09-24T14:49:59.781Z POST /api/ml/items
+
+[90mstdout[2m | tests/mlItems.test.js[2m > [22m[2mescrita ML exige aprova├º├úo (nunca autom├ítica)[2m > [22m[2mpre├ºo inv├ílido retorna 400 antes do ML
+[22m[39m[LOG] 2026-09-24T14:49:59.835Z PUT /api/ml/items/MLB1/price
+
+[90mstdout[2m | tests/mlItems.test.js[2m > [22m[2mescrita ML exige aprova├º├úo (nunca autom├ítica)[2m > [22m[2mestoque negativo retorna 400
+[22m[39m[LOG] 2026-09-24T14:49:59.846Z PUT /api/ml/items/MLB1/stock
+
+[90mstdout[2m | tests/mlItems.test.js[2m > [22m[2mescrita ML exige aprova├º├úo (nunca autom├ítica)[2m > [22m[2mstatus inv├ílido retorna 400
+[22m[39m[LOG] 2026-09-24T14:49:59.861Z PUT /api/ml/items/MLB1/status
+
+[90mstdout[2m | tests/mlItems.test.js[2m > [22m[2mescrita ML exige aprova├º├úo (nunca autom├ítica)[2m > [22m[2mpausar com aprova├º├úo funciona
+[22m[39m[LOG] 2026-09-24T14:49:59.873Z PUT /api/ml/items/MLB1/status
+
+[90mstdout[2m | tests/mlItems.test.js[2m > [22m[2mescrita ML exige aprova├º├úo (nunca autom├ítica)[2m > [22m[2mconta desconectada retorna 401 sem chamar o ML
+[22m[39m[LOG] 2026-09-24T14:49:59.897Z PUT /api/ml/items/MLB1/price
+
+[90mstdout[2m | tests/mlItems.test.js[2m > [22m[2mescrita ML exige aprova├º├úo (nunca autom├ítica)[2m > [22m[2mleitura de envio sanitizada sem vazar token
+[22m[39m[LOG] 2026-09-24T14:49:59.914Z GET /api/ml/shipments/S1
+
+[90mstdout[2m | tests/mlItems.test.js[2m > [22m[2mescrita ML exige aprova├º├úo (nunca autom├ítica)[2m > [22m[2m401 do ML vira 401 com reautoriza├º├úo
+[22m[39m[LOG] 2026-09-24T14:49:59.930Z PUT /api/ml/items/MLB1/price
+
+ [32mÔ£ô[39m tests/mlItems.test.js [2m([22m[2m11 tests[22m[2m)[22m[33m 354[2mms[22m[39m
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Fiscal e Transa├º├Áes (Neon)[2m > [22m[2mmonta transa├º├Áes de pedidos e compras
+[22m[39m[LOG] 2026-09-24T14:50:00.213Z GET /api/transacoes
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Auth (token assinado)[2m > [22m[2memite token com perfil Diretor no login
+[22m[39m[LOG] 2026-09-24T14:50:00.578Z POST /api/auth/login
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Auth (token assinado)[2m > [22m[2maceita o e-mail do diretor
+[22m[39m[LOG] 2026-09-24T14:50:00.592Z POST /api/auth/login
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Auth (token assinado)[2m > [22m[2mvalida o token em /api/auth/me
+[22m[39m[LOG] 2026-09-24T14:50:00.599Z POST /api/auth/login
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Auth (token assinado)[2m > [22m[2mvalida o token em /api/auth/me
+[22m[39m[LOG] 2026-09-24T14:50:00.611Z GET /api/auth/me
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Auth (token assinado)[2m > [22m[2mrejeita token inv├ílido em /api/auth/me
+[22m[39m[LOG] 2026-09-24T14:50:00.693Z GET /api/auth/me
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Cupons (Ofertas)[2m > [22m[2mlista cupons
+[22m[39m[LOG] 2026-09-24T14:50:00.706Z POST /api/cupons
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Cupons (Ofertas)[2m > [22m[2mlista cupons
+[22m[39m[LOG] 2026-09-24T14:50:01.128Z GET /api/cupons
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Cupons (Ofertas)[2m > [22m[2mlista cupons
+[22m[39m[LOG] 2026-09-24T14:50:01.528Z DELETE /api/cupons/55
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mGET /api/suppliers (busca local)[2m > [22m[2msem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:50:01.624Z GET /api/suppliers?q=dist
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mGET /api/suppliers (busca local)[2m > [22m[2mbusca por nome filtra no banco sem chamada externa
+[22m[39m[LOG] 2026-09-24T14:50:01.727Z GET /api/suppliers?q=distribuidora&uf=SP&cidade=Campinas
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mGET /api/suppliers (busca local)[2m > [22m[2msem filtros retorna a base local (take limitado)
+[22m[39m[LOG] 2026-09-24T14:50:01.775Z GET /api/suppliers
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mGET /api/suppliers (busca local)[2m > [22m[2mcidades distintas por UF
+[22m[39m[LOG] 2026-09-24T14:50:01.791Z GET /api/suppliers/cidades?uf=SP
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mGET /api/suppliers (busca local)[2m > [22m[2mcidades sem UF retorna 400
+[22m[39m[LOG] 2026-09-24T14:50:01.810Z GET /api/suppliers/cidades
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/suppliers/import-osm[2m > [22m[2msem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:50:01.910Z POST /api/suppliers/import-osm
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/suppliers/import-osm[2m > [22m[2msem cidade retorna 400
+[22m[39m[LOG] 2026-09-24T14:50:01.984Z POST /api/suppliers/import-osm
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/suppliers/import-osm[2m > [22m[2mUF inv├ílida retorna 400
+[22m[39m[LOG] 2026-09-24T14:50:01.999Z POST /api/suppliers/import-osm
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/suppliers/import-osm[2m > [22m[2mimporta OSM e faz upsert por osmId contando novos
+[22m[39m[LOG] 2026-09-24T14:50:02.013Z POST /api/suppliers/import-osm
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/suppliers/import-osm[2m > [22m[2mcidade inexistente no mapa vira 422 com mensagem clara
+[22m[39m[LOG] 2026-09-24T14:50:02.094Z POST /api/suppliers/import-osm
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/suppliers/import-osm[2m > [22m[2mtimeout OSM vira 504
+[22m[39m[LOG] 2026-09-24T14:50:02.107Z POST /api/suppliers/import-osm
+
+node.exe : [90mstderr[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/suppliers/import-osm[2m > 
+[22m[2mtimeout OSM vira 504
+No linha:1 caractere:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...ut OSM vira 504:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39m[SuppliersOSM] Erro ao importar: {
+  code: [32m'OSM_TIMEOUT'[39m,
+  message: [32m'Tempo esgotado ao localizar a cidade no mapa.'[39m
+}
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/suppliers/import-osm[2m > [22m[2mrate limit OSM vira 429
+[22m[39m[LOG] 2026-09-24T14:50:02.124Z POST /api/suppliers/import-osm
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mGET /api/fornecedores/:id[2m > [22m[2mretorna o fornecedor da pr├│pria empresa
+[22m[39m[LOG] 2026-09-24T14:50:02.165Z GET /api/fornecedores/5
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mGET /api/fornecedores/:id[2m > [22m[2mfornecedor de outra empresa retorna 404
+[22m[39m[LOG] 2026-09-24T14:50:02.180Z GET /api/fornecedores/5
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mGET /api/fornecedores/:id[2m > [22m[2mid inv├ílido retorna 400 sem tocar no banco
+[22m[39m[LOG] 2026-09-24T14:50:02.196Z GET /api/fornecedores/abc
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/fornecedores[2m > [22m[2msem nome retorna 400
+[22m[39m[LOG] 2026-09-24T14:50:02.212Z POST /api/fornecedores
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/fornecedores[2m > [22m[2mnunca aceita verificado=true do frontend
+[22m[39m[LOG] 2026-09-24T14:50:02.239Z POST /api/fornecedores
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/fornecedores[2m > [22m[2mfonte padr├úo ├® Manual (sem Google Places)
+[22m[39m[LOG] 2026-09-24T14:50:02.247Z POST /api/fornecedores
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPOST /api/fornecedores[2m > [22m[2mexternalId repetido retorna o existente sem duplicar
+[22m[39m[LOG] 2026-09-24T14:50:02.259Z POST /api/fornecedores
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPATCH /api/fornecedores/:id/verificar[2m > [22m[2msem dados comerciais retorna 400
+[22m[39m[LOG] 2026-09-24T14:50:02.266Z PATCH /api/fornecedores/1/verificar
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPATCH /api/fornecedores/:id/verificar[2m > [22m[2mmarca verificado com dados comerciais
+[22m[39m[LOG] 2026-09-24T14:50:02.305Z PATCH /api/fornecedores/1/verificar
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPATCH /api/fornecedores/:id/verificar[2m > [22m[2mfornecedor de outra empresa retorna 404
+[22m[39m[LOG] 2026-09-24T14:50:02.317Z PATCH /api/fornecedores/999/verificar
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Cupons (Ofertas)[2m > [22m[2mcria, atualiza e exclui um cupom
+[22m[39m[LOG] 2026-09-24T14:50:02.327Z POST /api/cupons
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPATCH /api/fornecedores/:id/favorito[2m > [22m[2malterna favorito da pr├│pria empresa
+[22m[39m[LOG] 2026-09-24T14:50:02.331Z PATCH /api/fornecedores/1/favorito
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPATCH /api/fornecedores/:id/favorito[2m > [22m[2mvalor n├úo booleano retorna 400
+[22m[39m[LOG] 2026-09-24T14:50:02.382Z PATCH /api/fornecedores/1/favorito
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPATCH /api/fornecedores/:id/favorito[2m > [22m[2mfornecedor de outra empresa retorna 404
+[22m[39m[LOG] 2026-09-24T14:50:02.399Z PATCH /api/fornecedores/999/favorito
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPATCH /api/fornecedores/:id/arquivar[2m > [22m[2marquiva e restaura da pr├│pria empresa
+[22m[39m[LOG] 2026-09-24T14:50:02.412Z PATCH /api/fornecedores/1/arquivar
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPATCH /api/fornecedores/:id/arquivar[2m > [22m[2marquiva e restaura da pr├│pria empresa
+[22m[39m[LOG] 2026-09-24T14:50:02.430Z PATCH /api/fornecedores/1/arquivar
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mPATCH /api/fornecedores/:id/arquivar[2m > [22m[2mfornecedor de outra empresa retorna 404
+[22m[39m[LOG] 2026-09-24T14:50:02.446Z PATCH /api/fornecedores/999/arquivar
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mDELETE /api/fornecedores/:id[2m > [22m[2mfornecedor de outra empresa retorna 404
+[22m[39m[LOG] 2026-09-24T14:50:02.480Z DELETE /api/fornecedores/999
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mDELETE /api/fornecedores/:id[2m > [22m[2mexclui da pr├│pria empresa
+[22m[39m[LOG] 2026-09-24T14:50:02.501Z DELETE /api/fornecedores/1
+
+[90mstdout[2m | tests/suppliers.test.js[2m > [22m[2mGoogle Places removido[2m > [22m[2mGET /api/fornecedores/buscar n├úo existe mais (cai em :id inv├ílido)
+[22m[39m[LOG] 2026-09-24T14:50:02.511Z GET /api/fornecedores/buscar?query=distribuidor&cidade=sp
+
+ [32mÔ£ô[39m tests/suppliers.test.js [2m([22m[2m30 tests[22m[2m)[22m[33m 934[2mms[22m[39m
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Cupons (Ofertas)[2m > [22m[2mcria, atualiza e exclui um cupom
+[22m[39m[LOG] 2026-09-24T14:50:02.577Z PUT /api/cupons/56
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Cupons (Ofertas)[2m > [22m[2mcria, atualiza e exclui um cupom
+[22m[39m[LOG] 2026-09-24T14:50:03.180Z DELETE /api/cupons/56
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Cupons (Ofertas)[2m > [22m[2mrejeita c├│digo duplicado
+[22m[39m[LOG] 2026-09-24T14:50:03.692Z POST /api/cupons
+
+[90mstdout[2m | tests/negocios.test.js[2m > [22m[2mpipeline de neg├│cios real[2m > [22m[2msem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:50:03.708Z GET /api/negocios
+
+[90mstdout[2m | tests/negocios.test.js[2m > [22m[2mpipeline de neg├│cios real[2m > [22m[2mlista neg├│cios do banco
+[22m[39m[LOG] 2026-09-24T14:50:03.768Z GET /api/negocios
+
+[90mstdout[2m | tests/negocios.test.js[2m > [22m[2mpipeline de neg├│cios real[2m > [22m[2mcria neg├│cio sempre em lead
+[22m[39m[LOG] 2026-09-24T14:50:03.841Z POST /api/negocios
+
+[90mstdout[2m | tests/negocios.test.js[2m > [22m[2mpipeline de neg├│cios real[2m > [22m[2mcriar sem t├¡tulo ou valor inv├ílido retorna 400
+[22m[39m[LOG] 2026-09-24T14:50:03.852Z POST /api/negocios
+
+[90mstdout[2m | tests/negocios.test.js[2m > [22m[2mpipeline de neg├│cios real[2m > [22m[2mcriar sem t├¡tulo ou valor inv├ílido retorna 400
+[22m[39m[LOG] 2026-09-24T14:50:03.864Z POST /api/negocios
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Cupons (Ofertas)[2m > [22m[2mrejeita c├│digo duplicado
+[22m[39m[LOG] 2026-09-24T14:50:03.938Z POST /api/cupons
+
+[90mstdout[2m | tests/negocios.test.js[2m > [22m[2mpipeline de neg├│cios real[2m > [22m[2mmove est├ígio v├ílido e rejeita inv├ílido
+[22m[39m[LOG] 2026-09-24T14:50:03.943Z PATCH /api/negocios/1/estagio
+
+[90mstdout[2m | tests/negocios.test.js[2m > [22m[2mpipeline de neg├│cios real[2m > [22m[2mmove est├ígio v├ílido e rejeita inv├ílido
+[22m[39m[LOG] 2026-09-24T14:50:03.953Z PATCH /api/negocios/1/estagio
+
+[90mstdout[2m | tests/negocios.test.js[2m > [22m[2mpipeline de neg├│cios real[2m > [22m[2mneg├│cio inexistente retorna 404
+[22m[39m[LOG] 2026-09-24T14:50:03.969Z PATCH /api/negocios/999/estagio
+
+ [32mÔ£ô[39m tests/negocios.test.js [2m([22m[2m6 tests[22m[2m)[22m[33m 303[2mms[22m[39m
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Cupons (Ofertas)[2m > [22m[2mrejeita c├│digo duplicado
+[22m[39mprisma:error 
+Invalid `prisma.cupom.create()` invocation in
+C:/Users/Thiago Amorim/OneDrive/Desktop/Projetos/Renda extra/novo omnisync-ai/backend/src/routes/cupons.js:45:39
+
+  42   return res.status(400).json({ code: 'INVALID_COUPON', message: 'Informe um valor maior que zero.' });
+  43 }
+  44 try {
+ÔåÆ 45   const criado = await prisma.cupom.create(
+Unique constraint failed on the fields: (`codigo`)
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Cupons (Ofertas)[2m > [22m[2mrejeita c├│digo duplicado
+[22m[39m[LOG] 2026-09-24T14:50:04.204Z DELETE /api/cupons/57
+
+[90mstdout[2m | tests/api.test.js[2m > [22m[2mAPI ÔÇö Dashboard[2m > [22m[2mretorna resumo com indicadores
+[22m[39m[LOG] 2026-09-24T14:50:04.616Z GET /api/dashboard
+
+ [32mÔ£ô[39m tests/marketplaceStubs.test.js [2m([22m[2m16 tests[22m[2m)[22m[33m 364[2mms[22m[39m
+ [32mÔ£ô[39m tests/api.test.js [2m([22m[2m22 tests[22m[2m)[22m[33m 17469[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m lista produtos (contrato paginado) [33m 3524[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m filtra por categoria [33m 488[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m retorna 404 para produto inexistente [33m 462[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m cria um produto [33m 1144[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m lista pedidos [33m 1593[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m filtra por status [33m 348[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m lista clientes [33m 1736[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m retorna KPIs de estoque [33m 436[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m retorna previs├úo de 60 dias [33m 401[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m lista notas fiscais [33m 397[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m lista compras [33m 429[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m monta transa├º├Áes de pedidos e compras [33m 366[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m lista cupons [33m 1619[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m cria, atualiza e exclui um cupom [33m 1364[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m rejeita c├│digo duplicado [33m 929[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m retorna resumo com indicadores [33m 1701[2mms[22m[39m
+[90mstdout[2m | tests/agentOrchestrator.test.js[2m > [22m[2magentOrchestrator[2m > [22m[2mvia HTTP sem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:50:07.517Z POST /api/ai/agent/SalesAnalyst
+
+[90mstdout[2m | tests/agentOrchestrator.test.js[2m > [22m[2magentOrchestrator[2m > [22m[2mvia HTTP agente desconhecido retorna 400
+[22m[39m[LOG] 2026-09-24T14:50:07.600Z POST /api/ai/agent/Xyz
+
+[90mstdout[2m | tests/agentOrchestrator.test.js[2m > [22m[2magentOrchestrator[2m > [22m[2mvia HTTP SalesAnalyst retorna registro completed
+[22m[39m[LOG] 2026-09-24T14:50:07.647Z POST /api/ai/agent/SalesAnalyst
+
+ [32mÔ£ô[39m tests/agentOrchestrator.test.js [2m([22m[2m8 tests[22m[2m)[22m[33m 303[2mms[22m[39m
+[90mstdout[2m | tests/metas.test.js[2m > [22m[2mmetas reais[2m > [22m[2msem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:50:09.189Z GET /api/metas
+
+[90mstdout[2m | tests/metas.test.js[2m > [22m[2mmetas reais[2m > [22m[2mlista metas reais
+[22m[39m[LOG] 2026-09-24T14:50:09.253Z GET /api/metas
+
+[90mstdout[2m | tests/metas.test.js[2m > [22m[2mmetas reais[2m > [22m[2mcria meta com valores v├ílidos
+[22m[39m[LOG] 2026-09-24T14:50:09.367Z POST /api/metas
+
+[90mstdout[2m | tests/metas.test.js[2m > [22m[2mmetas reais[2m > [22m[2mnome vazio ou valor inv├ílido retorna 400
+[22m[39m[LOG] 2026-09-24T14:50:09.385Z POST /api/metas
+
+[90mstdout[2m | tests/metas.test.js[2m > [22m[2mmetas reais[2m > [22m[2mnome vazio ou valor inv├ílido retorna 400
+[22m[39m[LOG] 2026-09-24T14:50:09.403Z POST /api/metas
+
+[90mstdout[2m | tests/metas.test.js[2m > [22m[2mmetas reais[2m > [22m[2mexclui meta existente
+[22m[39m[LOG] 2026-09-24T14:50:09.477Z DELETE /api/metas/7
+
+ [32mÔ£ô[39m tests/metas.test.js [2m([22m[2m5 tests[22m[2m)[22m[33m 374[2mms[22m[39m
+[90mstdout[2m | tests/approvalsAuth.test.js[2m > [22m[2maprova├º├Áes exigem JWT[2m > [22m[2mGET /api/approvals sem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:50:09.785Z GET /api/approvals
+
+[90mstdout[2m | tests/approvalsAuth.test.js[2m > [22m[2maprova├º├Áes exigem JWT[2m > [22m[2mPOST /api/approvals sem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:50:09.884Z POST /api/approvals
+
+[90mstdout[2m | tests/approvalsAuth.test.js[2m > [22m[2maprova├º├Áes exigem JWT[2m > [22m[2mPOST aprovar sem token retorna 401
+[22m[39m[LOG] 2026-09-24T14:50:09.911Z POST /api/approvals/xxx/aprovar
+
+[90mstdout[2m | tests/approvalsAuth.test.js[2m > [22m[2maprova├º├Áes exigem JWT[2m > [22m[2mcom token, rota responde sem 401
+[22m[39m[LOG] 2026-09-24T14:50:09.934Z GET /api/approvals
+
+[90mstdout[2m | tests/approvalsAuth.test.js[2m > [22m[2maprova├º├Áes exigem JWT[2m > [22m[2mcom token, hist├│rico responde 200 com lista
+[22m[39m[LOG] 2026-09-24T14:50:09.965Z GET /api/approvals?status=historico
+
+ [32mÔ£ô[39m tests/approvalsAuth.test.js [2m([22m[2m5 tests[22m[2m)[22m[32m 226[2mms[22m[39m
+ [32mÔ£ô[39m tests/mlOAuth.test.js [2m([22m[2m23 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m15 passed[39m[22m[90m (15)[39m
+[2m      Tests [22m [1m[32m201 passed[39m[22m[90m (201)[39m
+[2m   Start at [22m 11:49:41
+[2m   Duration [22m 28.15s[2m (transform 7.51s, setup 0ms, import 27.21s, tests 25.89s, environment 4ms)[22m
+

@@ -184,11 +184,10 @@ model Fornecedor {
   endereco             String?
   telefone             String?
   site                 String?
-  mapsUrl              String?
   avaliacao            Float?
   quantidadeAvaliacoes Int      @default(0)
   categoria            String?
-  fonte                String   @default("Google Places")
+  fonte                String   @default("Manual")
   verificado           Boolean  @default(false)
   favorito             Boolean  @default(false)
   arquivado            Boolean  @default(false)
@@ -199,12 +198,36 @@ model Fornecedor {
   prazoInformado       String?
   custoNegociado       Float?
   observacao           String?
+  // Histórico de verificações manuais (append-only; nunca inventado).
+  historicoVerificacoes Json     @default("[]")
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
   @@index([empresaId])
   @@unique([empresaId, externalId])
   @@map("Fornecedor")
+}
+
+// Base local de fornecedores públicos importados do OpenStreetMap (Nominatim + Overpass).
+// Dedupe por osmId; manuais ficam com osmId nulo.
+model Supplier {
+  id        Int      @id @default(autoincrement())
+  osmId     String?  @unique
+  nome      String
+  categoria String?
+  endereco  String?
+  cidade    String?
+  uf        String?
+  telefone  String?
+  site      String?
+  lat       Float?
+  lng       Float?
+  fonte     String   @default("osm")
+  createdAt DateTime @default(now())
+
+  @@index([uf, cidade])
+  @@index([nome])
+  @@map("suppliers")
 }
 
 

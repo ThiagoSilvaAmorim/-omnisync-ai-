@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Globe, MapPin, Phone, ShieldCheck, Star } from 'lucide-react';
+import { ArrowLeft, Globe, MapPin, Phone, ShieldCheck, Star } from 'lucide-react';
 import { api } from '../services/api';
 import { useToast } from '../hooks/useToast';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -172,11 +172,6 @@ export function FornecedorDetalhe() {
             {fornecedor.site && (
               <a href={fornecedor.site.startsWith('http') ? fornecedor.site : `https://${fornecedor.site}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs font-medium text-primary-600 hover:underline">
                 <Globe className="h-3.5 w-3.5" /> {fornecedor.site.replace(/^https?:\/\//, '')} ↗
-              </a>
-            )}
-            {fornecedor.mapsUrl && (
-              <a href={fornecedor.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:underline">
-                <ExternalLink className="h-3 w-3" /> Ver no Maps
               </a>
             )}
             {fornecedor.avaliacao != null && (

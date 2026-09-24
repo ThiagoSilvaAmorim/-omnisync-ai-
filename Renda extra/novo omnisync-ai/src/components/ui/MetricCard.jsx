@@ -6,9 +6,13 @@ import { useCountUp } from '../../hooks/useCountUp';
 // MetricCard — cartão de KPI do Dashboard.
 // Exibe rótulo, valor (com contagem animada) e
 // variação percentual (verde/vermelho conforme sinal).
+// value null/undefined = sem base de cálculo honesta
+// (ex.: lucro real sem custo cadastrado) → mostra "—"
+// e o rótulo emptyHint, nunca zero inventado.
 // ============================================
-export function MetricCard({ label, value, delta, format = 'number' }) {
-  const animated = useCountUp(value);
+export function MetricCard({ label, value, delta, format = 'number', emptyHint = 'Sem base de cálculo' }) {
+  const semValor = value === null || value === undefined || (typeof value === 'number' && !Number.isFinite(value));
+  const animated = useCountUp(semValor ? 0 : Number(value));
   const deltaNumber = Number(delta);
   const deltaValido = isValidDelta(delta);
   const positive = deltaValido && deltaNumber >= 0;
@@ -21,10 +25,12 @@ export function MetricCard({ label, value, delta, format = 'number' }) {
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
       <p className="text-xs font-medium text-slate-500">{label}</p>
       <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">
-        {formatValue(valor, format)}
+        {semValor ? '—' : formatValue(valor, format)}
       </p>
       <div className="mt-2 flex items-center gap-1">
-        {deltaValido ? (
+        {semValor ? (
+          <span className="text-xs font-medium text-slate-400">{emptyHint}</span>
+        ) : deltaValido ? (
           <span
             className={cn(
               'inline-flex items-center gap-0.5 text-xs font-medium',
@@ -38,7 +44,9 @@ export function MetricCard({ label, value, delta, format = 'number' }) {
         ) : (
           <span className="inline-flex items-center gap-0.5 text-xs font-medium text-slate-400">—</span>
         )}
-        <span className="text-xs text-slate-400">{deltaValido ? 'vs mês anterior' : 'Sem histórico'}</span>
+        {!semValor && (
+          <span className="text-xs text-slate-400">{deltaValido ? 'vs mês anterior' : 'Sem histórico'}</span>
+        )}
       </div>
     </div>
   );

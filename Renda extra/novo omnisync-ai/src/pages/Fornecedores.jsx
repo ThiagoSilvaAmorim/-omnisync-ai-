@@ -1,22 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, ExternalLink, Globe, MapPin, Phone, Plus, Radar, Star, Trash2, ShieldCheck } from 'lucide-react';
+import { Clock, Download, Globe, History, MapPin, Phone, Plus, Radar, Search, ShieldCheck, Star, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { useToast } from '../hooks/useToast';
-import { exportarCsv, formatCurrency } from '../lib/utils';
+import { exportarCsv, formatDate, formatCurrency, openStreetMapUrl } from '../lib/utils';
+import { UFS } from '../data/ufs';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { AiActionButton } from '../components/ui/AiActionButton';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
+import { SidePanel } from '../components/ui/SidePanel';
 import { Skeleton } from '../components/ui/Skeleton';
 
 // ============================================
-// Fornecedores — empresas públicas (Google Places),
-// lista salva e verificação comercial manual.
-// Nada aqui é inventado: sem busca ou cadastro,
-// a lista mostra estado vazio explícito.
+// Fornecedores — base local OpenStreetMap (GET /api/suppliers),
+// importação Nominatim+Overpass, lista salva e verificação
+// comercial manual. Abas SNV. Nada inventado: sem busca, estado vazio.
 // ============================================
 
 const ESTADO_BUSCA = {
@@ -24,9 +25,10 @@ const ESTADO_BUSCA = {
   LOADING: 'loading',
   RESULTADOS: 'resultados',
   SEM_RESULTADOS: 'sem-resultados',
-  NAO_CONFIGURADO: 'nao-configurado',
   ERRO: 'erro',
 };
+
+const DEBOUNCE_BUSCA_MS = 450;
 
 export function Fornecedores() {
   const toast = useToast();
@@ -37,23 +39,28 @@ export function Fornecedores() {
   const [loadingSalvos, setLoadingSalvos] = useState(true);
   const [erroSalvos, setErroSalvos] = useState(null);
 
-  // ---- Busca pública ----
-  const [tipoBusca, setTipoBusca] = useState('');
+  // ---- Busca local OSM (banco suppliers) ----
+  const [qBusca, setQBusca] = useState('');
+  const [ufBusca, setUfBusca] = useState('');
   const [cidadeBusca, setCidadeBusca] = useState('');
+  const [cidadesDisponiveis, setCidadesDisponiveis] = useState([]);
   const [estadoBusca, setEstadoBusca] = useState(ESTADO_BUSCA.IDLE);
   const [resultados, setResultados] = useState([]);
-  const [salvandoId, setSalvandoId] = useState(null);
+  const [importando, setImportando] = useState(false);
+  const [ultimaImport, setUltimaImport] = useState(null);
+  const debounceRef = useRef(null);
 
   // ---- Radar IA (catálogo real) ----
   const [candidatos, setCandidatos] = useState([]);
   const [varrendo, setVarrendo] = useState(false);
 
-  // ---- Modais ----
+  // ---- Modais / painel ----
   const [modalNovo, setModalNovo] = useState(false);
   const [excluindo, setExcluindo] = useState(null);
   const [analiseFornId, setAnaliseFornId] = useState(null);
   const [analiseForn, setAnaliseForn] = useState(null);
   const [verificando, setVerificando] = useState(null);
+  const [painel, setPainel] = useState(null);
   const [formVerificar, setFormVerificar] = useState({
     vendeAtacado: false,
     aceitaRevenda: false,
@@ -85,57 +92,123 @@ export function Fornecedores() {
     carregarSalvos();
   }, []);
 
-  const buscarEmpresas = async () => {
-    if (!tipoBusca.trim() || !cidadeBusca.trim()) {
-      toast('Informe o tipo de fornecedor e a cidade');
+  const buscarLocais = useCallback(async ({ mostrarVazio = true } = {}) => {
+    const temFiltro = !!(ufBusca || cidadeBusca.trim() || qBusca.trim());
+    if (!temFiltro) {
+      setEstadoBusca(ESTADO_BUSCA.IDLE);
+      setResultados([]);
       return;
     }
     setEstadoBusca(ESTADO_BUSCA.LOADING);
-    setResultados([]);
     try {
-      const r = await api.buscarFornecedoresPublicos(tipoBusca.trim(), cidadeBusca.trim());
+      const r = await api.getSuppliers({
+        q: qBusca.trim() || undefined,
+        uf: ufBusca || undefined,
+        cidade: cidadeBusca.trim() || undefined,
+      });
+      const lista = r?.fornecedores || [];
+      setResultados(lista);
+      setEstadoBusca(
+        lista.length > 0
+          ? ESTADO_BUSCA.RESULTADOS
+          : mostrarVazio
+            ? ESTADO_BUSCA.SEM_RESULTADOS
+            : ESTADO_BUSCA.IDLE
+      );
+    } catch (e) {
+      console.error('Erro na busca local:', e);
+      setEstadoBusca(ESTADO_BUSCA.ERRO);
+      setResultados([]);
+    }
+  }, [qBusca, ufBusca, cidadeBusca]);
+
+  // Debounce: digitação na busca local não martela a API.
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      buscarLocais({ mostrarVazio: true });
+    }, DEBOUNCE_BUSCA_MS);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [buscarLocais]);
+
+  // Cidades distintas da base local para a UF selecionada.
+  useEffect(() => {
+    let vivo = true;
+    if (!ufBusca) {
+      setCidadesDisponiveis([]);
+      return () => {
+        vivo = false;
+      };
+    }
+    api.getSuppliersCidades(ufBusca)
+      .then(r => {
+        if (vivo) setCidadesDisponiveis(r?.cidades || []);
+      })
+      .catch(() => {
+        if (vivo) setCidadesDisponiveis([]);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [ufBusca]);
+
+  const importarDoMapa = async () => {
+    if (!ufBusca || !cidadeBusca.trim()) {
+      toast('Selecione a UF e a cidade para buscar no OpenStreetMap');
+      return;
+    }
+    setImportando(true);
+    setUltimaImport(null);
+    try {
+      const r = await api.importSuppliersOsm({
+        uf: ufBusca,
+        cidade: cidadeBusca.trim(),
+        categoria: qBusca.trim() || undefined,
+      });
       const lista = r?.fornecedores || [];
       setResultados(lista);
       setEstadoBusca(lista.length > 0 ? ESTADO_BUSCA.RESULTADOS : ESTADO_BUSCA.SEM_RESULTADOS);
-    } catch (e) {
-      console.error('Erro na busca pública:', e);
-      const codigo = e?.code || '';
-      if (codigo === 'GOOGLE_PLACES_NOT_CONFIGURED' || String(e?.message || '').includes('configurada')) {
-        setEstadoBusca(ESTADO_BUSCA.NAO_CONFIGURADO);
-      } else {
-        setEstadoBusca(ESTADO_BUSCA.ERRO);
+      setUltimaImport({
+        novos: r?.novos ?? 0,
+        cacheado: !!r?.cacheado,
+        mensagem: r?.mensagem || '',
+      });
+      toast(r?.mensagem || 'Importação do OpenStreetMap concluída');
+      if (ufBusca) {
+        api.getSuppliersCidades(ufBusca)
+          .then(c => setCidadesDisponiveis(c?.cidades || []))
+          .catch(() => {});
       }
+    } catch (e) {
+      console.error('Erro ao importar OSM:', e);
+      toast(e?.message || 'Não foi possível buscar no OpenStreetMap agora');
+      setEstadoBusca(ESTADO_BUSCA.ERRO);
+    } finally {
+      setImportando(false);
     }
   };
 
   const salvarDaBusca = async (r) => {
-    const chave = r.externalId || r.nome;
-    setSalvandoId(chave);
     try {
       await api.salvarFornecedor({
-        externalId: r.externalId,
+        externalId: r.osmId || null,
         nome: r.nome,
         endereco: r.endereco,
         telefone: r.telefone,
         site: r.site,
-        mapsUrl: r.mapsUrl,
-        avaliacao: r.avaliacao,
-        quantidadeAvaliacoes: r.quantidadeAvaliacoes,
         categoria: r.categoria,
-        fonte: 'Google Places',
+        fonte: 'OpenStreetMap',
       });
       toast('Fornecedor salvo — ainda não verificado');
       carregarSalvos();
     } catch (e) {
       console.error('Erro ao salvar fornecedor:', e);
       toast('Erro ao salvar fornecedor');
-    } finally {
-      setSalvandoId(null);
     }
   };
 
-  // Análise Gemini do fornecedor salvo (resumo, pontos, riscos, perguntas de cotação).
-  // O AiActionButton exibe loading/erro/insuficiente; o painel abaixo exibe o resultado.
   const analisarFornecedor = async (f) => {
     setAnaliseFornId(f.id);
     setAnaliseForn(null);
@@ -195,7 +268,6 @@ export function Fornecedores() {
 
   const setCampoFornecedor = campo => e => setFormFornecedor(f => ({ ...f, [campo]: e.target.value }));
 
-  // Busca automática por CNPJ (BrasilAPI, pública e sem chave).
   const buscarCnpjFornecedor = async () => {
     const numeros = formFornecedor.cnpj.replace(/\D/g, '');
     if (numeros.length !== 14) {
@@ -250,7 +322,6 @@ export function Fornecedores() {
     }
   };
 
-  // Radar IA: deriva fornecedores candidatos do catálogo real (sem inventar dados).
   const varrerMercado = async () => {
     setVarrendo(true);
     try {
@@ -305,11 +376,14 @@ export function Fornecedores() {
     return !f.arquivado;
   });
 
-  const textoVazioAba = aba === 'favoritos'
-    ? 'Nenhum favorito ainda. Marque ★ nos fornecedores.'
-    : aba === 'arquivados'
-      ? 'Nenhum fornecedor arquivado.'
-      : 'Nenhum fornecedor salvo ainda. Busque empresas públicas acima ou cadastre manualmente.';
+  const textoVazioAba =
+    aba === 'favoritos'
+      ? 'Nenhum favorito ainda. Marque ★ nos fornecedores.'
+      : aba === 'arquivados'
+        ? 'Nenhum fornecedor arquivado.'
+        : 'Nenhum fornecedor salvo ainda. Busque empresas públicas acima ou cadastre manualmente.';
+
+  const abrirPainel = (f) => setPainel(f);
 
   const alternarFavorito = async (f) => {
     try {
@@ -332,6 +406,151 @@ export function Fornecedores() {
     }
   };
 
+  const abas = [
+    { id: 'resultados', label: 'Resultados públicos' },
+    { id: 'carteira', label: 'Meus fornecedores' },
+    { id: 'favoritos', label: 'Favoritos' },
+    { id: 'arquivados', label: 'Arquivados' },
+    { id: 'radar', label: 'Radar de IA' },
+  ];
+
+  const renderStatusBusca = (vazio) => {
+    if (estadoBusca === ESTADO_BUSCA.IDLE) {
+      return (
+        <div className={`rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700 ${vazio ? 'p-8' : ''}`}>
+          <p>
+            {vazio
+              ? 'Busque acima para listar fornecedores da base local. Nenhuma busca executada ainda.'
+              : 'Pesquise uma cidade (UF + cidade) para encontrar fornecedores públicos no OpenStreetMap.'}
+          </p>
+          {!vazio && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="mt-4"
+              disabled={importando || !ufBusca || !cidadeBusca.trim()}
+              onClick={importarDoMapa}
+            >
+              <Search className="h-4 w-4" />
+              {importando ? 'Buscando no mapa...' : 'Buscar novos no mapa'}
+            </Button>
+          )}
+        </div>
+      );
+    }
+    if (estadoBusca === ESTADO_BUSCA.LOADING) {
+      return (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-xl" />
+          ))}
+        </div>
+      );
+    }
+    if (estadoBusca === ESTADO_BUSCA.ERRO) {
+      return (
+        <p className="rounded-lg border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+          Não foi possível buscar fornecedores agora. Tente novamente.
+        </p>
+      );
+    }
+    if (estadoBusca === ESTADO_BUSCA.SEM_RESULTADOS) {
+      return (
+        <div className="rounded-lg border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500 dark:border-slate-700">
+          <p>Nenhum fornecedor na base local para esse filtro.</p>
+          <p className="mt-1 text-xs">
+            Use <strong>Buscar novos no mapa</strong> para importar do OpenStreetMap
+            {ufBusca && cidadeBusca ? ` (${cidadeBusca}/${ufBusca})` : ''}.
+          </p>
+          <Button
+            type="button"
+            variant="secondary"
+            className="mt-4"
+            disabled={importando || !ufBusca || !cidadeBusca.trim()}
+            onClick={importarDoMapa}
+          >
+            <Search className="h-4 w-4" />
+            {importando ? 'Buscando no mapa...' : 'Buscar novos no mapa'}
+          </Button>
+        </div>
+      );
+    }
+    if (estadoBusca === ESTADO_BUSCA.RESULTADOS) {
+      return (
+        <div className="space-y-3">
+          {ultimaImport && (
+            <p className="rounded-lg bg-primary-50 px-4 py-2 text-sm text-primary-700 dark:bg-primary-500/10 dark:text-primary-300">
+              {ultimaImport.mensagem || `${ultimaImport.novos} novo(s) fornecedor(es) encontrado(s).`}
+              {ultimaImport.cacheado ? ' (cache de 24h)' : ''}
+            </p>
+          )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {resultados.map(r => {
+              const chave = r.osmId || r.nome;
+              const jaSalvo = nomesNaBase.has(r.nome);
+              const osm = openStreetMapUrl({ lat: r.lat, lng: r.lng, query: [r.nome, r.cidade, r.uf].filter(Boolean).join(' ') });
+              return (
+                <div key={chave} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <p className="font-medium text-slate-800 dark:text-slate-100">{r.nome || '—'}</p>
+                  <p className="mt-1 flex flex-wrap gap-1.5">
+                    <Badge variant="slate">{r.categoria || 'Empresa'}</Badge>
+                    <Badge variant="amber">OpenStreetMap — não verificado</Badge>
+                  </p>
+                  <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500">
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    {[r.cidade, r.uf].filter(Boolean).join('/')}
+                    {r.endereco ? ` · ${r.endereco}` : ''}
+                  </p>
+                  {r.telefone && (
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+                      <Phone className="h-3.5 w-3.5 shrink-0" />
+                      {r.telefone}
+                    </p>
+                  )}
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-400">
+                    <Clock className="h-3 w-3" />
+                    Fonte: {r.fonte || 'osm'}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {r.site && (
+                      <a
+                        href={r.site.startsWith('http') ? r.site : `https://${r.site}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-medium text-primary-600 hover:underline"
+                      >
+                        Abrir site
+                      </a>
+                    )}
+                    {osm && (
+                      <a
+                        href={osm}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-medium text-primary-600 hover:underline"
+                      >
+                        Ver no OpenStreetMap
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      disabled={jaSalvo}
+                      onClick={() => salvarDaBusca(r)}
+                      className="ml-auto text-xs font-medium text-primary-600 hover:underline disabled:opacity-50 disabled:no-underline"
+                    >
+                      {jaSalvo ? 'Na minha lista' : 'Adicionar à minha lista'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -350,107 +569,105 @@ export function Fornecedores() {
         </div>
       </div>
 
-      {/* Busca pública de empresas */}
+      {/* Busca local OSM + importação — sempre no topo (padrão SNV) */}
       <Card>
-        <div className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-3 sm:items-end">
-          <Input label="Tipo de fornecedor/produto" value={tipoBusca} onChange={e => setTipoBusca(e.target.value)} placeholder="Ex: distribuidor de eletrônicos" />
-          <Input label="Cidade/UF" value={cidadeBusca} onChange={e => setCidadeBusca(e.target.value)} placeholder="Ex: São Paulo SP" />
-          <Button onClick={buscarEmpresas}>Buscar fornecedores reais</Button>
+        <div className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+          <Input
+            label="Nome ou categoria"
+            value={qBusca}
+            onChange={e => setQBusca(e.target.value)}
+            placeholder="Ex: distribuidor, atacado"
+          />
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-slate-500">UF</span>
+            <select
+              value={ufBusca}
+              onChange={e => {
+                setUfBusca(e.target.value);
+                setCidadeBusca('');
+              }}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition-colors focus:border-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            >
+              <option value="">Todas</option>
+              {UFS.map(u => (
+                <option key={u.sigla} value={u.sigla}>
+                  {u.sigla} — {u.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-slate-500">Cidade</span>
+            <input
+              list="fornecedores-cidades"
+              value={cidadeBusca}
+              onChange={e => setCidadeBusca(e.target.value)}
+              placeholder={ufBusca ? 'Ex: Campinas' : 'Selecione a UF'}
+              disabled={!ufBusca}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-primary-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            />
+            <datalist id="fornecedores-cidades">
+              {cidadesDisponiveis.map(c => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={importarDoMapa}
+              disabled={importando || !ufBusca || !cidadeBusca.trim()}
+            >
+              <Search className="h-4 w-4" />
+              {importando ? 'Buscando...' : 'Buscar novos no mapa'}
+            </Button>
+          </div>
         </div>
         <div className="px-5 pb-5">
-          {estadoBusca === 'idle' && (
-            <p className="text-sm text-slate-500">Pesquise uma categoria e uma cidade para encontrar empresas públicas.</p>
-          )}
-          {estadoBusca === 'loading' && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-32 rounded-xl" />
-              ))}
-            </div>
-          )}
-          {estadoBusca === 'nao-configurado' && (
-            <p className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700">
-              Busca pública ainda não configurada no servidor.
-            </p>
-          )}
-          {estadoBusca === 'erro' && (
-            <p className="rounded-lg border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
-              Não foi possível buscar empresas agora. Tente novamente.
-            </p>
-          )}
-          {estadoBusca === 'sem-resultados' && (
-            <p className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700">
-              Nenhuma empresa pública encontrada para essa busca.
-            </p>
-          )}
-          {estadoBusca === 'resultados' && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {resultados.map(r => {
-                const chave = r.externalId || r.nome;
-                const jaSalvo = [...nomesNaBase].includes(r.nome);
-                return (
-                  <div key={chave} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <p className="font-medium text-slate-800 dark:text-slate-100">{r.nome || '—'}</p>
-                    <p className="mt-1 flex flex-wrap gap-1.5">
-                      <Badge variant="slate">{r.categoria || 'Empresa'}</Badge>
-                      <Badge variant="amber">Encontrado publicamente — não verificado</Badge>
-                    </p>
-                    {r.endereco && <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />{r.endereco}</p>}
-                    {r.telefone && <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500"><Phone className="h-3.5 w-3.5 shrink-0" />{r.telefone}</p>}
-                    {r.avaliacao != null && (
-                      <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
-                        <Star className="h-3.5 w-3.5 text-amber-400" />{Number(r.avaliacao).toFixed(1)}{r.quantidadeAvaliacoes ? ` (${r.quantidadeAvaliacoes} avaliações)` : ''}
-                      </p>
-                    )}
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {r.site && (
-                        <a href={r.site.startsWith('http') ? r.site : `https://${r.site}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary-600 hover:underline">
-                          Abrir site
-                        </a>
-                      )}
-                      {r.mapsUrl && (
-                        <a href={r.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:underline">
-                          <ExternalLink className="h-3 w-3" /> Maps
-                        </a>
-                      )}
-                      <button
-                        type="button"
-                        disabled={jaSalvo || salvandoId === chave}
-                        onClick={() => salvarDaBusca(r)}
-                        className="ml-auto text-xs font-medium text-primary-600 hover:underline disabled:opacity-50 disabled:no-underline"
-                      >
-                        {jaSalvo ? 'Na minha lista' : salvandoId === chave ? 'Salvando...' : 'Adicionar à minha lista'}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <p className="mb-3 text-xs text-slate-500">
+            Busca local na base OpenStreetMap (sem chave externa). O botão acima importa fornecedores
+            da cidade selecionada via Nominatim + Overpass e cacheia por 24h.
+          </p>
+          {renderStatusBusca(false)}
         </div>
       </Card>
 
-      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800" role="tablist" aria-label="Abas de fornecedores">
-        {[
-          { id: 'carteira', label: 'Meus fornecedores' },
-          { id: 'favoritos', label: 'Favoritos' },
-          { id: 'arquivados', label: 'Arquivados' },
-          { id: 'radar', label: 'Radar de IA & Oportunidades' },
-        ].map(t => (
+      <div
+        className="flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-800"
+        role="tablist"
+        aria-label="Abas de fornecedores"
+      >
+        {abas.map(t => (
           <button
             key={t.id}
             type="button"
             role="tab"
             aria-selected={aba === t.id}
             onClick={() => setAba(t.id)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${aba === t.id ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            className={`-mb-px shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+              aba === t.id
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      {aba !== 'radar' ? (
+      {/* Resultados OSM ficam no card de busca acima (sem duplicar na aba). */}
+      {aba === 'resultados' && (
+        <div>
+          <p className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700">
+            {resultados.length > 0
+              ? `Exibindo ${resultados.length} fornecedor(es) da busca acima.`
+              : 'Use a busca acima (UF + cidade) e, se a base estiver vazia, "Buscar novos no mapa".'}
+          </p>
+        </div>
+      )}
+
+      {(aba === 'carteira' || aba === 'favoritos' || aba === 'arquivados') && (
         <div>
           {loadingSalvos ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -477,16 +694,24 @@ export function Fornecedores() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <CardTitle>
-                          <Link to={`/fornecedores/${f.id}`} className="hover:text-primary-600 hover:underline">
+                          <button
+                            type="button"
+                            onClick={() => abrirPainel(f)}
+                            className="text-left hover:text-primary-600 hover:underline"
+                          >
                             {f.nome}
-                          </Link>
+                          </button>
                         </CardTitle>
                         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                           <Badge variant="slate">{f.categoria || 'Geral'}</Badge>
                           <Badge variant={f.verificado ? 'teal' : 'amber'}>
                             {f.verificado ? (
-                              <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3" /> Verificado</span>
-                            ) : 'Não verificado'}
+                              <span className="inline-flex items-center gap-1">
+                                <ShieldCheck className="h-3 w-3" /> Verificado
+                              </span>
+                            ) : (
+                              'Não verificado'
+                            )}
                           </Badge>
                         </div>
                       </div>
@@ -502,18 +727,19 @@ export function Fornecedores() {
                       <Phone className="h-4 w-4 shrink-0 text-slate-400" /> {f.telefone || '—'}
                     </p>
                     {f.site && (
-                      <a href={f.site.startsWith('http') ? f.site : `https://${f.site}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs font-medium text-primary-600 hover:underline">
+                      <a
+                        href={f.site.startsWith('http') ? f.site : `https://${f.site}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-xs font-medium text-primary-600 hover:underline"
+                      >
                         <Globe className="h-3.5 w-3.5" /> {f.site.replace(/^https?:\/\//, '')} ↗
-                      </a>
-                    )}
-                    {f.mapsUrl && (
-                      <a href={f.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:underline">
-                        <ExternalLink className="h-3 w-3" /> Ver no Maps
                       </a>
                     )}
                     {f.avaliacao != null && (
                       <p className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                        <Star className="h-4 w-4 shrink-0 text-amber-400" /> {Number(f.avaliacao).toFixed(1)}{f.quantidadeAvaliacoes ? ` (${f.quantidadeAvaliacoes})` : ''}
+                        <Star className="h-4 w-4 text-amber-400" /> {Number(f.avaliacao).toFixed(1)}
+                        {f.quantidadeAvaliacoes ? ` (${f.quantidadeAvaliacoes})` : ''}
                       </p>
                     )}
                     {f.verificado && (
@@ -521,13 +747,18 @@ export function Fornecedores() {
                         {f.prazoInformado && <p>Prazo: {f.prazoInformado}</p>}
                         {f.custoNegociado != null && <p>Custo: {formatCurrency(f.custoNegociado)}</p>}
                         <p>
-                          {[f.vendeAtacado && 'Atacado', f.aceitaRevenda && 'Revenda', f.possuiNotaFiscal && 'NF-e', f.possuiApi && 'API'].filter(Boolean).join(' • ') || '—'}
+                          {[f.vendeAtacado && 'Atacado', f.aceitaRevenda && 'Revenda', f.possuiNotaFiscal && 'NF-e', f.possuiApi && 'API']
+                            .filter(Boolean)
+                            .join(' • ') || '—'}
                         </p>
                       </div>
                     )}
-                    <p className="text-xs text-slate-400">Fonte: {f.fonte || '—'}</p>
+                    <p className="flex items-center gap-1.5 text-xs text-slate-400">
+                      <Clock className="h-3 w-3" />
+                      Fonte: {f.fonte || '—'} · Última atualização: {formatDate(f.updatedAt || f.createdAt)}
+                    </p>
                     <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         {!f.verificado && (
                           <button
                             type="button"
@@ -537,6 +768,13 @@ export function Fornecedores() {
                             Marcar como verificado
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => abrirPainel(f)}
+                          className="text-xs font-medium text-slate-500 hover:text-primary-600 hover:underline"
+                        >
+                          Detalhes
+                        </button>
                         <AiActionButton
                           label="Analisar com Gemini"
                           onRun={() => analisarFornecedor(f)}
@@ -549,7 +787,11 @@ export function Fornecedores() {
                           onClick={() => alternarFavorito(f)}
                           title={f.favorito ? 'Remover dos favoritos' : 'Favoritar'}
                           aria-label={`Favoritar ${f.nome}`}
-                          className={`rounded-lg p-1.5 transition-colors ${f.favorito ? 'text-amber-500 hover:text-amber-600' : 'text-slate-400 hover:bg-slate-100 hover:text-amber-500 dark:hover:bg-slate-800'}`}
+                          className={`rounded-lg p-1.5 transition-colors ${
+                            f.favorito
+                              ? 'text-amber-500 hover:text-amber-600'
+                              : 'text-slate-400 hover:bg-slate-100 hover:text-amber-500 dark:hover:bg-slate-800'
+                          }`}
                         >
                           <span aria-hidden="true" className="text-base leading-none">★</span>
                         </button>
@@ -578,10 +820,15 @@ export function Fornecedores() {
                           <div className="space-y-1.5">
                             <p className="whitespace-pre-wrap">{analiseForn.analysis}</p>
                             {analiseForn.recommendations?.length > 0 && (
-                              <p><span className="font-semibold">Recomendações:</span> {analiseForn.recommendations.join(' • ')}</p>
+                              <p>
+                                <span className="font-semibold">Recomendações:</span>{' '}
+                                {analiseForn.recommendations.join(' • ')}
+                              </p>
                             )}
                             {analiseForn.risks?.length > 0 && (
-                              <p><span className="font-semibold">Riscos:</span> {analiseForn.risks.join(' • ')}</p>
+                              <p>
+                                <span className="font-semibold">Riscos:</span> {analiseForn.risks.join(' • ')}
+                              </p>
                             )}
                             <p className="text-slate-400">
                               Confiança {Math.round((analiseForn.confidence ?? 0) * 100)}% • Qualidade {analiseForn.dataQuality}
@@ -598,13 +845,17 @@ export function Fornecedores() {
             </div>
           )}
         </div>
-      ) : (
+      )}
+
+      {aba === 'radar' && (
         <div className="space-y-4">
           <Card>
             <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-sm text-slate-500">
                 <Radar className={`h-4 w-4 ${varrendo ? 'animate-spin text-primary-600' : ''}`} />
-                {varrendo ? 'IA escaneando o catálogo por fornecedores...' : 'A varredura mapeia fornecedores reais do seu catálogo.'}
+                {varrendo
+                  ? 'IA escaneando o catálogo por fornecedores...'
+                  : 'A varredura mapeia fornecedores reais do seu catálogo.'}
               </div>
               <Button variant="secondary" onClick={varrerMercado} disabled={varrendo}>
                 {varrendo ? 'Varrendo...' : 'Varrer mercado'}
@@ -614,7 +865,11 @@ export function Fornecedores() {
           {candidatos.length === 0 ? (
             <Card>
               <p className="p-8 text-center text-sm text-slate-500">
-                {varrendo ? <Skeleton className="mx-auto h-12 max-w-md rounded-lg" /> : 'Clique em "Varrer mercado" para mapear fornecedores.'}
+                {varrendo ? (
+                  <Skeleton className="mx-auto h-12 max-w-md rounded-lg" />
+                ) : (
+                  'Clique em "Varrer mercado" para mapear fornecedores.'
+                )}
               </p>
             </Card>
           ) : (
@@ -625,7 +880,9 @@ export function Fornecedores() {
                   <Card key={c.nome}>
                     <div className="space-y-2 p-5">
                       <p className="font-medium text-slate-800 dark:text-slate-100">{c.nome}</p>
-                      <p className="text-xs text-slate-500">{c.produtos} produto(s) • {c.categorias.join(', ') || '—'}</p>
+                      <p className="text-xs text-slate-500">
+                        {c.produtos} produto(s) • {c.categorias.join(', ') || '—'}
+                      </p>
                       <Button
                         variant="secondary"
                         disabled={naBase}
@@ -646,7 +903,12 @@ export function Fornecedores() {
       <Modal open={modalNovo} onClose={() => setModalNovo(false)} title="Novo fornecedor">
         <div className="space-y-3">
           <div>
-            <Input label="CNPJ" value={formFornecedor.cnpj} onChange={setCampoFornecedor('cnpj')} placeholder="00.000.000/0000-00" />
+            <Input
+              label="CNPJ"
+              value={formFornecedor.cnpj}
+              onChange={setCampoFornecedor('cnpj')}
+              placeholder="00.000.000/0000-00"
+            />
             <button
               type="button"
               onClick={buscarCnpjFornecedor}
@@ -667,15 +929,13 @@ export function Fornecedores() {
           <Button variant="secondary" onClick={() => setModalNovo(false)}>
             Cancelar
           </Button>
-          <Button onClick={salvarFornecedor}>
-            Cadastrar
-          </Button>
+          <Button onClick={salvarFornecedor}>Cadastrar</Button>
         </div>
       </Modal>
 
       <Modal open={!!verificando} onClose={() => setVerificando(null)} title={`Verificar ${verificando?.nome ?? ''}`}>
         <div className="space-y-3">
-          <p className="text-xs text-slate-500">A avaliação do Google não basta: confirme os dados comerciais abaixo.</p>
+          <p className="text-xs text-slate-500">Ficha pública do OSM não basta: confirme os dados comerciais abaixo.</p>
           {[
             ['vendeAtacado', 'Vende no atacado'],
             ['aceitaRevenda', 'Aceita revenda'],
@@ -692,17 +952,32 @@ export function Fornecedores() {
               {rotulo}
             </label>
           ))}
-          <Input label="Prazo informado (obrigatório)" value={formVerificar.prazoInformado} onChange={e => setFormVerificar(f => ({ ...f, prazoInformado: e.target.value }))} placeholder="Ex: 3 a 5 dias" />
-          <Input label="Custo negociado (R$)" type="number" min="0" value={formVerificar.custoNegociado} onChange={e => setFormVerificar(f => ({ ...f, custoNegociado: e.target.value }))} placeholder="Opcional" />
-          <Input label="Observação" value={formVerificar.observacao} onChange={e => setFormVerificar(f => ({ ...f, observacao: e.target.value }))} placeholder="Contato confirmado pelo usuário" />
+          <Input
+            label="Prazo informado (obrigatório)"
+            value={formVerificar.prazoInformado}
+            onChange={e => setFormVerificar(f => ({ ...f, prazoInformado: e.target.value }))}
+            placeholder="Ex: 3 a 5 dias"
+          />
+          <Input
+            label="Custo negociado (R$)"
+            type="number"
+            min="0"
+            value={formVerificar.custoNegociado}
+            onChange={e => setFormVerificar(f => ({ ...f, custoNegociado: e.target.value }))}
+            placeholder="Opcional"
+          />
+          <Input
+            label="Observação"
+            value={formVerificar.observacao}
+            onChange={e => setFormVerificar(f => ({ ...f, observacao: e.target.value }))}
+            placeholder="Contato confirmado pelo usuário"
+          />
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setVerificando(null)}>
             Cancelar
           </Button>
-          <Button onClick={confirmarVerificar}>
-            Marcar como verificado
-          </Button>
+          <Button onClick={confirmarVerificar}>Marcar como verificado</Button>
         </div>
       </Modal>
 
@@ -723,6 +998,156 @@ export function Fornecedores() {
           </button>
         </div>
       </Modal>
+
+      {/* Painel lateral de detalhes (padrão SNV) */}
+      <SidePanel
+        open={!!painel}
+        onClose={() => setPainel(null)}
+        title={painel?.nome || 'Detalhes'}
+        label={`Detalhes de ${painel?.nome || 'fornecedor'}`}
+      >
+        {painel && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="slate">{painel.categoria || 'Geral'}</Badge>
+              <Badge variant={painel.verificado ? 'teal' : 'amber'}>
+                {painel.verificado ? 'Verificado' : 'Não verificado'}
+              </Badge>
+              <Badge variant="slate">Fonte: {painel.fonte || '—'}</Badge>
+            </div>
+
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Contato</h3>
+              <div className="space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
+                {painel.endereco && (
+                  <p className="flex items-start gap-2">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                    {painel.endereco}
+                  </p>
+                )}
+                <p className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 shrink-0 text-slate-400" />
+                  {painel.telefone || '—'}
+                </p>
+                {painel.site && (
+                  <a
+                    href={painel.site.startsWith('http') ? painel.site : `https://${painel.site}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 font-medium text-primary-600 hover:underline"
+                  >
+                    <Globe className="h-4 w-4 shrink-0" />
+                    {painel.site.replace(/^https?:\/\//, '')} ↗
+                  </a>
+                )}
+                {(() => {
+                  const osm = openStreetMapUrl({
+                    lat: painel.lat,
+                    lng: painel.lng,
+                    query: [painel.nome, painel.endereco].filter(Boolean).join(' '),
+                  });
+                  return osm ? (
+                    <a
+                      href={osm}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 font-medium text-primary-600 hover:underline"
+                    >
+                      <MapPin className="h-4 w-4 shrink-0" />
+                      Ver no OpenStreetMap
+                    </a>
+                  ) : null;
+                })()}
+              </div>
+            </section>
+
+            {painel.avaliacao != null && (
+              <section>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Avaliação pública</h3>
+                <p className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                  <Star className="h-4 w-4 text-amber-400" />
+                  {Number(painel.avaliacao).toFixed(1)}
+                  {painel.quantidadeAvaliacoes ? ` (${painel.quantidadeAvaliacoes} avaliações)` : ''}
+                </p>
+              </section>
+            )}
+
+            {painel.verificado && (
+              <section>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Dados comerciais verificados</h3>
+                <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                  {painel.prazoInformado && <p>Prazo informado: {painel.prazoInformado}</p>}
+                  {painel.custoNegociado != null && <p>Custo negociado: {formatCurrency(painel.custoNegociado)}</p>}
+                  <p>
+                    {[painel.vendeAtacado && 'Atacado', painel.aceitaRevenda && 'Revenda', painel.possuiNotaFiscal && 'NF-e', painel.possuiApi && 'API']
+                      .filter(Boolean)
+                      .join(' • ') || '—'}
+                  </p>
+                  {painel.observacao && <p className="mt-1 italic">{painel.observacao}</p>}
+                </div>
+              </section>
+            )}
+
+            <section>
+              <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <History className="h-3.5 w-3.5" /> Histórico de verificação
+              </h3>
+              {painel.historicoVerificacoes?.length ? (
+                <ol className="space-y-2">
+                  {painel.historicoVerificacoes.map((h, i) => {
+                    const chips = [h.vendeAtacado && 'Atacado', h.aceitaRevenda && 'Revenda', h.possuiNotaFiscal && 'NF-e', h.possuiApi && 'API']
+                      .filter(Boolean)
+                      .join(' • ');
+                    return (
+                      <li
+                        key={i}
+                        className="rounded-lg border border-slate-100 p-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300"
+                      >
+                        <p className="font-medium text-slate-700 dark:text-slate-200">{formatDate(h.quando)}</p>
+                        <p>
+                          Prazo: {h.prazoInformado || '—'}
+                          {h.custoNegociado != null ? ` · Custo: ${formatCurrency(h.custoNegociado)}` : ''}
+                        </p>
+                        {chips && <p>{chips}</p>}
+                        {h.observacao && <p className="italic">{h.observacao}</p>}
+                      </li>
+                    );
+                  })}
+                </ol>
+              ) : (
+                <p className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-xs text-slate-500 dark:border-slate-700">
+                  Nenhuma verificação registrada ainda.
+                </p>
+              )}
+            </section>
+
+            <p className="flex items-center gap-1.5 text-xs text-slate-400">
+              <Clock className="h-3 w-3" />
+              Última atualização: {formatDate(painel.updatedAt || painel.createdAt)}
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {!painel.verificado && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    abrirVerificar(painel);
+                    setPainel(null);
+                  }}
+                >
+                  Verificar agora
+                </Button>
+              )}
+              <Link
+                to={`/fornecedores/${painel.id}`}
+                className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                Abrir página completa
+              </Link>
+            </div>
+          </div>
+        )}
+      </SidePanel>
     </div>
   );
 }

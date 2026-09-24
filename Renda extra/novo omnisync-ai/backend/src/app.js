@@ -12,6 +12,7 @@ import { assinarToken, usuarioDoRequest } from './auth.js';
 import productRoutes from './routes/products.js';
 import stockRoutes from './routes/stock.js';
 import supplierRoutes from './routes/suppliers.js';
+import supplierOsmRoutes from './routes/suppliersOsm.js';
 import mlAuthRoutes from './routes/mlAuth.js';
 import mlItemsRoutes from './routes/mlItems.js';
 import purchaseOrderRoutes from './routes/purchaseOrders.js';
@@ -234,8 +235,10 @@ app.get('/api/transacoes', async (_req, res) => {
 app.get('/api/oportunidades', send(data.oportunidades));
 app.get('/api/eventos', send(data.eventosCalendario));
 app.get('/api/integracoes', send(data.integracoes));
-// Fornecedores reais (Google Places + salvamento manual). Substitui o mock estático.
+// Fornecedores reais: lista salva + verificação manual. Substitui o mock estático.
 app.use('/api/fornecedores', supplierRoutes);
+// Fornecedores públicos OSM (Nominatim + Overpass) — base local em suppliers.
+app.use('/api/suppliers', supplierOsmRoutes);
 // B.O.s reais (router de problemas com auth). Substitui o mock estático.
 app.use('/api/negocios', negocioRoutes);
 // Estágios são vocabulário fixo do domínio (fonte única no router de negócios).
