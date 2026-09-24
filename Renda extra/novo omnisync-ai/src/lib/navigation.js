@@ -1,18 +1,21 @@
 // ============================================
 // navigation.js — fonte única de navegação.
-// Mantém as seções do menu, o mapa rota->seção e um
-// helper para o cabeçalho/breadcrumb de cada página.
+// Hierarquia curta (referência SNV): Principal,
+// Operação, Fornecimento, Inteligência, Finanças,
+// Integrações e Configurações.
 // ============================================
 
 import {
   Activity,
   AlertTriangle,
+  AppWindow,
   Barcode,
   Bot,
   Boxes,
   Building2,
   Calculator,
   Calendar,
+  ChevronDown,
   Crown,
   Factory,
   FileText,
@@ -39,14 +42,12 @@ import {
   Wallet,
 } from 'lucide-react';
 
-// ---------- Estrutura da sidebar ----------
-// Seções -> itens -> ícone + rota.
-// Seções espelham a operação de marketplace:
-// Principal, Cadastros, Marketplaces, Dados,
-// Finanças e Configurações.
+// ---------- Seções da sidebar ----------
+// Cada seção tem ícone (modo colapsado), título e itens.
 const NAV_SECTIONS = [
   {
     titulo: 'Principal',
+    Icone: LayoutDashboard,
     itens: [
       { nome: 'Dashboard', rota: '/dashboard', Icone: LayoutDashboard },
       { nome: 'Tarefas', rota: '/tarefas', Icone: ListTodo },
@@ -55,31 +56,33 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    titulo: 'Cadastros',
+    titulo: 'Operação',
+    Icone: ShoppingCart,
     itens: [
+      { nome: 'Pedidos', rota: '/pedidos', Icone: ShoppingCart },
+      { nome: 'Vendas', rota: '/vendas', Icone: TrendingUp },
       { nome: 'Produtos', rota: '/produtos', Icone: Package },
       { nome: 'Estoque', rota: '/estoque', Icone: Boxes },
-      { nome: 'Compras', rota: '/compras', Icone: ShoppingBag },
-      { nome: 'Fornecedores', rota: '/fornecedores', Icone: Factory },
-      { nome: 'Gerador de EAN', rota: '/ean', Icone: Barcode },
-      { nome: 'Clientes / CRM', rota: '/clientes', Icone: Users },
-      { nome: 'Logística', rota: '/logistica', Icone: Truck },
-    ],
-  },
-  {
-    titulo: 'Marketplaces',
-    itens: [
-      { nome: 'Integrações', rota: '/integracao', Icone: Plug },
-      { nome: 'Vendas', rota: '/vendas', Icone: TrendingUp },
-      { nome: 'Pedidos', rota: '/pedidos', Icone: ShoppingCart },
       { nome: 'Publicações', rota: '/publicacoes', Icone: Send },
       { nome: 'Marketing', rota: '/marketing', Icone: Tag },
       { nome: 'Conteúdo IA', rota: '/conteudo-ia', Icone: Sparkles },
+      { nome: 'Logística', rota: '/logistica', Icone: Truck },
       { nome: 'Calendário', rota: '/calendario', Icone: Calendar },
+      { nome: 'Clientes / CRM', rota: '/clientes', Icone: Users },
+      { nome: 'Gerador de EAN', rota: '/ean', Icone: Barcode },
     ],
   },
   {
-    titulo: 'Dados',
+    titulo: 'Fornecimento',
+    Icone: Factory,
+    itens: [
+      { nome: 'Fornecedores', rota: '/fornecedores', Icone: Factory },
+      { nome: 'Compras', rota: '/compras', Icone: ShoppingBag },
+    ],
+  },
+  {
+    titulo: 'Inteligência',
+    Icone: Radar,
     itens: [
       { nome: 'Radar de Mercado', rota: '/radar-mercado', Icone: Radar },
       { nome: 'Laboratório de Oportunidades', rota: '/laboratorio-oportunidades', Icone: FlaskConical },
@@ -90,6 +93,7 @@ const NAV_SECTIONS = [
   },
   {
     titulo: 'Finanças',
+    Icone: Wallet,
     itens: [
       { nome: 'Financeiro', rota: '/financeiro', Icone: Wallet },
       { nome: 'Fiscal', rota: '/fiscal', Icone: FileText },
@@ -99,7 +103,15 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    titulo: 'Integrações',
+    Icone: Plug,
+    itens: [
+      { nome: 'Integrações', rota: '/integracao', Icone: Plug },
+    ],
+  },
+  {
     titulo: 'Configurações',
+    Icone: Shield,
     itens: [
       { nome: 'Comece por aqui', rota: '/onboarding', Icone: Rocket },
       { nome: 'Segurança', rota: '/seguranca', Icone: Shield },
@@ -110,6 +122,7 @@ const NAV_SECTIONS = [
 ];
 
 export const SECTIONS = NAV_SECTIONS;
+export { ChevronDown, AppWindow };
 
 /** Mapa rota-base -> seção (para breadcrumb e agrupamento). */
 export const SECAO_POR_ROTA = (() => {

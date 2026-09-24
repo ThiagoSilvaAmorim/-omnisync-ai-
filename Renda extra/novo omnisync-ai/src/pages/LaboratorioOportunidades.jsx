@@ -4,8 +4,8 @@ import { useApp } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { AiActionButton } from '../components/ui/AiActionButton';
 import { Button } from '../components/ui/Button';
-import { Sparkles } from 'lucide-react';
 
 // ============================================
 // Laboratório de Oportunidades — sugestões de
@@ -127,9 +127,13 @@ export function LaboratorioOportunidades() {
           <h1 className="text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Laboratório de Oportunidades</h1>
           <p className="text-sm text-slate-500">Sugestões de produtos com alto potencial de crescimento</p>
         </div>
-        <Button onClick={varrerAgora}>
-          <Sparkles className="h-4 w-4" /> Analisar mercado
-        </Button>
+        <AiActionButton
+          label="Analisar mercado"
+          loadingLabel="Analisando..."
+          variant="primary"
+          onRun={varrerAgora}
+          className="shrink-0"
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

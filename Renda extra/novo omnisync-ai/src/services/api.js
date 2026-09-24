@@ -62,8 +62,15 @@ async function request(path, options) {
 
 async function get(path, mockValue) {
   if (API_URL) return request(path);
+  // Sem backend configurado: leituras de catálogo podem cair no mock de
+  // demonstração local. Escritas NÃO usam este helper (rejeitam abaixo).
   await delay();
   return typeof mockValue === 'function' ? mockValue() : mockValue;
+}
+
+/** Erro explícito quando uma escrita é chamada sem backend. */
+function semBackend() {
+  return Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'));
 }
 
 const json = body => ({
@@ -112,9 +119,9 @@ export const api = {
   },
   getProdutoDestaque: () => get('/produtos/destaque', mock.produtoDestaque),
   getProduto: (id) => get(`/produtos/${id}`, mock.produtos.find(p => p.id === id)),
-  criarProduto: body => (API_URL ? request('/produtos', json(body)) : Promise.resolve(body)),
-  atualizarProduto: (id, body) => (API_URL ? request(`/produtos/${id}`, { method: 'PUT', ...json(body) }) : Promise.resolve(body)),
-  removerProduto: id => (API_URL ? request(`/produtos/${id}`, { method: 'DELETE' }) : Promise.resolve({ ok: true })),
+  criarProduto: body => (API_URL ? request('/produtos', json(body)) : semBackend()),
+  atualizarProduto: (id, body) => (API_URL ? request(`/produtos/${id}`, { method: 'PUT', ...json(body) }) : semBackend()),
+  removerProduto: id => (API_URL ? request(`/produtos/${id}`, { method: 'DELETE' }) : semBackend()),
 
   // ---------- Estoque ----------
   // Retorna apenas o objeto de KPIs (atual, critico, reservado, coberturaMediaDias, capitalParado).
@@ -131,8 +138,8 @@ export const api = {
   },
   getEstoqueParado: () => get('/estoque/parado', mock.estoqueParadoFaixas),
   getPrevisaoEstoque: () => get('/estoque/previsao', mock.previsaoEstoque),
-  atualizarEstoque: (id, estoque) => (API_URL ? request(`/produtos/${id}/estoque`, { method: 'PUT', ...json({ estoque }) }) : Promise.resolve({ estoque })),
-  movimentarEstoque: (data) => (API_URL ? request('/estoque/movimentacao', { method: 'POST', ...json(data) }) : Promise.resolve({ ok: true })),
+  atualizarEstoque: (id, estoque) => (API_URL ? request(`/produtos/${id}/estoque`, { method: 'PUT', ...json({ estoque }) }) : semBackend()),
+  movimentarEstoque: (data) => (API_URL ? request('/estoque/movimentacao', { method: 'POST', ...json(data) }) : semBackend()),
   getMovimentacoes: (productId, params = {}) => {
     const searchParams = new URLSearchParams();
     if (params.limit) searchParams.append('limit', params.limit);
@@ -145,8 +152,8 @@ export const api = {
 
   // ---------- Pedidos ----------
   getPedidos: status => get(status ? `/pedidos?status=${status}` : '/pedidos', mock.pedidos),
-  criarPedido: body => (API_URL ? request('/pedidos', json(body)) : Promise.resolve(body)),
-  removerPedido: id => (API_URL ? request(`/pedidos/${id}`, { method: 'DELETE' }) : Promise.resolve({ ok: true })),
+  criarPedido: body => (API_URL ? request('/pedidos', json(body)) : semBackend()),
+  removerPedido: id => (API_URL ? request(`/pedidos/${id}`, { method: 'DELETE' }) : semBackend()),
 
   // ---------- Clientes ----------
   getClientes: () => get('/clientes', mock.clientes),
@@ -158,7 +165,7 @@ export const api = {
   moverNegocio: (id, estagio) => (API_URL
     ? request(`/negocios/${id}/estagio`, { method: 'PATCH', ...json({ estagio }) })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
-  criarCliente: body => (API_URL ? request('/clientes', json(body)) : Promise.resolve(body)),
+  criarCliente: body => (API_URL ? request('/clientes', json(body)) : semBackend()),
 
   // ---------- Dashboard ----------
   getDashboardAnalytics: () => get('/dashboard/analytics', { kpis: mock.dashboardKpis, vendasPorCanal: mock.vendasPorCanal, alertas: mock.alertas }),
@@ -227,16 +234,9 @@ export const api = {
 
   // ---------- Marketplaces ----------
   getMarketplaces: () => get('/marketplaces', mock.integracoes.filter(i => i.categoria === 'Marketplace')),
-  syncMarketplace: id => {
-    if (API_URL) return request(`/marketplaces/${id}/sync`, { method: 'POST' });
-    return delay().then(() => ({
-      ok: true,
-      marketplace: id,
-      mensagem: 'Sincronização concluída',
-      novosPedidos: 3,
-      comprasGeradas: 1,
-    }));
-  },
+  syncMarketplace: id => (API_URL
+    ? request(`/marketplaces/${id}/sync`, { method: 'POST' })
+    : semBackend()),
 
   // ---------- Produtos (KPIs calculados de dados reais) ----------
   // Backend ainda não tem /api/produtos/kpis, então calcula a partir da lista real.
@@ -328,15 +328,12 @@ export const api = {
     { status: 'nao_configurado', provedor: 'mercadolivre', empresaId: 1 },
   ),
   // Desconecta a integração ML (mlUserId opcional desconecta só aquela loja).
-  mlDisconnect: (mlUserId) => {
-    if (API_URL) {
-      return request('/auth/ml/disconnect', {
+  mlDisconnect: (mlUserId) => (API_URL
+    ? request('/auth/ml/disconnect', {
         method: 'POST',
         ...json(mlUserId != null ? { mlUserId: String(mlUserId) } : {}),
-      });
-    }
-    return delay().then(() => ({ ok: true, status: 'desconectado' }));
-  },
+      })
+    : semBackend()),
   // ---------- Análises Gemini sobre dados reais (somente leitura + rascunho) ----------
   // Exige backend; sem API configurada, rejeita com erro explícito.
   analisarDominio: (dominio, payload) => (API_URL
@@ -394,9 +391,9 @@ export const api = {
 
   // ---------- Cupons (Central de Ofertas) ----------
   getCupons: () => get('/cupons', []),
-  criarCupom: body => (API_URL ? request('/cupons', json(body)) : Promise.resolve({ id: `local-${Date.now().toString(36)}`, ...body, usos: 0, ativo: true })),
-  atualizarCupom: (id, body) => (API_URL ? request(`/cupons/${id}`, { method: 'PUT', ...json(body) }) : Promise.resolve(body)),
-  removerCupom: id => (API_URL ? request(`/cupons/${id}`, { method: 'DELETE' }) : Promise.resolve({ ok: true })),
+  criarCupom: body => (API_URL ? request('/cupons', json(body)) : semBackend()),
+  atualizarCupom: (id, body) => (API_URL ? request(`/cupons/${id}`, { method: 'PUT', ...json(body) }) : semBackend()),
+  removerCupom: id => (API_URL ? request(`/cupons/${id}`, { method: 'DELETE' }) : semBackend()),
 
   // ---------- Central IA ----------
   fetchSystemStatus: () => get('/director/status', { active: true, modo: 'manual', ultimaExecucao: null, proximaExecucao: null }),
@@ -406,27 +403,25 @@ export const api = {
   fetchAprovacoesPendentes: () => get('/approvals?status=pendente', []),
   fetchAprovacoesHistorico: () => get('/approvals?status=historico', []),
   fetchAprovacoesStats: () => get('/approvals/estatisticas', { pendentes: 0, aprovadasHoje: 0, rejeitadasHoje: 0, expiradas: 0 }),
-  aprovarAprovacao: (id) => {
-    if (API_URL) return request(`/approvals/${id}/aprovar`, json({ aprovador: 'usuario' }));
-    return delay().then(() => ({ success: true }));
-  },
-  rejeitarAprovacao: (id, motivo) => {
-    if (API_URL) return request(`/approvals/${id}/rejeitar`, json({ rejeitadoPor: 'usuario', motivo }));
-    return delay().then(() => ({ success: true }));
-  },
+  aprovarAprovacao: (id) => (API_URL
+    ? request(`/approvals/${id}/aprovar`, json({ aprovador: 'usuario' }))
+    : semBackend()),
+  rejeitarAprovacao: (id, motivo) => (API_URL
+    ? request(`/approvals/${id}/rejeitar`, json({ rejeitadoPor: 'usuario', motivo }))
+    : semBackend()),
   fetchAutomacoes: () => get('/tasks', { regras: [], tarefasEnfileiradas: 0 }),
   fetchProvedoresIA: () => get('/ai/provedores', { provedores: [], ordem: [] }),
   fetchChavesIA: () => get('/ai/chaves', []),
-  criarChaveIA: body => (API_URL ? request('/ai/chaves', json(body)) : Promise.resolve({ id: `local-${Date.now().toString(36)}`, ...body })),
-  alternarChaveIA: (id, ativo) => (API_URL ? request(`/ai/chaves/${id}`, { method: 'PUT', ...json({ ativo }) }) : Promise.resolve({ ok: true })),
-  removerChaveIA: id => (API_URL ? request(`/ai/chaves/${id}`, { method: 'DELETE' }) : Promise.resolve({ ok: true })),
+  criarChaveIA: body => (API_URL ? request('/ai/chaves', json(body)) : semBackend()),
+  alternarChaveIA: (id, ativo) => (API_URL ? request(`/ai/chaves/${id}`, { method: 'PUT', ...json({ ativo }) }) : semBackend()),
+  removerChaveIA: id => (API_URL ? request(`/ai/chaves/${id}`, { method: 'DELETE' }) : semBackend()),
   statusDrive: () => get('/integracoes/drive/status', { vinculado: false }),
   enviarDrive: body => (API_URL ? request('/integracoes/drive/upload', json(body)) : Promise.reject(new Error('Drive indisponível sem backend'))),
-  alternarProvedorIA: (nome, ativo) => (API_URL ? request(`/ai/provedores/${nome}`, json({ ativo })) : Promise.resolve({ ok: true })),
-  testarProvedorIA: nome => (API_URL ? request(`/ai/provedores/${nome}/teste`, { method: 'POST' }) : Promise.resolve({ ok: true })),
-  emitirEvento: (type, payload, source_agent = 'web') => (API_URL ? request('/events', json({ type, payload, source_agent })) : Promise.resolve({ ok: true })),
+  alternarProvedorIA: (nome, ativo) => (API_URL ? request(`/ai/provedores/${nome}`, json({ ativo })) : semBackend()),
+  testarProvedorIA: nome => (API_URL ? request(`/ai/provedores/${nome}/teste`, { method: 'POST' }) : semBackend()),
+  emitirEvento: (type, payload, source_agent = 'web') => (API_URL ? request('/events', json({ type, payload, source_agent })) : semBackend()),
   // Cria tarefa real na fila do backend (usada pelas ações de IA das telas).
-  criarTarefa: body => (API_URL ? request('/tasks', json(body)) : delay().then(() => ({ taskId: `local-${Date.now().toString(36)}` }))),
+  criarTarefa: body => (API_URL ? request('/tasks', json(body)) : semBackend()),
   // ---------- Tarefas: fila real do backend ----------
   getTarefas: (status) => get(status ? `/tasks?status=${encodeURIComponent(status)}` : '/tasks', []),
   repetirTarefa: (id) => (API_URL
@@ -456,8 +451,7 @@ export const api = {
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   fetchImpactoFinanceiro: () => get('/dashboard/analytics', { impactoMensal: 0, impactoAnual: 0, economia: 0, custoApi: 0 }),
   fetchAuditoria: () => get('/audit', { eventos: [], ultimasAcoes: [] }),
-triggerKillSwitch: () => {
-    if (API_URL) return request('/director/killswitch/ativar', { method: 'POST', body: JSON.stringify({ motivo: 'Manual' }) });
-    return delay().then(() => ({ success: true, message: 'Todas as operações de IA foram suspensas.' }));
-  },
+  triggerKillSwitch: () => (API_URL
+    ? request('/director/killswitch/ativar', { method: 'POST', body: JSON.stringify({ motivo: 'Manual' }) })
+    : semBackend()),
 };

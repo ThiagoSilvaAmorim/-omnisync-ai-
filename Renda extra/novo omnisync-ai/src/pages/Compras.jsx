@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Skeleton } from '../components/ui/Skeleton';
+import { AiActionButton } from '../components/ui/AiActionButton';
 
 // ============================================
 // Compras — ordens de compra reais do backend.
@@ -124,7 +125,7 @@ export function Compras() {
   const gerarRascunhoReposicao = async (p) => {
     if (!p.fornecedor) {
       toast('Produto sem fornecedor vinculado');
-      return;
+      return { ok: false, message: 'Produto sem fornecedor vinculado' };
     }
     const quantidade = Math.max(Number(p.minimo) * 2 - Number(p.estoque ?? 0), 10);
     try {
@@ -134,8 +135,10 @@ export function Compras() {
       });
       toast(`Rascunho criado para ${p.nome} — aguardando aprovação`);
       carregar();
+      return { ok: true };
     } catch (e) {
       toast(`Erro ao criar rascunho: ${e.message}`);
+      throw e;
     }
   };
 
@@ -202,9 +205,14 @@ export function Compras() {
                       Estoque atual: {p.estoque} · Mínimo: {p.minimo} · Fornecedor: {p.fornecedor || '—'}
                     </p>
                   </div>
-                  <Button size="sm" onClick={() => gerarRascunhoReposicao(p)}>
-                    <Truck className="h-4 w-4" /> Gerar rascunho
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Truck className="h-4 w-4 text-slate-400" aria-hidden />
+                    <AiActionButton
+                      label="Gerar rascunho"
+                      loadingLabel="Criando..."
+                      onRun={() => gerarRascunhoReposicao(p)}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
