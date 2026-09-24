@@ -9,6 +9,7 @@ vi.mock('../services/api', () => ({
     getFornecedoresSalvos: vi.fn(async () => []),
     getSuppliers: vi.fn(async () => ({ ok: true, fornecedores: [] })),
     getSuppliersCidades: vi.fn(async () => ({ ok: true, cidades: [] })),
+    getMunicipiosIbge: vi.fn(async () => ({ ok: true, cidades: [] })),
     importSuppliersOsm: vi.fn(async () => ({
       ok: true,
       novos: 0,

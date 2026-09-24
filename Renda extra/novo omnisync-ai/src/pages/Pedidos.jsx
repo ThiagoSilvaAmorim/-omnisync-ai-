@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { api } from '../services/api';
 import { useToast } from '../hooks/useToast';
@@ -37,11 +37,7 @@ export function Pedidos() {
   const [search] = useState('');
   const [statusFilter] = useState('Todos');
 
-  useEffect(() => {
-    carregarPedidos();
-  }, []);
-
-  const carregarPedidos = async () => {
+  const carregarPedidos = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -57,7 +53,11 @@ export function Pedidos() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
+
+  useEffect(() => {
+    carregarPedidos();
+  }, [carregarPedidos]);
 
   const handleStatusChange = async (pedidoId, novoStatus) => {
     try {

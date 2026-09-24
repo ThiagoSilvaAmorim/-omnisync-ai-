@@ -5,12 +5,33 @@
 // GET  /api/suppliers/cidades?uf=     → cidades distintas já importadas.
 
 import { Router } from 'express';
+import { z } from 'zod';
 import { prisma } from '../prisma/client.js';
 import { usuarioDoRequest } from '../auth.js';
 import { importarFornecedoresOsm } from '../services/osm.js';
 
 const router = Router();
 const MAX_RESULTADOS = 200;
+
+const ufsValidas = new Set([
+  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
+]);
+
+const queryBuscaSchema = z.object({
+  q: z.string().trim().max(120).optional().default(''),
+  uf: z.string().trim().transform(v => v.toUpperCase()).refine(v => v === '' || ufsValidas.has(v), 'UF inválida').optional().default(''),
+  cidade: z.string().trim().max(80).optional().default(''),
+});
+
+const queryCidadesSchema = z.object({
+  uf: z.string().trim().transform(v => v.toUpperCase()).refine(v => ufsValidas.has(v), 'UF inválida'),
+});
+
+const bodyImportSchema = z.object({
+  uf: z.string().trim().transform(v => v.toUpperCase()).refine(v => ufsValidas.has(v), 'UF inválida (2 letras).'),
+  cidade: z.string().trim().min(1, 'Informe a cidade.').max(80),
+  categoria: z.string().trim().max(60).optional(),
+});
 
 function requireAuth(req, res, next) {
   const user = usuarioDoRequest(req);
@@ -41,9 +62,11 @@ router.use(requireAuth);
 
 // GET /api/suppliers?q=&uf=&cidade= — busca local no banco.
 router.get('/', async (req, res) => {
-  const q = String(req.query.q || '').trim();
-  const uf = String(req.query.uf || '').trim().toUpperCase();
-  const cidade = String(req.query.cidade || '').trim();
+  const parsed = queryBuscaSchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ code: 'INVALID_QUERY', message: parsed.error.issues[0]?.message || 'Parâmetros inválidos.' });
+  }
+  const { q, uf, cidade } = parsed.data;
 
   const where = {};
   if (uf) where.uf = uf;
@@ -71,10 +94,11 @@ router.get('/', async (req, res) => {
 
 // GET /api/suppliers/cidades?uf=SP — cidades distintas já na base local.
 router.get('/cidades', async (req, res) => {
-  const uf = String(req.query.uf || '').trim().toUpperCase();
-  if (!uf) {
-    return res.status(400).json({ code: 'INVALID_UF', message: 'Informe a UF.' });
+  const parsed = queryCidadesSchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ code: 'INVALID_UF', message: parsed.error.issues[0]?.message || 'Informe a UF.' });
   }
+  const { uf } = parsed.data;
   try {
     const linhas = await prisma.supplier.groupBy({ by: ['cidade'], where: { uf, cidade: { not: null } }, orderBy: { cidade: 'asc' } });
     const cidades = linhas.map(l => l.cidade).filter(Boolean);
@@ -87,17 +111,13 @@ router.get('/cidades', async (req, res) => {
 
 // POST /api/suppliers/import-osm — importa do OpenStreetMap e faz upsert.
 router.post('/import-osm', async (req, res) => {
-  const b = req.body || {};
-  const uf = String(b.uf || '').trim().toUpperCase();
-  const cidade = String(b.cidade || '').trim();
-  const categoria = b.categoria ? String(b.categoria).trim() : null;
-
-  if (uf.length !== 2) {
-    return res.status(400).json({ code: 'INVALID_UF', message: 'Informe a UF (2 letras).' });
+  const parsed = bodyImportSchema.safeParse(req.body || {});
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const code = issue?.path?.[0] === 'uf' ? 'INVALID_UF' : 'INVALID_CIDADE';
+    return res.status(400).json({ code, message: issue?.message || 'Parâmetros inválidos.' });
   }
-  if (!cidade) {
-    return res.status(400).json({ code: 'INVALID_CIDADE', message: 'Informe a cidade.' });
-  }
+  const { uf, cidade, categoria = null } = parsed.data;
 
   try {
     const { fornecedores, cacheado } = await importarFornecedoresOsm({ uf, cidade, categoria });

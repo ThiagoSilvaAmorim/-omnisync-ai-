@@ -133,7 +133,7 @@ export function Fornecedores() {
     };
   }, [buscarLocais]);
 
-  // Cidades distintas da base local para a UF selecionada.
+  // Cidades da UF: IBGE (oficial) + as já importadas na base local.
   useEffect(() => {
     let vivo = true;
     if (!ufBusca) {
@@ -142,13 +142,16 @@ export function Fornecedores() {
         vivo = false;
       };
     }
-    api.getSuppliersCidades(ufBusca)
-      .then(r => {
-        if (vivo) setCidadesDisponiveis(r?.cidades || []);
-      })
-      .catch(() => {
-        if (vivo) setCidadesDisponiveis([]);
-      });
+    Promise.allSettled([
+      api.getMunicipiosIbge(ufBusca),
+      api.getSuppliersCidades(ufBusca),
+    ]).then(([ibge, local]) => {
+      if (!vivo) return;
+      const listaIbge = ibge?.status === 'fulfilled' ? (ibge.value?.cidades || []) : [];
+      const listaLocal = local?.status === 'fulfilled' ? (local.value?.cidades || []) : [];
+      const merged = [...new Set([...listaIbge, ...listaLocal])].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      setCidadesDisponiveis(merged);
+    });
     return () => {
       vivo = false;
     };

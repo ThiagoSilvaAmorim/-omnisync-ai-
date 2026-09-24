@@ -1,0 +1,30 @@
+# .cursorrules — OmniSync AI (protótipo front-end)
+
+Você é o agente responsável por construir o protótipo React do OmniSync AI dentro deste repositório.
+Siga estas regras em TODA sessão, mesmo que o usuário não repita o contexto:
+
+## Fonte da verdade
+- Leia `00_LEIA_PRIMEIRO.md` a `07_SETUP_CURSOR_PLUGINS.md` antes de escrever qualquer código, na ordem indicada.
+- `01_PROMPT_MESTRE.md` e `02_ARQUITETURA_TELAS.md` são a especificação oficial. Se o usuário pedir algo que contradiz esses arquivos, implemente o pedido novo e avise em 1 linha o que mudou — não pergunte, não pare o trabalho.
+
+## Modo de trabalho autônomo
+- Trabalhe tela por tela (1 a 8). Nunca gere as 8 de uma vez.
+- Depois de codar uma tela: rode `npm run build` (ou `npm run lint` se build for lento). Se der erro, corrija sozinho antes de seguir. Não pergunte "posso corrigir?" — corrija.
+- Se faltar uma decisão de design que não está especificada (ex: um ícone específico), escolha a opção mais coerente com o design system (`indigo-600`/`purple-600`, `Inter`, cards `rounded-xl`) e siga. Não pare o fluxo para perguntar detalhes estéticos menores.
+- Só pare e pergunte ao usuário quando faltar uma decisão de PRODUTO (ex: "essa tela deve ter paginação ou scroll infinito?") que muda a lógica, não a estética.
+
+## Qualidade de código
+- Nunca deixe um componente vazio ou com `TODO` sem implementação — a spec já tem detalhe suficiente para preencher tudo.
+- Nunca importe algo que não existe. Depois de criar um componente, confira o import em quem o usa.
+- Comentários curtos em português explicando Hooks (`useState`, `useContext`) e a lógica de rotas — ver `01_PROMPT_MESTRE.md`, bloco 4.
+- Trate estados de loading (skeleton), vazio (empty state) e erro em toda tela com tabela ou gráfico — ver `02_ARQUITETURA_TELAS.md`.
+- Responsivo obrigatório: sidebar vira menu hambúrguer abaixo de `md`, grids de KPI colapsam para 1 coluna no mobile e 2 no tablet.
+
+## Testes
+- Depois de cada tela, execute o checklist correspondente em `06_QA_TESTES.md` e marque com `[x]` diretamente nesse arquivo.
+- Se o Playwright MCP estiver disponível (ver `07_SETUP_CURSOR_PLUGINS.md`), rode o teste de fumaça (smoke test) navegando pela tela recém-criada e clicando nos elementos interativos antes de seguir.
+
+## Não fazer
+- Não usar Next.js, não usar CSS externo além do `index.css` de entrada do Tailwind.
+- Não inventar bibliotecas fora da lista do prompt mestre (React, Vite, Tailwind, React Router v6, Lucide React, Recharts).
+- Não remover nenhuma tela ou bloco especificado para "simplificar" — o objetivo é fidelidade ao escopo, não economia de tempo.

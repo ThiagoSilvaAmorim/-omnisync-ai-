@@ -195,6 +195,8 @@ export const api = {
     return request(`/suppliers${query ? `?${query}` : ''}`);
   },
   getSuppliersCidades: (uf) => request(`/suppliers/cidades?uf=${encodeURIComponent(uf)}`),
+  // Municípios oficiais da UF (IBGE via backend, cache 24h).
+  getMunicipiosIbge: (uf) => request(`/ibge/municipios?uf=${encodeURIComponent(uf)}`),
   importSuppliersOsm: (body) => (API_URL
     ? request('/suppliers/import-osm', json(body))
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),

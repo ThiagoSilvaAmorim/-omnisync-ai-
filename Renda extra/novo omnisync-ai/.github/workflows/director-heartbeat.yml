@@ -1,0 +1,20 @@
+# Despertador do Diretor IA: executa um ciclo autônomo a cada 30 minutos.
+# Funciona sem plano pago (o cron nativo da Vercel no hobby é 1x/dia).
+# Requer push deste arquivo para o repositório GitHub conectado.
+name: Director IA Heartbeat
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ciclo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar ciclo do Diretor IA
+        run: |
+          codigo=$(curl -s -o /tmp/heartbeat.json -w "%{http_code}" -X POST https://omnisync-backend-one.vercel.app/api/director/executar-agora)
+          echo "HTTP $codigo"
+          cat /tmp/heartbeat.json
+          test "$codigo" -ge 200 -a "$codigo" -lt 300

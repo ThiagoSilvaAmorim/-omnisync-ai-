@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import * as data from './data.js';
 import { eventBus, emitEvent, EVENT_TYPES } from './eventBus.js';
@@ -13,6 +14,7 @@ import productRoutes from './routes/products.js';
 import stockRoutes from './routes/stock.js';
 import supplierRoutes from './routes/suppliers.js';
 import supplierOsmRoutes from './routes/suppliersOsm.js';
+import ibgeRoutes from './routes/ibge.js';
 import mlAuthRoutes from './routes/mlAuth.js';
 import mlItemsRoutes from './routes/mlItems.js';
 import purchaseOrderRoutes from './routes/purchaseOrders.js';
@@ -32,6 +34,9 @@ import metaRoutes from './routes/metas.js';
 
 const app = express();
 
+// Cabeçalhos de segurança (CSP, X-Frame, etc.). CSP flexível porque a API
+// só retorna JSON e o front é servido pelo Vercel.
+app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors());
 app.use(express.json());
 
@@ -239,6 +244,9 @@ app.get('/api/integracoes', send(data.integracoes));
 app.use('/api/fornecedores', supplierRoutes);
 // Fornecedores públicos OSM (Nominatim + Overpass) — base local em suppliers.
 app.use('/api/suppliers', supplierOsmRoutes);
+
+// Municípios oficiais por UF (IBGE, cache 24h).
+app.use('/api/ibge', ibgeRoutes);
 // B.O.s reais (router de problemas com auth). Substitui o mock estático.
 app.use('/api/negocios', negocioRoutes);
 // Estágios são vocabulário fixo do domínio (fonte única no router de negócios).
