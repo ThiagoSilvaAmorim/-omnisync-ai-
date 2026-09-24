@@ -10,6 +10,8 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const NOMINATIM_MIN_INTERVAL_MS = 1000;
 const OVERPASS_TIMEOUT_MS = 25000;
 const NOMINATIM_TIMEOUT_MS = 10000;
+const RETENTATIVAS_OSM = 3;
+const ESPERA_RETRY_MS = 1500;
 
 const cacheImport = new Map();
 let ultimaChamadaNominatim = 0;
@@ -99,6 +101,21 @@ function escaparRegex(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+async function comRetentativas(fn) {
+  let ultimo;
+  for (let tentativa = 1; tentativa <= RETENTATIVAS_OSM; tentativa++) {
+    try {
+      return await fn();
+    } catch (e) {
+      ultimo = e;
+      const transitorio = e?.code === 'OSM_UNAVAILABLE' || e?.code === 'OSM_TIMEOUT' || e?.code === 'OSM_RATE_LIMIT';
+      if (!transitorio || tentativa === RETENTATIVAS_OSM) throw e;
+      await new Promise(r => setTimeout(r, ESPERA_RETRY_MS * tentativa));
+    }
+  }
+  throw ultimo;
+}
+
 /** Consulta Overpass no bbox da cidade e mapeia Poi → Supplier-like. */
 export async function buscarPoisNaCidade({ uf, cidade, categoria, bbox }) {
   // Overpass bbox: (south,west,north,east) aplicado a cada seletor.
@@ -180,8 +197,8 @@ export async function importarFornecedoresOsm({ uf, cidade, categoria }) {
   const cacheado = importacaoRecente(uf, cidade, categoria);
   if (cacheado) return { ...cacheado, cacheado: true };
 
-  const bbox = await geocodificarCidade(uf, cidade);
-  const fornecedores = await buscarPoisNaCidade({ uf, cidade, categoria, bbox });
+  const bbox = await comRetentativas(() => geocodificarCidade(uf, cidade));
+  const fornecedores = await comRetentativas(() => buscarPoisNaCidade({ uf, cidade, categoria, bbox }));
   const payload = { fornecedores, quando: Date.now(), cacheado: false };
   cacheImport.set(chaveCache(uf, cidade, categoria), payload);
   return payload;
