@@ -8,6 +8,7 @@
 
 import { Router } from 'express';
 import { z } from 'zod';
+import { lookup } from 'node:dns/promises';
 import { prisma } from '../prisma/client.js';
 import { usuarioDoRequest } from '../auth.js';
 import { importarFornecedoresOsm } from '../services/osm.js';
@@ -66,7 +67,44 @@ async function slugUnico(base, excluirId = null) {
   }
 }
 
-function paraPublico(s) {
+// ---- Site do fornecedor: só expõe URL normalizada cujo domínio está vivo ----
+// (evita clique em domínio morto: "não foi possível encontrar o servidor").
+function normalizarSite(raw) {
+  if (!raw) return null;
+  const c = String(raw).trim();
+  if (!c || /\s/.test(c)) return null;
+  const url = /^[a-z][a-z0-9+.-]*:\/\//i.test(c) ? c : `https://${c}`;
+  try {
+    const u = new URL(url);
+    if (!u.hostname.includes('.')) return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+const TTL_SITE_MS = 30 * 60 * 1000;
+const cacheSites = new Map();
+
+async function siteVivo(raw) {
+  const url = normalizarSite(raw);
+  if (!url) return null;
+  const host = new URL(url).hostname;
+  const agora = Date.now();
+  const hit = cacheSites.get(host);
+  if (hit && hit.expira > agora) return hit.vivo ? url : null;
+  let vivo = false;
+  try {
+    await lookup(host);
+    vivo = true;
+  } catch {
+    vivo = false;
+  }
+  cacheSites.set(host, { vivo, expira: agora + TTL_SITE_MS });
+  return vivo ? url : null;
+}
+
+async function paraPublico(s) {
   return {
     id: s.id,
     slug: s.slug,
@@ -76,7 +114,7 @@ function paraPublico(s) {
     uf: s.uf,
     city: s.city,
     niche: s.niche,
-    siteUrl: s.siteUrl,
+    siteUrl: await siteVivo(s.siteUrl),
     productCount: s.productCount,
     marketplaces: s.marketplaces,
     acceptsDropshipping: s.acceptsDropshipping,
@@ -157,7 +195,7 @@ router.get('/', async (req, res) => {
       }),
       prisma.supplier.count({ where }),
     ]);
-    return res.json({ items: itens.map(paraPublico), total, page, limit });
+    return res.json({ items: await Promise.all(itens.map(paraPublico)), total, page, limit });
   } catch (e) {
     console.error('[SuppliersCatalog] Erro ao buscar:', e.message);
     return res.status(500).json({ error: 'Erro ao buscar fornecedores' });
@@ -178,7 +216,7 @@ router.get('/:slug', async (req, res) => {
     if (!fornecedor || !fornecedor.acceptsDropshipping) {
       return res.status(404).json({ error: 'Fornecedor não encontrado' });
     }
-    return res.json({ fornecedor: paraPublico(fornecedor), produtos: fornecedor.products.map(paraPublicoProduto) });
+    return res.json({ fornecedor: await paraPublico(fornecedor), produtos: fornecedor.products.map(paraPublicoProduto) });
   } catch (e) {
     console.error('[SuppliersCatalog] Erro ao buscar fornecedor:', e.message);
     return res.status(500).json({ error: 'Erro ao buscar fornecedor' });
@@ -246,7 +284,7 @@ router.post('/import-osm', async (req, res) => {
         : fornecedores.length > 0
           ? 'Fornecedores já estavam na base local.'
           : 'Nenhum fornecedor público encontrado para esse filtro no OpenStreetMap.',
-      items: lista.map(paraPublico),
+      items: await Promise.all(lista.map(paraPublico)),
     });
   } catch (e) {
     const code = e.code || 'OSM_IMPORT_FAILED';

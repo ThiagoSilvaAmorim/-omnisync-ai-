@@ -20,6 +20,15 @@ const selosMarketplace = {
   shopee: { label: 'Shopee', variant: 'red' },
 };
 
+function iniciais(nome) {
+  return String(nome || '?')
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(p => p[0])
+    .join('')
+    .toUpperCase();
+}
+
 export function SupplierDetail() {
   const { slug } = useParams();
   const [estado, setEstado] = useState({ carregando: true, erro: null, fornecedor: null, produtos: [] });
@@ -104,10 +113,17 @@ export function SupplierDetail() {
       </Link>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="h-32 bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-500/10 dark:to-slate-900">
+        <div className="relative h-32 bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-500/10 dark:to-slate-900">
           {capa && <img src={capa} alt="" className="h-32 w-full object-cover" />}
+          <div className="absolute -bottom-6 left-5 flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border-2 border-white bg-slate-800 text-lg font-semibold text-white shadow dark:border-slate-900">
+            {f.logoUrl ? (
+              <img src={f.logoUrl} alt={`Logo de ${f.name}`} className="h-14 w-14 object-cover" />
+            ) : (
+              iniciais(f.name)
+            )}
+          </div>
         </div>
-        <div className="flex flex-col gap-3 p-5">
+        <div className="flex flex-col gap-3 p-5 pt-8">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">{f.name}</h1>
             {f.niche && <Badge variant="amber">{f.niche}</Badge>}

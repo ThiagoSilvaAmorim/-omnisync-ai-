@@ -46,6 +46,71 @@ router.get('/destaque', async (_req, res) => {
   res.json(produto || { nome: 'Nenhum produto em destaque', sku: '', preco: 0 });
 });
 
+// ---- Busca de Produtos MercadoLivre via backend proxy ----
+// Registrada ANTES de /:id, senão ":id" engole "mercadolibre".
+function requireAuth(req, res, next) {
+  const user = usuarioDoRequest(req);
+  if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
+  req.empresaId = user.empresaId || 1;
+  next();
+}
+
+router.get('/mercadolibre', requireAuth, async (req, res) => {
+  try {
+    const { q = 'notebook', limit = 12 } = req.query;
+    const accessToken = await mlOAuth.getValidAccessToken(req.empresaId);
+    if (!accessToken) {
+      return res.status(401).json({ error: 'Conta do Mercado Livre não conectada', mensagem: 'Conecte sua conta na aba de Integrações', code: 'ML_NOT_CONNECTED' });
+    }
+    const headers = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
+    const encode = v => encodeURIComponent(v);
+
+    // 1ª tentativa: busca de anúncios (preço/vendas/link). Pode devolver 403
+    // para apps sem permissão — daí o fallback para o catálogo oficial.
+    let resposta = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encode(q)}&limit=${limit}`, { headers });
+    let anuncios = resposta.ok;
+    let mlData = null;
+
+    if (anuncios) {
+      mlData = await resposta.json();
+    } else {
+      resposta = await fetch(`https://api.mercadolibre.com/products/search?site_id=MLB&q=${encode(q)}&limit=${limit}`, { headers });
+      if (!resposta.ok) {
+        const errorBody = await resposta.json().catch(() => ({}));
+        console.error('[ML_DEBUG] ML API error:', resposta.status, errorBody.message || errorBody);
+        return res.status(resposta.status).json({ error: 'Erro ao buscar produtos no Mercado Livre', mensagem: 'Verifique sua conexão na aba de Integrações.' });
+      }
+      mlData = await resposta.json();
+    }
+
+    let produtos;
+    if (anuncios) {
+      produtos = (mlData.results || []).map(p => ({
+        id: `ml-${p.id}`, nome: p.title, preco: p.price, moeda: 'BRL',
+        imagem: p.thumbnail?.replace('http://', 'https://'),
+        categoria: p.category_id || 'Mercado Livre', marca: p.seller?.nickname || 'Mercado Livre',
+        avaliacao: null, vendidos: Number(p.sold_quantity) || 0, link: p.permalink, origem: 'Mercado Livre',
+      }));
+    } else {
+      // Catálogo oficial do ML: foto real, sem preço/vendas de anúncio.
+      produtos = (mlData.results || []).map(p => {
+        const marca = (p.attributes || []).find(a => a.id === 'BRAND')?.value_name;
+        const imagem = p.pictures?.[0]?.url || null;
+        return {
+          id: `ml-${p.id}`, nome: p.name, preco: null, moeda: 'BRL',
+          imagem: imagem ? imagem.replace('http://', 'https://') : null,
+          categoria: p.domain_id || 'Mercado Livre', marca: marca || 'Mercado Livre',
+          avaliacao: null, vendidos: 0, link: null, origem: 'Mercado Livre (catálogo)',
+        };
+      });
+    }
+    res.json({ produtos, total: mlData.paging?.total || produtos.length, q, fonte: anuncios ? 'anuncios' : 'catalogo' });
+  } catch (error) {
+    console.error('[ML_DEBUG] ERROR:', error.message);
+    res.status(500).json({ error: 'Erro na busca de produtos', mensagem: 'Falha ao buscar produtos no Mercado Livre.' });
+  }
+});
+
 // GET /api/produtos/:id
 router.get('/:id', async (req, res) => {
   try {
@@ -184,40 +249,3 @@ router.put('/:id/estoque', async (req, res) => {
 });
 
 export default router;
-
-// ---- Busca de Produtos MercadoLivre via backend proxy ----
-function requireAuth(req, res, next) {
-  const user = usuarioDoRequest(req);
-  if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
-  req.empresaId = user.empresaId || 1;
-  next();
-}
-
-router.get('/mercadolibre', requireAuth, async (req, res) => {
-  try {
-    const { q = 'notebook', limit = 12 } = req.query;
-    console.error('[ML_DEBUG] empresaId=' + req.empresaId);
-    const accessToken = await mlOAuth.getValidAccessToken(req.empresaId);
-    console.error('[ML_DEBUG] accessToken=' + (accessToken ? 'present' : 'null'));
-    if (!accessToken) {
-      return res.status(401).json({ error: 'Conta do Mercado Livre não conectada', mensagem: 'Conecte sua conta na aba de Integrações', code: 'ML_NOT_CONNECTED' });
-    }
-    const mlResponse = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(q)}&limit=${limit}`, { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } });
-    if (!mlResponse.ok) {
-      const errorBody = await mlResponse.json().catch(() => ({}));
-      console.error('[ML_DEBUG] ML API error:', mlResponse.status, errorBody.message || errorBody);
-      return res.status(mlResponse.status).json({ error: 'Erro ao buscar produtos no Mercado Livre', mensagem: 'Verifique sua conexão na aba de Integrações.' });
-    }
-    const mlData = await mlResponse.json();
-    const produtos = (mlData.results || []).map(p => ({
-      id: `ml-${p.id}`, nome: p.title, preco: p.price, moeda: 'BRL',
-      imagem: p.thumbnail?.replace('http://', 'https://'),
-      categoria: p.category_id || 'Mercado Livre', marca: p.seller?.nickname || 'Mercado Livre',
-      avaliacao: null, vendidos: Number(p.sold_quantity) || 0, link: p.permalink, origem: 'Mercado Livre',
-    }));
-    res.json({ produtos, total: mlData.pagination?.total || produtos.length, q });
-  } catch (error) {
-    console.error('[ML_DEBUG] ERROR:', error.message);
-    res.status(500).json({ error: 'Erro na busca de produtos', mensagem: 'Falha ao buscar produtos no Mercado Livre.' });
-  }
-});
