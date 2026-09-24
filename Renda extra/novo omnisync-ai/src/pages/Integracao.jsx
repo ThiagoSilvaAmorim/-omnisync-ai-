@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Globe, Clock, CheckCircle, XCircle, Download, Search, ExternalLink, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Globe, Download, Search, ExternalLink, Loader2 } from 'lucide-react';
 import { api } from '../services/api';
 import { useToast } from '../hooks/useToast';
 import { exportarCsv, formatDate } from '../lib/utils';

@@ -1,18 +1,14 @@
 import { useState, useEffect } from 'react';
-import { X, Eye, Edit, Trash, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { api } from '../services/api';
-import { useApi } from '../hooks/useApi';
-import { useAuth } from '../context/AuthContext';
-import { podeAcessar } from '../lib/permissoes';
 import { useToast } from '../hooks/useToast';
 import { OrderCard } from '../components/pedidos/OrderCard';
 import { OrderDetailPanel } from '../components/pedidos/OrderDetailPanel';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import { EmptyState } from '../components/ui/EmptyState';
-import { formatCurrency, formatNumber } from '../lib/utils';
+import { formatCurrency } from '../lib/utils';
 
 const STATUS_LABELS = {
   pendente: 'Pendente',
@@ -31,17 +27,15 @@ const STATUS_COLORS = {
 };
 
 export function Pedidos() {
-  const { user } = useAuth();
   const toast = useToast();
-  const [aba, setAba] = useState('ativos');
   const [pedidoSelecionado, setPedidoSelecionado] = useState(null);
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Todos');
+  const [perPage] = useState(10);
+  const [search] = useState('');
+  const [statusFilter] = useState('Todos');
 
   useEffect(() => {
     carregarPedidos();

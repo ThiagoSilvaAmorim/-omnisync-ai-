@@ -6,7 +6,6 @@ import { api } from '../services/api';
 import { CATEGORIAS_INTERNET, buscarMercadoLivre, buscarProdutosInternet, formatPrecoRadar } from '../services/marketplace';
 import { agruparPorCampo, topVendidos, topAvaliados, menorPreco } from '../lib/radarAgregacoes';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
 import { EmptyState } from '../components/ui/EmptyState';

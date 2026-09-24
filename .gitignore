@@ -1,0 +1,11 @@
+# Lixo óbvio — não versionar
+node_modules/
+*.exe
+*.log
+.DS_Store
+Thumbs.db
+
+# Backups/extrações locais
+Renda extra/NEXORA_extracted/
+Renda extra/auditoria/
+Renda extra/.md/

@@ -52,13 +52,11 @@ export function BentoHome({ period, customRange }) {
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
   const [pedidos, setPedidos] = useState([]);
-  const [error, setError] = useState(null);
   const [analise, setAnalise] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      setError(null);
       try {
         const [ana, peds] = await Promise.all([
           api.getDashboardAnalytics().catch(() => null),
@@ -68,7 +66,6 @@ export function BentoHome({ period, customRange }) {
         setPedidos(Array.isArray(peds) ? peds : []);
       } catch (e) {
         console.error('Erro ao carregar BentoHome:', e);
-        setError(e.message);
       } finally {
         setTimeout(() => setLoading(false), 400);
       }

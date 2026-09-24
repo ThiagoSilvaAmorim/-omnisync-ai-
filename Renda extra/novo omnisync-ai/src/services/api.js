@@ -159,12 +159,6 @@ export const api = {
   getClientes: () => get('/clientes', mock.clientes),
   getNegocios: () => get('/negocios', []),
   getEstagios: () => get('/estagios', []),
-  criarNegocio: body => (API_URL
-    ? request('/negocios', json(body))
-    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
-  moverNegocio: (id, estagio) => (API_URL
-    ? request(`/negocios/${id}/estagio`, { method: 'PATCH', ...json({ estagio }) })
-    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   criarCliente: body => (API_URL ? request('/clientes', json(body)) : semBackend()),
 
   // ---------- Dashboard ----------

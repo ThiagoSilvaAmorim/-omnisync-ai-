@@ -86,27 +86,21 @@ export function DashboardCommandCenter({ period, customRange }) {
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
-  const [dashboardData, setDashboardData] = useState(null);
   const [pedidos, setPedidos] = useState([]);
-  const [error, setError] = useState(null);
   const [analise, setAnalise] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      setError(null);
       try {
-        const [ana, dash, peds] = await Promise.all([
+        const [ana, peds] = await Promise.all([
           api.getDashboardAnalytics().catch(() => null),
-          api.getDashboardResumo().catch(() => null),
           api.getPedidos().catch(() => []),
         ]);
         setAnalytics(ana);
-        setDashboardData(dash);
         setPedidos(Array.isArray(peds) ? peds : []);
       } catch (e) {
         console.error('Erro ao carregar dashboard:', e);
-        setError(e.message);
       } finally {
         setTimeout(() => setLoading(false), 400);
       }

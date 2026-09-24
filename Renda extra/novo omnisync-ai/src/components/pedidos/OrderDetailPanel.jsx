@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn } from '../../lib/utils';
-import { X, CheckCircle, Edit } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { api } from '../../services/api';
 

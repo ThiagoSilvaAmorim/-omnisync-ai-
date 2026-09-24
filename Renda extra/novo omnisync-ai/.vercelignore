@@ -1,0 +1,2 @@
+# Ignora o backend no deploy do Vercel (o backend vai para outro host).
+backend/

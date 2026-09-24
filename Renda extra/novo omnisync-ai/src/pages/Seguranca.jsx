@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Download, Pencil, ShieldCheck, UserPlus } from 'lucide-react';
-import { auditLog, usuarios } from '../data/mockData';
+import { usuarios } from '../data/mockData';
 import { api } from '../services/api';
 import { useToast } from '../hooks/useToast';
 import { exportarCsv } from '../lib/utils';

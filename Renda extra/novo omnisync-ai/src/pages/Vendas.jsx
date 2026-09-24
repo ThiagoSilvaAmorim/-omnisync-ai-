@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
-import { useToast } from '../hooks/useToast';
 import { api } from '../services/api';
 import { MetricCard } from '../components/ui/MetricCard';
-import { Card, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Badge } from '../components/ui/Badge';
 import { formatCurrency, cn } from '../lib/utils';
@@ -13,11 +10,8 @@ import { formatCurrency, cn } from '../lib/utils';
 const STATUS = { entregue: 'teal', enviado: 'sky', processando: 'amber', pendente: 'slate', cancelado: 'red' };
 
 export function Vendas() {
-  const { theme } = useTheme();
-  const toast = useToast();
   const [kpis, setKpis] = useState([]);
   const [pedidos, setPedidos] = useState([]);
-  const [busca, setBusca] = useState('');
   const [detalhe, setDetalhe] = useState(null);
   const [error, setError] = useState(null);
 
@@ -51,15 +45,6 @@ export function Vendas() {
   };
 
   const faturamento = kpis.reduce((a, k) => a + (Number(k.valor) || 0), 0);
-  const resumo = () => {
-    const total = kpis.length || 0;
-    const pedidosTotal = pedidos.length;
-    return {
-      totalPedidos: pedidosTotal,
-      faturamento,
-      ticketsMedio: pedidosTotal ? Math.round(faturamento / pedidosTotal) : 0,
-    };
-  };
 
   if (error) {
     return (
@@ -89,12 +74,6 @@ export function Vendas() {
             Vendas
           </h1>
           <p className="text-sm text-slate-500">Acompanhe faturamento e desempenho por canal</p>
-        </div>
-
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setBusca('')}>
-            Limpar busca
-          </Button>
         </div>
       </header>
 

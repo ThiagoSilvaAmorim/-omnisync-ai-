@@ -15,14 +15,6 @@ import { Skeleton } from '../components/ui/Skeleton';
 // e ordens de compra reais. Sem dados inventados.
 // ============================================
 
-const STATUS_OC = {
-  aguardando_aprovacao: 'amber',
-  compra_aprovada: 'teal',
-  enviado_ao_fornecedor: 'sky',
-  cancelado: 'red',
-  erro: 'red',
-};
-
 const BRL = v => Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export function FornecedorDetalhe() {
