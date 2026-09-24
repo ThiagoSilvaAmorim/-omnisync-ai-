@@ -13,7 +13,8 @@ import { assinarToken, usuarioDoRequest } from './auth.js';
 import productRoutes from './routes/products.js';
 import stockRoutes from './routes/stock.js';
 import supplierRoutes from './routes/suppliers.js';
-import supplierOsmRoutes from './routes/suppliersOsm.js';
+import supplierCatalogRoutes from './routes/suppliersCatalog.js';
+import catalogProductRoutes from './routes/catalogProducts.js';
 import ibgeRoutes from './routes/ibge.js';
 import mlAuthRoutes from './routes/mlAuth.js';
 import mlItemsRoutes from './routes/mlItems.js';
@@ -242,8 +243,10 @@ app.get('/api/eventos', send(data.eventosCalendario));
 app.get('/api/integracoes', send(data.integracoes));
 // Fornecedores reais: lista salva + verificação manual. Substitui o mock estático.
 app.use('/api/fornecedores', supplierRoutes);
-// Fornecedores públicos OSM (Nominatim + Overpass) — base local em suppliers.
-app.use('/api/suppliers', supplierOsmRoutes);
+// Catálogo de fornecedores (tela /fornecedores): busca local + niches + :slug.
+app.use('/api/suppliers', supplierCatalogRoutes);
+// Produtos do catálogo de fornecedores (aba Produtos; não confundir com /api/produtos).
+app.use('/api/products', catalogProductRoutes);
 
 // Municípios oficiais por UF (IBGE, cache 24h).
 app.use('/api/ibge', ibgeRoutes);

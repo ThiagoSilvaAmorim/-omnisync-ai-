@@ -1,6 +1,6 @@
 // backend/src/routes/suppliers.js
 // Lista salva de fornecedores + salvamento manual + verificação comercial.
-// Resultados públicos do OSM ficam em /api/suppliers (suppliersOsm.js);
+// Resultados públicos do catálogo ficam em /api/suppliers (suppliersCatalog.js);
 // quem nasce daqui nunca nasce verificado; sem API do fornecedor, a compra
 // segue com aprovação manual.
 

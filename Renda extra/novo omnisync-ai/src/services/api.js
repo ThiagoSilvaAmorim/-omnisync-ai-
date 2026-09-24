@@ -183,23 +183,32 @@ export const api = {
   getEventos: () => get('/eventos', mock.eventosCalendario),
   getIntegracoes: () => get('/integracoes', mock.integracoes),
   getFornecedores: () => get('/fornecedores', mock.fornecedores),
-  // ---------- Fornecedores públicos OSM (base local suppliers) ----------
-  // Busca é local (banco); importação chama Nominatim/Overpass no backend.
-  // Sem backend, rejeitam com erro explícito (sem mock de resultados).
-  getSuppliers: (params = {}) => {
+  // ---------- Catálogo de fornecedores (tela /fornecedores) ----------
+  // Busca 100% no banco do backend, sem chave externa.
+  getCatalogSuppliers: (params = {}) => {
     const sp = new URLSearchParams();
     if (params.q) sp.append('q', params.q);
     if (params.uf) sp.append('uf', params.uf);
-    if (params.cidade) sp.append('cidade', params.cidade);
+    if (params.niche) sp.append('niche', params.niche);
+    if (params.page) sp.append('page', params.page);
+    if (params.limit) sp.append('limit', params.limit);
     const query = sp.toString();
     return request(`/suppliers${query ? `?${query}` : ''}`);
   },
-  getSuppliersCidades: (uf) => request(`/suppliers/cidades?uf=${encodeURIComponent(uf)}`),
+  getSupplierNiches: () => request('/suppliers/niches'),
+  getSupplierBySlug: slug => request(`/suppliers/${encodeURIComponent(slug)}`),
+  getCatalogProducts: (params = {}) => {
+    const sp = new URLSearchParams();
+    if (params.q) sp.append('q', params.q);
+    if (params.uf) sp.append('uf', params.uf);
+    if (params.niche) sp.append('niche', params.niche);
+    if (params.page) sp.append('page', params.page);
+    if (params.limit) sp.append('limit', params.limit);
+    const query = sp.toString();
+    return request(`/products${query ? `?${query}` : ''}`);
+  },
   // Municípios oficiais da UF (IBGE via backend, cache 24h).
   getMunicipiosIbge: (uf) => request(`/ibge/municipios?uf=${encodeURIComponent(uf)}`),
-  importSuppliersOsm: (body) => (API_URL
-    ? request('/suppliers/import-osm', json(body))
-    : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   getFornecedoresSalvos: () => get('/fornecedores', []),
   salvarFornecedor: body => (API_URL
     ? request('/fornecedores', json(body))

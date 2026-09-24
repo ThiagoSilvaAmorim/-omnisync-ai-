@@ -1,114 +1,173 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppProvider } from '../context/AppContext';
-import { Fornecedores } from '../pages/Fornecedores';
+import { SuppliersPage } from '../pages/SuppliersPage';
 
 vi.mock('../services/api', () => ({
   api: {
-    getFornecedoresSalvos: vi.fn(async () => []),
-    getSuppliers: vi.fn(async () => ({ ok: true, fornecedores: [] })),
-    getSuppliersCidades: vi.fn(async () => ({ ok: true, cidades: [] })),
-    getMunicipiosIbge: vi.fn(async () => ({ ok: true, cidades: [] })),
-    importSuppliersOsm: vi.fn(async () => ({
-      ok: true,
-      novos: 0,
-      fornecedores: [],
-      mensagem: 'Nenhum fornecedor público encontrado para esse filtro no OpenStreetMap.',
-    })),
-    salvarFornecedor: vi.fn(),
-    verificarFornecedor: vi.fn(),
-    excluirFornecedor: vi.fn(),
-    favoritarFornecedor: vi.fn(),
-    arquivarFornecedor: vi.fn(),
-    getProdutos: vi.fn(async () => ({ produtos: [] })),
+    getCatalogSuppliers: vi.fn(async () => ({ items: [], total: 0, page: 1, limit: 24 })),
+    getCatalogProducts: vi.fn(async () => ({ items: [], total: 0, page: 1, limit: 24 })),
+    getSupplierNiches: vi.fn(async () => ({ niches: ['company', 'wholesale'] })),
+    getSupplierBySlug: vi.fn(async () => ({ fornecedor: null, produtos: [] })),
   },
 }));
 
-function renderizar() {
+import { api } from '../services/api';
+
+function renderizar(rota = '/fornecedores') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[rota]}>
       <AppProvider>
-        <Fornecedores />
+        <SuppliersPage />
       </AppProvider>
     </MemoryRouter>
   );
 }
 
-describe('Fornecedores (estados honestos OSM)', () => {
-  it('estado inicial pede busca por cidade, sem cards fixos', async () => {
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Restaura os padrões: clearAllMocks não remove impls setadas por teste.
+  api.getCatalogSuppliers.mockResolvedValue({ items: [], total: 0, page: 1, limit: 24 });
+  api.getCatalogProducts.mockResolvedValue({ items: [], total: 0, page: 1, limit: 24 });
+  api.getSupplierNiches.mockResolvedValue({ niches: ['company', 'wholesale'] });
+});
+
+describe('SuppliersPage (catálogo de fornecedores)', () => {
+  it('renderiza cabeçalho e abas Fornecedores|Produtos', async () => {
     renderizar();
-    expect(
-      await screen.findByText(
-        'Pesquise uma cidade (UF + cidade) para encontrar fornecedores públicos no OpenStreetMap.'
-      )
-    ).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Fornecedores' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: /Fornecedores/ })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: /Produtos/ })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: /Fornecedores/ }).getAttribute('aria-selected')).toBe('true');
   });
 
-  it('lista vazia honesta quando nada foi salvo', async () => {
+  it('estado vazio honesto quando a base não retorna resultados', async () => {
     renderizar();
-    fireEvent.click(await screen.findByRole('tab', { name: 'Meus fornecedores' }));
-    expect(
-      await screen.findByText('Nenhum fornecedor salvo ainda. Busque empresas públicas acima ou cadastre manualmente.')
-    ).toBeTruthy();
+    expect(await screen.findByText('Nenhum fornecedor encontrado')).toBeTruthy();
   });
 
-  it('aba Favoritos tem estado vazio próprio', async () => {
-    renderizar();
-    fireEvent.click(await screen.findByRole('tab', { name: 'Favoritos' }));
-    expect(await screen.findByText('Nenhum favorito ainda. Marque ★ nos fornecedores.')).toBeTruthy();
-  });
-
-  it('não exibe métricas inventadas sem dados', async () => {
-    const { container } = renderizar();
-    await screen.findByText(
-      'Pesquise uma cidade (UF + cidade) para encontrar fornecedores públicos no OpenStreetMap.'
-    );
-    expect(container.textContent).not.toContain('Total comprado');
-    expect(container.textContent).not.toContain('Em alta');
-  });
-
-  it('botão de importar OSM fica desabilitado sem UF e cidade', async () => {
-    renderizar();
-    const botoes = await screen.findAllByRole('button', { name: /Buscar novos no mapa/i });
-    expect(botoes.length).toBeGreaterThan(0);
-    expect(botoes.every(b => b.disabled)).toBe(true);
-  });
-
-  it('com UF e cidade, importação usa OpenStreetMap sem chave', async () => {
-    const { api } = await import('../services/api');
-    api.getSuppliersCidades.mockResolvedValue({ ok: true, cidades: ['Campinas'] });
-    api.getSuppliers.mockResolvedValue({ ok: true, fornecedores: [] });
-    api.importSuppliersOsm.mockResolvedValue({
-      ok: true,
-      novos: 1,
-      mensagem: '1 novo(s) fornecedor(es) encontrado(s).',
-      fornecedores: [
-        {
-          id: 1,
-          osmId: 'node/1',
-          nome: 'Distribuidora Campinas',
-          categoria: 'wholesale',
-          cidade: 'Campinas',
-          uf: 'SP',
-          fonte: 'osm',
-        },
-      ],
+  it('lista fornecedores retornados pela API com botão Ver fornecedor', async () => {
+    api.getCatalogSuppliers.mockResolvedValue({
+      items: [{
+        id: 'u1',
+        slug: 'atacado-central',
+        name: 'Atacado Central',
+        uf: 'SP',
+        city: 'Campinas',
+        niche: 'wholesale',
+        productCount: 3,
+        marketplaces: ['mercadolivre'],
+        acceptsDropshipping: true,
+        coverImages: [],
+      }],
+      total: 1,
+      page: 1,
+      limit: 24,
     });
-
     renderizar();
-    const uf = await screen.findByLabelText('UF');
-    fireEvent.change(uf, { target: { value: 'SP' } });
-    const cidade = await screen.findByLabelText('Cidade');
-    await waitFor(() => expect(cidade.disabled).toBe(false));
-    fireEvent.change(cidade, { target: { value: 'Campinas' } });
+    expect(await screen.findByText('Atacado Central')).toBeTruthy();
+    expect(screen.getByText('1 fornecedor(es) na base')).toBeTruthy();
+    const link = screen.getByRole('link', { name: 'Ver fornecedor' });
+    expect(link.getAttribute('href')).toBe('/fornecedores/atacado-central');
+    expect(screen.getByText('ML')).toBeTruthy();
+  });
 
-    const botoes = await screen.findAllByRole('button', { name: /Buscar novos no mapa/i });
-    const botao = botoes.find(b => !b.disabled) || botoes[0];
-    await waitFor(() => expect(botao.disabled).toBe(false), { timeout: 3000 });
+  it('troca para aba Produtos e busca em /api/products', async () => {
+    api.getCatalogProducts.mockResolvedValue({
+      items: [{
+        id: 'p1',
+        name: 'Fone Bluetooth TWS',
+        sku: 'DEMO-FONE-001',
+        costPrice: 45.9,
+        niche: 'company',
+        supplier: { slug: '3g-foods', name: '3G Foods', uf: 'SP', city: 'Campinas' },
+      }],
+      total: 1,
+      page: 1,
+      limit: 24,
+    });
+    renderizar();
+    fireEvent.click(screen.getByRole('tab', { name: /Produtos/ }));
+    expect(await screen.findByText('Fone Bluetooth TWS')).toBeTruthy();
+    expect(api.getCatalogProducts).toHaveBeenCalled();
+    expect(screen.getByRole('tab', { name: /Produtos/ }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('link', { name: /3G Foods/ }).getAttribute('href')).toBe('/fornecedores/3g-foods');
+  });
+
+  it('busca na URL (?q=) é aplicada com debounce de 300ms', async () => {
+    renderizar('/fornecedores?q=fone');
+    await waitFor(() =>
+      expect(api.getCatalogSuppliers).toHaveBeenCalledWith(
+        expect.objectContaining({ q: 'fone' })
+      )
+    );
+    expect(await screen.findByDisplayValue('fone')).toBeTruthy();
+  });
+
+  it('digitar no campo de busca reflete na URL e dispara nova busca', async () => {
+    renderizar();
+    await waitFor(() => expect(api.getCatalogSuppliers).toHaveBeenCalledTimes(1));
+    const campo = await screen.findByLabelText('Buscar no catálogo');
+    fireEvent.change(campo, { target: { value: 'caneca' } });
+    await waitFor(
+      () =>
+        expect(api.getCatalogSuppliers).toHaveBeenCalledWith(
+          expect.objectContaining({ q: 'caneca' })
+        ),
+      { timeout: 2000 }
+    );
+  });
+
+  it('erro de rede exibe estado de erro explícito (sem dados inventados)', async () => {
+    api.getCatalogSuppliers.mockRejectedValue(new Error('Backend fora do ar'));
+    renderizar();
+    expect(await screen.findByText('Erro ao carregar o catálogo')).toBeTruthy();
+    expect(screen.getByText('Backend fora do ar')).toBeTruthy();
+  });
+
+  it('filtro de nicho chega à API e select carrega nichos do banco', async () => {
+    renderizar();
+    expect(await screen.findByText('Nenhum fornecedor encontrado')).toBeTruthy();
+    await waitFor(() => expect(api.getSupplierNiches).toHaveBeenCalled());
+    const select = await screen.findByLabelText('Nicho');
+    expect(select.querySelector('option[value="wholesale"]')).toBeTruthy();
+    fireEvent.change(select, { target: { value: 'wholesale' } });
+    await waitFor(() =>
+      expect(api.getCatalogSuppliers).toHaveBeenCalledWith(
+        expect.objectContaining({ niche: 'wholesale' })
+      )
+    );
+  });
+
+  it('botão Carregar mais aparece quando há mais páginas', async () => {
+    api.getCatalogSuppliers.mockImplementation(async (params = {}) => {
+      const pagina = Number(params.page) || 1;
+      return {
+        items: Array.from({ length: 24 }).map((_, i) => ({
+          id: `f${pagina}-${i}`,
+          slug: `f${pagina}-${i}`,
+          name: `Fornecedor ${pagina}-${i}`,
+          uf: 'SP',
+          city: 'Campinas',
+          niche: null,
+          productCount: 0,
+          marketplaces: [],
+          acceptsDropshipping: true,
+          coverImages: [],
+        })),
+        total: 60,
+        page: pagina,
+        limit: 24,
+      };
+    });
+    renderizar();
+    const botao = await screen.findByRole('button', { name: /Carregar mais \(24\/60\)/ });
     fireEvent.click(botao);
-
-    await waitFor(() => expect(api.importSuppliersOsm).toHaveBeenCalledWith({ uf: 'SP', cidade: 'Campinas' }));
-    expect((await screen.findAllByText('Distribuidora Campinas')).length).toBeGreaterThan(0);
+    await waitFor(() =>
+      expect(api.getCatalogSuppliers).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 2 })
+      )
+    );
   });
 });

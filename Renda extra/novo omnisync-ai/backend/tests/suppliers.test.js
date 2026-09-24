@@ -16,9 +16,14 @@ vi.mock('../src/prisma/client.js', () => ({
     supplier: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      count: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       groupBy: vi.fn(),
+    },
+    catalogProduct: {
+      findMany: vi.fn(),
+      count: vi.fn(),
     },
   },
 }));
@@ -40,7 +45,7 @@ function auth() {
   return { Authorization: `Bearer ${tokenValido()}` };
 }
 
-describe('GET /api/suppliers (busca local)', () => {
+describe('GET /api/suppliers (catálogo)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -52,29 +57,57 @@ describe('GET /api/suppliers (busca local)', () => {
 
   it('busca por nome filtra no banco sem chamada externa', async () => {
     prisma.supplier.findMany.mockResolvedValue([
-      { id: 1, osmId: 'node/1', nome: 'Distribuidora Real', cidade: 'Campinas', uf: 'SP', fonte: 'osm' },
+      { id: 'u1', slug: 'distribuidora-real', name: 'Distribuidora Real', city: 'Campinas', uf: 'SP', acceptsDropshipping: true },
     ]);
-    const res = await request(app).get('/api/suppliers?q=distribuidora&uf=SP&cidade=Campinas').set(auth());
+    prisma.supplier.count.mockResolvedValue(1);
+    const res = await request(app).get('/api/suppliers?q=distribuidora&uf=SP&niche=wholesale&page=1&limit=24').set(auth());
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ ok: true, fonte: 'OpenStreetMap', total: 1 });
-    expect(res.body.fornecedores[0]).toMatchObject({ nome: 'Distribuidora Real', uf: 'SP', cidade: 'Campinas' });
+    expect(res.body.total).toBe(1);
+    expect(res.body.page).toBe(1);
+    expect(res.body.limit).toBe(24);
+    expect(res.body.items[0]).toMatchObject({ name: 'Distribuidora Real', uf: 'SP', city: 'Campinas' });
     expect(prisma.supplier.findMany).toHaveBeenCalledTimes(1);
-    const where = prisma.supplier.findMany.mock.calls[0][0].where;
-    expect(where.uf).toBe('SP');
-    expect(where.cidade).toMatchObject({ equals: 'Campinas', mode: 'insensitive' });
+    const opts = prisma.supplier.findMany.mock.calls[0][0];
+    expect(opts.where.acceptsDropshipping).toBe(true);
+    expect(opts.where.uf).toBe('SP');
+    expect(opts.where.niche).toMatchObject({ equals: 'wholesale', mode: 'insensitive' });
+    expect(opts.skip).toBe(0);
+    expect(opts.take).toBe(24);
   });
 
-  it('sem filtros retorna a base local (take limitado)', async () => {
+  it('paginação calcula skip/take a partir da página', async () => {
     prisma.supplier.findMany.mockResolvedValue([]);
-    const res = await request(app).get('/api/suppliers').set(auth());
+    prisma.supplier.count.mockResolvedValue(60);
+    const res = await request(app).get('/api/suppliers?page=3&limit=24').set(auth());
     expect(res.status).toBe(200);
-    expect(res.body.fornecedores).toEqual([]);
     const opts = prisma.supplier.findMany.mock.calls[0][0];
-    expect(opts.take).toBe(200);
+    expect(opts.skip).toBe(48);
+    expect(opts.take).toBe(24);
+  });
+
+  it('limit acima do máximo retorna 400', async () => {
+    const res = await request(app).get('/api/suppliers?limit=500').set(auth());
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_QUERY');
+    expect(prisma.supplier.findMany).not.toHaveBeenCalled();
+  });
+
+  it('UF inválida retorna 400', async () => {
+    const res = await request(app).get('/api/suppliers?uf=XX').set(auth());
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_QUERY');
+  });
+
+  it('niches distintos do catálogo', async () => {
+    prisma.supplier.findMany.mockResolvedValue([{ niche: 'company' }, { niche: 'trade' }, { niche: 'wholesale' }]);
+    const res = await request(app).get('/api/suppliers/niches').set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.niches).toEqual(['company', 'trade', 'wholesale']);
+    expect(prisma.supplier.findMany.mock.calls[0][0].distinct).toEqual(['niche']);
   });
 
   it('cidades distintas por UF', async () => {
-    prisma.supplier.groupBy.mockResolvedValue([{ cidade: 'Campinas' }, { cidade: 'Valinhos' }]);
+    prisma.supplier.groupBy.mockResolvedValue([{ city: 'Campinas' }, { city: 'Valinhos' }]);
     const res = await request(app).get('/api/suppliers/cidades?uf=SP').set(auth());
     expect(res.status).toBe(200);
     expect(res.body.cidades).toEqual(['Campinas', 'Valinhos']);
@@ -84,6 +117,90 @@ describe('GET /api/suppliers (busca local)', () => {
     const res = await request(app).get('/api/suppliers/cidades').set(auth());
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('INVALID_UF');
+  });
+});
+
+describe('GET /api/suppliers/:slug (detalhe)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('retorna fornecedor com catálogo de produtos', async () => {
+    prisma.supplier.findUnique.mockResolvedValue({
+      id: 'u1',
+      slug: 'atacado-central',
+      name: 'Atacado Central',
+      coverImages: [],
+      marketplaces: ['mercadolivre'],
+      acceptsDropshipping: true,
+      products: [{ id: 'p1', name: 'Caneca', sku: 'C1', imageUrl: null, costPrice: 10, niche: 'trade', supplierId: 'u1' }],
+    });
+    const res = await request(app).get('/api/suppliers/atacado-central').set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.fornecedor).toMatchObject({ slug: 'atacado-central', name: 'Atacado Central' });
+    expect(res.body.produtos).toHaveLength(1);
+    expect(res.body.produtos[0]).toMatchObject({ name: 'Caneca', sku: 'C1' });
+  });
+
+  it('slug inexistente retorna 404', async () => {
+    prisma.supplier.findUnique.mockResolvedValue(null);
+    const res = await request(app).get('/api/suppliers/nao-existe').set(auth());
+    expect(res.status).toBe(404);
+  });
+
+  it('fornecedor que não aceita dropshipping retorna 404 (fora do catálogo)', async () => {
+    prisma.supplier.findUnique.mockResolvedValue({ id: 'u2', slug: 'x', acceptsDropshipping: false, products: [] });
+    const res = await request(app).get('/api/suppliers/x').set(auth());
+    expect(res.status).toBe(404);
+  });
+
+  it('slug vazio retorna 400 sem tocar no banco', async () => {
+    const res = await request(app).get('/api/suppliers/%20').set(auth());
+    expect(res.status).toBe(400);
+    expect(prisma.supplier.findUnique).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/products (catálogo de produtos)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sem token retorna 401', async () => {
+    const res = await request(app).get('/api/products?q=fone');
+    expect(res.status).toBe(401);
+  });
+
+  it('busca com join do fornecedor para filtro de UF', async () => {
+    prisma.catalogProduct.findMany.mockResolvedValue([
+      { id: 'p1', name: 'Fone Bluetooth TWS', sku: 'DEMO-FONE-001', imageUrl: null, costPrice: 45.9, niche: 'trade', supplier: { slug: '3g-foods', name: '3G Foods', uf: 'SP', city: 'Campinas' } },
+    ]);
+    prisma.catalogProduct.count.mockResolvedValue(1);
+    const res = await request(app).get('/api/products?q=fone&uf=SP&page=1&limit=24').set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(1);
+    expect(res.body.items[0]).toMatchObject({ name: 'Fone Bluetooth TWS', supplier: { slug: '3g-foods' } });
+    const opts = prisma.catalogProduct.findMany.mock.calls[0][0];
+    expect(opts.where.supplier.acceptsDropshipping).toBe(true);
+    expect(opts.where.supplier.uf).toBe('SP');
+    expect(opts.where.OR[0]).toMatchObject({ name: { contains: 'fone', mode: 'insensitive' } });
+    expect(opts.take).toBe(24);
+  });
+
+  it('UF inválida retorna 400', async () => {
+    const res = await request(app).get('/api/products?uf=XX').set(auth());
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_QUERY');
+    expect(prisma.catalogProduct.findMany).not.toHaveBeenCalled();
+  });
+
+  it('vazio retorna items [] e total 0 (sem mock de dados)', async () => {
+    prisma.catalogProduct.findMany.mockResolvedValue([]);
+    prisma.catalogProduct.count.mockResolvedValue(0);
+    const res = await request(app).get('/api/products?q=inexistente').set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.items).toEqual([]);
+    expect(res.body.total).toBe(0);
   });
 });
 
@@ -141,15 +258,18 @@ describe('POST /api/suppliers/import-osm', () => {
         },
       ],
     });
-    prisma.supplier.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 9, osmId: 'node/222' });
+    prisma.supplier.findUnique.mockImplementation(async ({ where }) => {
+      if (where.osmId === 'node/222') return { id: 9, osmId: 'node/222' };
+      if (where.osmId) return null;
+      return null; // lookup de slug: nenhum slug existe ainda
+    });
     prisma.supplier.create.mockImplementation(async ({ data }) => ({ id: 1, ...data }));
     prisma.supplier.update.mockResolvedValue({ id: 9 });
     prisma.supplier.findMany.mockResolvedValue([
-      { id: 1, osmId: 'node/111', nome: 'Atacado Central', cidade: 'Campinas', uf: 'SP', fonte: 'osm' },
-      { id: 9, osmId: 'node/222', nome: 'Trade Sul', cidade: 'Campinas', uf: 'SP', fonte: 'osm' },
+      { id: 1, slug: 'atacado-central', name: 'Atacado Central', city: 'Campinas', uf: 'SP', fonte: 'osm' },
+      { id: 9, slug: 'trade-sul', name: 'Trade Sul', city: 'Campinas', uf: 'SP', fonte: 'osm' },
     ]);
+    prisma.supplier.count.mockResolvedValue(2);
 
     const res = await request(app)
       .post('/api/suppliers/import-osm')
@@ -160,6 +280,7 @@ describe('POST /api/suppliers/import-osm', () => {
     expect(res.body).toMatchObject({ ok: true, fonte: 'OpenStreetMap', novos: 1, atualizados: 1, encontrados: 2 });
     expect(importarFornecedoresOsm).toHaveBeenCalledWith({ uf: 'SP', cidade: 'Campinas', categoria: null });
     expect(prisma.supplier.create).toHaveBeenCalledTimes(1);
+    expect(prisma.supplier.create.mock.calls[0][0].data.slug).toBeTruthy();
     expect(prisma.supplier.update).toHaveBeenCalledTimes(1);
     expect(res.body.mensagem).toContain('1 novo');
   });

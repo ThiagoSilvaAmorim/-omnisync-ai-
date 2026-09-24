@@ -208,26 +208,53 @@ model Fornecedor {
   @@map("Fornecedor")
 }
 
-// Base local de fornecedores públicos importados do OpenStreetMap (Nominatim + Overpass).
-// Dedupe por osmId; manuais ficam com osmId nulo.
+// Catálogo de fornecedores (busca pública sem chave externa).
+// Legados OSM: osmId/lat/lng/endereco/telefone/fonte sustentam a importação
+// POST /api/suppliers/import-osm; a busca em si usa só as colunas do catálogo.
 model Supplier {
-  id        Int      @id @default(autoincrement())
-  osmId     String?  @unique
-  nome      String
-  categoria String?
-  endereco  String?
-  cidade    String?
-  uf        String?
-  telefone  String?
-  site      String?
-  lat       Float?
-  lng       Float?
-  fonte     String   @default("osm")
-  createdAt DateTime @default(now())
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String
+  slug               String   @unique
+  logoUrl            String?  @map("logo_url")
+  coverImages        String[] @default([]) @map("cover_images")
+  uf                 String   @db.Char(2)
+  city               String
+  niche              String?
+  siteUrl            String?  @map("site_url")
+  productCount       Int      @default(0) @map("product_count")
+  marketplaces       String[] @default([])
+  acceptsDropshipping Boolean  @default(true) @map("accepts_dropshipping")
+  createdAt          DateTime @default(now()) @map("created_at")
+  osmId              String?  @unique @map("osm_id")
+  lat                Float?
+  lng                Float?
+  endereco           String?
+  telefone           String?
+  fonte              String   @default("osm")
 
-  @@index([uf, cidade])
-  @@index([nome])
+  products CatalogProduct[]
+
+  @@index([uf])
+  @@index([niche])
   @@map("suppliers")
+}
+
+// Produtos do catálogo de fornecedores (visão Produtos da tela /fornecedores).
+// Não confundir com o model Product (estoque interno, tabela "Product").
+model CatalogProduct {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  supplierId String   @map("supplier_id") @db.Uuid
+  name       String
+  imageUrl   String?  @map("image_url")
+  costPrice  Float?   @map("cost_price")
+  sku        String?
+  niche      String?
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@unique([supplierId, sku])
+  @@index([supplierId])
+  @@index([niche])
+  @@map("products")
 }
 
 
