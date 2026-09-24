@@ -1,20 +1,22 @@
 import { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Building2, Package, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Building2, Crown, Package, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
 import { FiltersBar } from '../components/fornecedores/FiltersBar';
 import { SupplierCard } from '../components/fornecedores/SupplierCard';
 import { ProductCard } from '../components/fornecedores/ProductCard';
-import { useSuppliers, useSuppliersNiches, LIMITE_PAGINA } from '../hooks/useSuppliers';
+import { useSuppliers, useSuppliersNiches, useSuppliersCidades, LIMITE_PAGINA } from '../hooks/useSuppliers';
 
 // ============================================
 // SuppliersPage — catálogo de fornecedores e
 // produtos (/fornecedores). As abas Produtos e
 // Fornecedores são visões do MESMO catálogo:
-// mesma busca, mesmos filtros de UF e nicho,
-// refletidos na URL (?q=&uf=&niche=&tab=&page=).
+// mesma busca, filtros de UF/nicho/cidade/
+// categoria, ordenação por score e posição no
+// ranking, refletidos na URL
+// (?q=&uf=&niche=&cidade=&order=&category=&tab=&page=).
 // ============================================
 
 const abas = [
@@ -28,17 +30,24 @@ export function SuppliersPage() {
   const q = params.get('q') || '';
   const uf = params.get('uf') || '';
   const niche = params.get('niche') || '';
+  const cidade = params.get('cidade') || '';
+  const order = params.get('order') || '';
+  const category = params.get('category') || '';
   const tab = params.get('tab') === 'produtos' ? 'produtos' : 'fornecedores';
   const page = Math.max(1, Number(params.get('page')) || 1);
 
-  const { items, total, loading, carregandoMais, error, temMais, recarregar } = useSuppliers({
+  const { items, total, categorias, loading, carregandoMais, error, temMais, recarregar } = useSuppliers({
     tab,
     q,
     uf,
     niche,
+    cidade,
+    order,
+    category,
     page,
   });
   const niches = useSuppliersNiches();
+  const cidades = useSuppliersCidades();
 
   const atualizarParam = useCallback(
     (chave, valor) => {
@@ -54,13 +63,31 @@ export function SuppliersPage() {
   const setQ = useCallback(v => atualizarParam('q', v), [atualizarParam]);
   const setUf = useCallback(v => atualizarParam('uf', v), [atualizarParam]);
   const setNiche = useCallback(v => atualizarParam('niche', v), [atualizarParam]);
+  const setOrder = useCallback(v => atualizarParam('order', v), [atualizarParam]);
+  const setCategory = useCallback(v => atualizarParam('category', v), [atualizarParam]);
   const setTab = useCallback(v => atualizarParam('tab', v), [atualizarParam]);
+
+  // Escolher uma cidade monta o rank dela: ordena por "melhor avaliado".
+  const setCidade = useCallback(v => {
+    const proximo = new URLSearchParams(params);
+    if (v) {
+      proximo.set('cidade', v);
+      proximo.set('order', 'score');
+    } else {
+      proximo.delete('cidade');
+      proximo.delete('order');
+    }
+    proximo.delete('page');
+    setParams(proximo, { replace: true });
+  }, [params, setParams]);
 
   const carregarMais = () => atualizarParam('page', String(page + 1));
 
   const vazio = tab === 'produtos'
-    ? { title: 'Nenhum produto encontrado', description: 'Ajuste a busca, o estado ou o nicho.' }
-    : { title: 'Nenhum fornecedor encontrado', description: 'Ajuste a busca, o estado ou o nicho.' };
+    ? { title: 'Nenhum produto encontrado', description: 'Ajuste a busca, o estado ou a categoria.' }
+    : { title: 'Nenhum fornecedor encontrado', description: 'Ajuste a busca, o estado ou a cidade.' };
+
+  const emRanking = tab === 'fornecedores' && order === 'score';
 
   return (
     <div className="space-y-6">
@@ -91,7 +118,24 @@ export function SuppliersPage() {
         ))}
       </div>
 
-      <FiltersBar q={q} uf={uf} niche={niche} niches={niches} onQ={setQ} onUf={setUf} onNiche={setNiche} />
+      <FiltersBar
+        tab={tab}
+        q={q}
+        uf={uf}
+        niche={niche}
+        niches={niches}
+        cidade={cidade}
+        cidades={cidades}
+        order={order}
+        category={category}
+        categorias={categorias}
+        onQ={setQ}
+        onUf={setUf}
+        onNiche={setNiche}
+        onCidade={setCidade}
+        onOrder={setOrder}
+        onCategory={setCategory}
+      />
 
       {error && items.length === 0 ? (
         <EmptyState
@@ -113,13 +157,28 @@ export function SuppliersPage() {
         />
       ) : (
         <>
+          {emRanking && (
+            <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+              <Crown className="h-4 w-4 shrink-0" />
+              Ranking {cidade ? `de ${cidade}` : 'dos melhores avaliados'} — posição por score
+              (site, dropshipping, produtos, logo e contato).
+            </div>
+          )}
+
           <p className="text-xs text-slate-500">
-            {total} {tab === 'produtos' ? 'produto(s)' : 'fornecedor(es)'} na base
+            {total} {tab === 'produtos' ? 'produto(s)' : 'fornecedor(es)'}
+            {cidade ? ` em ${cidade}` : ''} na base
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             {tab === 'produtos'
               ? items.map(p => <ProductCard key={p.id} produto={p} />)
-              : items.map(f => <SupplierCard key={f.id} fornecedor={f} />)}
+              : items.map((f, i) => (
+                  <SupplierCard
+                    key={f.id}
+                    fornecedor={f}
+                    posicao={emRanking ? (page - 1) * LIMITE_PAGINA + i + 1 : undefined}
+                  />
+                ))}
           </div>
 
           {error && (

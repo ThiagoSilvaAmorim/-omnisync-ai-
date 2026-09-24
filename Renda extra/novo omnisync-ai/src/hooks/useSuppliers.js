@@ -10,9 +10,10 @@ import { api } from '../services/api';
 
 export const LIMITE_PAGINA = 24;
 
-export function useSuppliers({ tab, q, uf, niche, page }) {
+export function useSuppliers({ tab, q, uf, niche, cidade, order, category, page }) {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
+  const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [carregandoMais, setCarregandoMais] = useState(false);
   const [error, setError] = useState(null);
@@ -34,11 +35,12 @@ export function useSuppliers({ tab, q, uf, niche, page }) {
     setError(null);
 
     const busca = tab === 'produtos' ? api.getCatalogProducts : api.getCatalogSuppliers;
-    busca({ q: qDebounced, uf, niche, page, limit: LIMITE_PAGINA })
+    busca({ q: qDebounced, uf, niche, cidade, order, category, page, limit: LIMITE_PAGINA })
       .then(r => {
         if (meu !== seq.current) return;
         setItems(prev => (primeiraPagina ? r.items : [...prev, ...r.items]));
         setTotal(r.total || 0);
+        if (Array.isArray(r.categorias)) setCategorias(r.categorias);
       })
       .catch(e => {
         if (meu !== seq.current) return;
@@ -50,11 +52,12 @@ export function useSuppliers({ tab, q, uf, niche, page }) {
         setLoading(false);
         setCarregandoMais(false);
       });
-  }, [tab, qDebounced, uf, niche, page, nonce]);
+  }, [tab, qDebounced, uf, niche, cidade, order, category, page, nonce]);
 
   return {
     items,
     total,
+    categorias,
     loading,
     carregandoMais,
     error,
@@ -85,4 +88,29 @@ export function useSuppliersNiches() {
   }, []);
 
   return niches;
+}
+
+// ============================================
+// useSuppliersCidades — cidades do catálogo
+// com contagem ({ city, total }[]) para o
+// filtro/ranking por cidade.
+// ============================================
+export function useSuppliersCidades() {
+  const [cidades, setCidades] = useState([]);
+
+  useEffect(() => {
+    let ativo = true;
+    api.getSupplierCidades()
+      .then(r => {
+        if (ativo) setCidades(Array.isArray(r.cidades) ? r.cidades : []);
+      })
+      .catch(() => {
+        // Sem cidades: o select fica só com "Todas".
+      });
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  return cidades;
 }

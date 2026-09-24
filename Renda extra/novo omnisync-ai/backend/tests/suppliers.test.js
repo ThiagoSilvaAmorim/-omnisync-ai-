@@ -24,6 +24,7 @@ vi.mock('../src/prisma/client.js', () => ({
     catalogProduct: {
       findMany: vi.fn(),
       count: vi.fn(),
+      groupBy: vi.fn(),
     },
   },
 }));
@@ -106,17 +107,63 @@ describe('GET /api/suppliers (catálogo)', () => {
     expect(prisma.supplier.findMany.mock.calls[0][0].distinct).toEqual(['niche']);
   });
 
-  it('cidades distintas por UF', async () => {
-    prisma.supplier.groupBy.mockResolvedValue([{ city: 'Campinas' }, { city: 'Valinhos' }]);
+  it('cidades distintas por UF com contagem', async () => {
+    prisma.supplier.groupBy.mockResolvedValue([
+      { city: 'Campinas', _count: { _all: 76 } },
+      { city: 'Valinhos', _count: { _all: 1 } },
+    ]);
     const res = await request(app).get('/api/suppliers/cidades?uf=SP').set(auth());
     expect(res.status).toBe(200);
-    expect(res.body.cidades).toEqual(['Campinas', 'Valinhos']);
+    expect(res.body.cidades).toEqual([
+      { city: 'Campinas', total: 76 },
+      { city: 'Valinhos', total: 1 },
+    ]);
+    expect(prisma.supplier.groupBy.mock.calls[0][0].where).toEqual({ uf: 'SP' });
   });
 
-  it('cidades sem UF retorna 400', async () => {
+  it('cidades sem UF retorna todas com contagem', async () => {
+    prisma.supplier.groupBy.mockResolvedValue([
+      { city: 'São Paulo', _count: { _all: 274 } },
+      { city: 'Campinas', _count: { _all: 76 } },
+    ]);
     const res = await request(app).get('/api/suppliers/cidades').set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.cidades[0]).toEqual({ city: 'São Paulo', total: 274 });
+    expect(prisma.supplier.groupBy.mock.calls[0][0].where).toEqual({});
+  });
+
+  it('cidades com UF inválida retorna 400', async () => {
+    const res = await request(app).get('/api/suppliers/cidades?uf=XX').set(auth());
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('INVALID_UF');
+  });
+
+  it('filtra por cidade (equals insensível a maiúsculas)', async () => {
+    prisma.supplier.findMany.mockResolvedValue([
+      { id: 'u1', slug: 'sp-1', name: 'Fornecedor SP', city: 'São Paulo', uf: 'SP', acceptsDropshipping: true },
+    ]);
+    prisma.supplier.count.mockResolvedValue(1);
+    const res = await request(app).get('/api/suppliers?cidade=São Paulo').set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(1);
+    const opts = prisma.supplier.findMany.mock.calls[0][0];
+    expect(opts.where.city).toEqual({ equals: 'São Paulo', mode: 'insensitive' });
+  });
+
+  it('order=score devolve o ranking ordenado pelo score calculado', async () => {
+    prisma.supplier.findMany.mockResolvedValue([
+      { id: 'u1', slug: 'completo', name: 'Completo', city: 'Campinas', uf: 'SP', acceptsDropshipping: true, productCount: 5, logoUrl: 'x.png', telefone: '1199', endereco: 'Rua A', marketplaces: ['mercadolivre'], siteUrl: null },
+      { id: 'u2', slug: 'basico', name: 'Basico', city: 'Campinas', uf: 'SP', acceptsDropshipping: true, productCount: 0, logoUrl: null, telefone: null, endereco: null, marketplaces: [], siteUrl: null },
+    ]);
+    const res = await request(app).get('/api/suppliers?order=score&cidade=Campinas').set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(2);
+    expect(res.body.items[0].slug).toBe('completo');
+    expect(res.body.items[0].score).toBeGreaterThan(res.body.items[1].score);
+    expect(res.body.items[0].scoreCriterios.length).toBe(7);
+    const opts = prisma.supplier.findMany.mock.calls[0][0];
+    expect(opts.where.city).toEqual({ equals: 'Campinas', mode: 'insensitive' });
+    expect(opts.take).toBe(500);
   });
 });
 
@@ -164,6 +211,7 @@ describe('GET /api/suppliers/:slug (detalhe)', () => {
 describe('GET /api/products (catálogo de produtos)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prisma.catalogProduct.groupBy.mockResolvedValue([]);
   });
 
   it('sem token retorna 401', async () => {
@@ -201,6 +249,27 @@ describe('GET /api/products (catálogo de produtos)', () => {
     expect(res.status).toBe(200);
     expect(res.body.items).toEqual([]);
     expect(res.body.total).toBe(0);
+  });
+
+  it('filtra por categoria real do produto', async () => {
+    prisma.catalogProduct.findMany.mockResolvedValue([
+      { id: 'p1', name: 'Fone Bluetooth TWS', sku: 'S-FONE', imageUrl: null, costPrice: null, niche: null, category: 'Eletrônicos', supplier: { slug: '3g-foods', name: '3G Foods', uf: 'SP', city: 'Campinas' } },
+    ]);
+    prisma.catalogProduct.count.mockResolvedValue(1);
+    prisma.catalogProduct.groupBy.mockResolvedValue([
+      { category: 'Eletrônicos', _count: { _all: 7 } },
+      { category: 'Vestuário', _count: { _all: 2 } },
+      { category: null, _count: { _all: 0 } },
+    ]);
+    const res = await request(app).get('/api/products?category=Eletrônicos').set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.items[0].category).toBe('Eletrônicos');
+    expect(res.body.categorias).toEqual([
+      { category: 'Eletrônicos', total: 7 },
+      { category: 'Vestuário', total: 2 },
+    ]);
+    const opts = prisma.catalogProduct.findMany.mock.calls[0][0];
+    expect(opts.where.category).toEqual({ equals: 'Eletrônicos', mode: 'insensitive' });
   });
 });
 

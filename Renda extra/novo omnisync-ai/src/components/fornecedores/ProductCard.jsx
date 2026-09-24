@@ -28,7 +28,10 @@ export function ProductCard({ produto }) {
           <h3 className="text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100">
             {produto.name}
           </h3>
-          {produto.niche && <Badge variant="amber">{produto.niche}</Badge>}
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            {produto.category && <Badge variant="teal">{produto.category}</Badge>}
+            {produto.niche && <Badge variant="amber">{produto.niche}</Badge>}
+          </div>
         </div>
 
         {produto.sku && <p className="text-xs text-slate-500">SKU: {produto.sku}</p>}

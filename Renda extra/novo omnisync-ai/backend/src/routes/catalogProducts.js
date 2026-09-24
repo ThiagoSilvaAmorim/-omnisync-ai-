@@ -1,6 +1,6 @@
 // backend/src/routes/catalogProducts.js
 // Produtos do catálogo de fornecedores (aba Produtos da tela /fornecedores).
-// GET /api/products?q=&uf=&niche=&page=&limit= → { items, total }
+// GET /api/products?q=&uf=&niche=&category=&page=&limit= → { items, total, categorias }
 // Diferente de /api/produtos (estoque interno, model Product).
 
 import { Router } from 'express';
@@ -20,6 +20,7 @@ const querySchema = z.object({
   q: z.string().trim().max(120).optional().default(''),
   uf: z.string().trim().transform(v => v.toUpperCase()).refine(v => v === '' || ufsValidas.has(v), 'UF inválida').optional().default(''),
   niche: z.string().trim().max(60).optional().default(''),
+  category: z.string().trim().max(60).optional().default(''),
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(LIMITE_MAXIMO).optional().default(LIMITE_PADRAO),
 });
@@ -39,22 +40,25 @@ router.get('/', async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ code: 'INVALID_QUERY', message: parsed.error.issues[0]?.message || 'Parâmetros inválidos.' });
   }
-  const { q, uf, niche, page, limit } = parsed.data;
+  const { q, uf, niche, category, page, limit } = parsed.data;
 
-  const where = { supplier: { acceptsDropshipping: true } };
-  if (uf) where.supplier.uf = uf;
-  if (niche) where.niche = { equals: niche, mode: 'insensitive' };
+  const base = { supplier: { acceptsDropshipping: true } };
+  if (uf) base.supplier.uf = uf;
+  if (niche) base.niche = { equals: niche, mode: 'insensitive' };
   if (q) {
-    where.OR = [
+    base.OR = [
       { name: { contains: q, mode: 'insensitive' } },
       { sku: { contains: q, mode: 'insensitive' } },
       { niche: { contains: q, mode: 'insensitive' } },
+      { category: { contains: q, mode: 'insensitive' } },
       { supplier: { name: { contains: q, mode: 'insensitive' } } },
     ];
   }
 
+  const where = category ? { ...base, category: { equals: category, mode: 'insensitive' } } : base;
+
   try {
-    const [itens, total] = await Promise.all([
+    const [itens, total, agrupadas] = await Promise.all([
       prisma.catalogProduct.findMany({
         where,
         orderBy: { name: 'asc' },
@@ -63,6 +67,13 @@ router.get('/', async (req, res) => {
         include: { supplier: { select: { slug: true, name: true, uf: true, city: true } } },
       }),
       prisma.catalogProduct.count({ where }),
+      // Categorias do conjunto filtrado (sem o filtro de categoria) p/ o select.
+      prisma.catalogProduct.groupBy({
+        by: ['category'],
+        where: base,
+        _count: { _all: true },
+        orderBy: { category: 'asc' },
+      }),
     ]);
     const items = itens.map(p => ({
       id: p.id,
@@ -71,9 +82,13 @@ router.get('/', async (req, res) => {
       imageUrl: p.imageUrl,
       costPrice: p.costPrice,
       niche: p.niche,
+      category: p.category,
       supplier: { slug: p.supplier.slug, name: p.supplier.name, uf: p.supplier.uf, city: p.supplier.city },
     }));
-    return res.json({ items, total, page, limit });
+    const categorias = agrupadas
+      .filter(a => a.category)
+      .map(a => ({ category: a.category, total: a._count._all }));
+    return res.json({ items, total, page, limit, categorias });
   } catch (e) {
     console.error('[CatalogProducts] Erro ao buscar:', e.message);
     return res.status(500).json({ error: 'Erro ao buscar produtos' });

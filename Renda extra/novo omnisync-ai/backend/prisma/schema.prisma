@@ -249,11 +249,13 @@ model CatalogProduct {
   costPrice  Float?   @map("cost_price")
   sku        String?
   niche      String?
+  category   String?
   supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
   @@unique([supplierId, sku])
   @@index([supplierId])
   @@index([niche])
+  @@index([category])
   @@map("products")
 }
 

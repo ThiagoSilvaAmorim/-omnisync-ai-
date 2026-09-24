@@ -7,8 +7,9 @@ import { SuppliersPage } from '../pages/SuppliersPage';
 vi.mock('../services/api', () => ({
   api: {
     getCatalogSuppliers: vi.fn(async () => ({ items: [], total: 0, page: 1, limit: 24 })),
-    getCatalogProducts: vi.fn(async () => ({ items: [], total: 0, page: 1, limit: 24 })),
+    getCatalogProducts: vi.fn(async () => ({ items: [], total: 0, page: 1, limit: 24, categorias: [] })),
     getSupplierNiches: vi.fn(async () => ({ niches: ['company', 'wholesale'] })),
+    getSupplierCidades: vi.fn(async () => ({ cidades: [] })),
     getSupplierBySlug: vi.fn(async () => ({ fornecedor: null, produtos: [] })),
   },
 }));
@@ -29,8 +30,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   // Restaura os padrões: clearAllMocks não remove impls setadas por teste.
   api.getCatalogSuppliers.mockResolvedValue({ items: [], total: 0, page: 1, limit: 24 });
-  api.getCatalogProducts.mockResolvedValue({ items: [], total: 0, page: 1, limit: 24 });
+  api.getCatalogProducts.mockResolvedValue({ items: [], total: 0, page: 1, limit: 24, categorias: [] });
   api.getSupplierNiches.mockResolvedValue({ niches: ['company', 'wholesale'] });
+  api.getSupplierCidades.mockResolvedValue({ cidades: [] });
 });
 
 describe('SuppliersPage (catálogo de fornecedores)', () => {
@@ -167,6 +169,80 @@ describe('SuppliersPage (catálogo de fornecedores)', () => {
     await waitFor(() =>
       expect(api.getCatalogSuppliers).toHaveBeenCalledWith(
         expect.objectContaining({ page: 2 })
+      )
+    );
+  });
+
+  it('ranking por cidade: URL com cidade+order=score mostra posição, score e banner', async () => {
+    api.getCatalogSuppliers.mockResolvedValue({
+      items: [
+        {
+          id: 'u1', slug: 'melhor-sp', name: 'Melhor de São Paulo', uf: 'SP', city: 'São Paulo',
+          niche: 'wholesale', productCount: 5, marketplaces: ['mercadolivre'], acceptsDropshipping: true,
+          coverImages: [], score: 100,
+          scoreCriterios: [{ label: 'Site no ar', pontos: 30, max: 30 }],
+        },
+        {
+          id: 'u2', slug: 'segundo-sp', name: 'Segundo de São Paulo', uf: 'SP', city: 'São Paulo',
+          niche: 'company', productCount: 0, marketplaces: [], acceptsDropshipping: true,
+          coverImages: [], score: 15,
+          scoreCriterios: [{ label: 'Site no ar', pontos: 0, max: 30 }],
+        },
+      ],
+      total: 2,
+      page: 1,
+      limit: 24,
+    });
+    renderizar('/fornecedores?cidade=São Paulo&order=score');
+    await waitFor(() =>
+      expect(api.getCatalogSuppliers).toHaveBeenCalledWith(
+        expect.objectContaining({ cidade: 'São Paulo', order: 'score' })
+      )
+    );
+    expect(await screen.findByText('Ranking de São Paulo — posição por score (site, dropshipping, produtos, logo e contato).')).toBeTruthy();
+    expect(screen.getByText('#1')).toBeTruthy();
+    expect(screen.getByText('#2')).toBeTruthy();
+    expect(screen.getByText('2 fornecedor(es) em São Paulo na base')).toBeTruthy();
+  });
+
+  it('select de cidade carrega cidades com contagem e ativa o ranking', async () => {
+    api.getSupplierCidades.mockResolvedValue({
+      cidades: [{ city: 'São Paulo', total: 274 }, { city: 'Campinas', total: 76 }],
+    });
+    renderizar();
+    expect(await screen.findByText('Nenhum fornecedor encontrado')).toBeTruthy();
+    await waitFor(() => expect(api.getSupplierCidades).toHaveBeenCalled());
+    const select = await screen.findByLabelText('Cidade');
+    expect(select.querySelector('option[value="São Paulo"]').textContent).toBe('São Paulo (274)');
+    fireEvent.change(select, { target: { value: 'São Paulo' } });
+    await waitFor(() =>
+      expect(api.getCatalogSuppliers).toHaveBeenCalledWith(
+        expect.objectContaining({ cidade: 'São Paulo', order: 'score' })
+      )
+    );
+  });
+
+  it('aba Produtos: select de categoria com contagens e card exibe a categoria real', async () => {
+    api.getCatalogProducts.mockResolvedValue({
+      items: [{
+        id: 'p1', name: 'Fone Bluetooth TWS', sku: 'S-FONE', costPrice: null, niche: 'company',
+        category: 'Eletrônicos', supplier: { slug: '3g-foods', name: '3G Foods', uf: 'SP', city: 'Campinas' },
+      }],
+      total: 1,
+      page: 1,
+      limit: 24,
+      categorias: [{ category: 'Eletrônicos', total: 7 }, { category: 'Vestuário', total: 2 }],
+    });
+    renderizar();
+    fireEvent.click(screen.getByRole('tab', { name: /Produtos/ }));
+    expect(await screen.findByText('Fone Bluetooth TWS')).toBeTruthy();
+    expect(screen.getByText('Eletrônicos')).toBeTruthy();
+    const select = await screen.findByLabelText('Categoria do produto');
+    expect(select.querySelector('option[value="Vestuário"]').textContent).toBe('Vestuário (2)');
+    fireEvent.change(select, { target: { value: 'Vestuário' } });
+    await waitFor(() =>
+      expect(api.getCatalogProducts).toHaveBeenCalledWith(
+        expect.objectContaining({ category: 'Vestuário' })
       )
     );
   });

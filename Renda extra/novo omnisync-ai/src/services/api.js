@@ -190,18 +190,23 @@ export const api = {
     if (params.q) sp.append('q', params.q);
     if (params.uf) sp.append('uf', params.uf);
     if (params.niche) sp.append('niche', params.niche);
+    if (params.cidade) sp.append('cidade', params.cidade);
+    if (params.order) sp.append('order', params.order);
     if (params.page) sp.append('page', params.page);
     if (params.limit) sp.append('limit', params.limit);
     const query = sp.toString();
     return request(`/suppliers${query ? `?${query}` : ''}`);
   },
   getSupplierNiches: () => request('/suppliers/niches'),
+  // Cidades do catálogo com contagem ({ city, total }[]) — filtro + ranking.
+  getSupplierCidades: (uf) => request(`/suppliers/cidades${uf ? `?uf=${encodeURIComponent(uf)}` : ''}`),
   getSupplierBySlug: slug => request(`/suppliers/${encodeURIComponent(slug)}`),
   getCatalogProducts: (params = {}) => {
     const sp = new URLSearchParams();
     if (params.q) sp.append('q', params.q);
     if (params.uf) sp.append('uf', params.uf);
     if (params.niche) sp.append('niche', params.niche);
+    if (params.category) sp.append('category', params.category);
     if (params.page) sp.append('page', params.page);
     if (params.limit) sp.append('limit', params.limit);
     const query = sp.toString();

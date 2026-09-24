@@ -25,12 +25,14 @@ const queryCatalogoSchema = z.object({
   q: z.string().trim().max(120).optional().default(''),
   uf: z.string().trim().transform(v => v.toUpperCase()).refine(v => v === '' || ufsValidas.has(v), 'UF inválida').optional().default(''),
   niche: z.string().trim().max(60).optional().default(''),
+  cidade: z.string().trim().max(80).optional().default(''),
+  order: z.enum(['', 'score', 'nome']).optional().default(''),
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(LIMITE_MAXIMO).optional().default(LIMITE_PADRAO),
 });
 
 const queryCidadesSchema = z.object({
-  uf: z.string().trim().transform(v => v.toUpperCase()).refine(v => ufsValidas.has(v), 'UF inválida'),
+  uf: z.string().trim().transform(v => v.toUpperCase()).refine(v => v === '' || ufsValidas.has(v), 'UF inválida').optional().default(''),
 });
 
 const bodyImportSchema = z.object({
@@ -104,7 +106,24 @@ async function siteVivo(raw) {
   return vivo ? url : null;
 }
 
+// ---- Score de qualidade calculado só com dados REAIS do banco ----
+// Critérios expostos no card (tooltip) — nada de nota inventada.
+function calcularScore(s, siteNoAr) {
+  const criterios = [
+    { label: 'Site no ar', pontos: siteNoAr ? 30 : 0, max: 30 },
+    { label: 'Aceita dropshipping', pontos: s.acceptsDropshipping ? 15 : 0, max: 15 },
+    { label: 'Produtos no catálogo', pontos: s.productCount > 0 ? 15 : 0, max: 15 },
+    { label: 'Logotipo', pontos: s.logoUrl ? 10 : 0, max: 10 },
+    { label: 'Telefone', pontos: s.telefone ? 10 : 0, max: 10 },
+    { label: 'Endereço/geolocalização', pontos: s.endereco || (s.lat != null && s.lng != null) ? 10 : 0, max: 10 },
+    { label: 'Marketplaces', pontos: Array.isArray(s.marketplaces) && s.marketplaces.length > 0 ? 10 : 0, max: 10 },
+  ];
+  return { score: criterios.reduce((acc, c) => acc + c.pontos, 0), criterios };
+}
+
 async function paraPublico(s) {
+  const site = await siteVivo(s.siteUrl);
+  const { score, criterios } = calcularScore(s, Boolean(site));
   return {
     id: s.id,
     slug: s.slug,
@@ -114,10 +133,12 @@ async function paraPublico(s) {
     uf: s.uf,
     city: s.city,
     niche: s.niche,
-    siteUrl: await siteVivo(s.siteUrl),
+    siteUrl: site,
     productCount: s.productCount,
     marketplaces: s.marketplaces,
     acceptsDropshipping: s.acceptsDropshipping,
+    score,
+    scoreCriterios: criterios,
   };
 }
 
@@ -151,32 +172,38 @@ router.get('/niches', async (_req, res) => {
   }
 });
 
-// GET /api/suppliers/cidades?uf=SP — cidades distintas já importadas (legado).
+// GET /api/suppliers/cidades?uf=SP — cidades distintas com contagem (filtro + ranking).
 router.get('/cidades', async (req, res) => {
   const parsed = queryCidadesSchema.safeParse(req.query);
   if (!parsed.success) {
-    return res.status(400).json({ code: 'INVALID_UF', message: parsed.error.issues[0]?.message || 'Informe a UF.' });
+    return res.status(400).json({ code: 'INVALID_UF', message: parsed.error.issues[0]?.message || 'UF inválida.' });
   }
   try {
-    const linhas = await prisma.supplier.groupBy({ by: ['city'], where: { uf: parsed.data.uf }, orderBy: { city: 'asc' } });
-    return res.json({ ok: true, cidades: linhas.map(l => l.city).filter(Boolean) });
+    const where = parsed.data.uf ? { uf: parsed.data.uf } : {};
+    const linhas = await prisma.supplier.groupBy({ by: ['city'], where, orderBy: { city: 'asc' }, _count: { _all: true } });
+    const cidades = linhas
+      .filter(l => l.city)
+      .map(l => ({ city: l.city, total: l._count._all }))
+      .sort((a, b) => b.total - a.total || a.city.localeCompare(b.city));
+    return res.json({ ok: true, cidades });
   } catch (e) {
     console.error('[SuppliersCatalog] Erro ao listar cidades:', e.message);
     return res.status(500).json({ error: 'Erro ao listar cidades' });
   }
 });
 
-// GET /api/suppliers?q=&uf=&niche=&page=&limit= — busca no banco (sem chave externa).
+// GET /api/suppliers?q=&uf=&niche=&cidade=&order=&page=&limit= — busca no banco (sem chave externa).
 router.get('/', async (req, res) => {
   const parsed = queryCatalogoSchema.safeParse(req.query);
   if (!parsed.success) {
     return res.status(400).json({ code: 'INVALID_QUERY', message: parsed.error.issues[0]?.message || 'Parâmetros inválidos.' });
   }
-  const { q, uf, niche, page, limit } = parsed.data;
+  const { q, uf, niche, cidade, order, page, limit } = parsed.data;
 
   const where = { acceptsDropshipping: true };
   if (uf) where.uf = uf;
   if (niche) where.niche = { equals: niche, mode: 'insensitive' };
+  if (cidade) where.city = { equals: cidade, mode: 'insensitive' };
   if (q) {
     where.OR = [
       { name: { contains: q, mode: 'insensitive' } },
@@ -186,6 +213,16 @@ router.get('/', async (req, res) => {
   }
 
   try {
+    // order=score: o ranking é calculado em memória (score depende de dados
+    // combinados do fornecedor) — paginação por fatiamento do conjunto completo.
+    if (order === 'score') {
+      const todos = await prisma.supplier.findMany({ where, orderBy: { name: 'asc' }, take: 500 });
+      const publicos = await Promise.all(todos.map(paraPublico));
+      publicos.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+      const items = publicos.slice((page - 1) * limit, page * limit);
+      return res.json({ items, total: publicos.length, page, limit });
+    }
+
     const [itens, total] = await Promise.all([
       prisma.supplier.findMany({
         where,
