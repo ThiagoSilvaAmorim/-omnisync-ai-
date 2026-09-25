@@ -74,7 +74,6 @@ function CatalogoProdutos() {
   ];
 
   const [selecionados, setSelecionados] = useState([]);
-  const [pill, setPill] = useState('Todos');
   const [modalNovo, setModalNovo] = useState(false);
   // Rascunho de anúncio via Gemini (nunca publica sozinho).
   const [rascunho, setRascunho] = useState(null);
@@ -164,14 +163,17 @@ function CatalogoProdutos() {
   const [salvando, setSalvando] = useState(false);
   const [form, setForm] = useState({ nome: '', sku: '', categoria: '', preco: '', estoque: '', minimo: '', fornecedor: '' });
 
-  const PILLS = ['Todos', 'ativo', 'baixo', 'critico', 'esgotado'];
+  // Filtro único de status (select com Esgotado incluído — antes existia
+  // select E pills duplicados filtrando ao mesmo tempo).
+  const categorias = [...new Set(produtos.map(p => p.categoria).filter(Boolean))].sort();
 
   const filtrados = produtos.filter(p => {
     if (busca && !`${p.nome} ${p.sku}`.toLowerCase().includes(busca.toLowerCase())) return false;
-    if (pill === 'esgotado') {
-      if (Number(p.estoque ?? p.atual ?? 0) > 0) return false;
-    } else if (pill !== 'Todos' && (p.status || 'normal') !== pill) return false;
-    if (filtros.status !== 'todos' && p.status !== filtros.status) return false;
+    if (filtros.status !== 'todos') {
+      if (filtros.status === 'esgotado') {
+        if (Number(p.estoque ?? p.atual ?? 0) > 0) return false;
+      } else if ((p.status || 'normal') !== filtros.status) return false;
+    }
     if (filtros.categoria !== 'todas' && p.categoria !== filtros.categoria) return false;
     return true;
   });
@@ -216,7 +218,6 @@ function CatalogoProdutos() {
   const limparFiltros = () => {
     setBusca('');
     setFiltros({ status: 'todos', categoria: 'todas' });
-    setPill('Todos');
     setPage(1);
   };
 
@@ -312,42 +313,6 @@ function CatalogoProdutos() {
         {kpiCards}
       </div>
 
-      <Card>
-        <div className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3 lg:grid-cols-4">
-          <Select label="Status" value={filtros.status} onChange={v => setFiltros(f => ({ ...f, status: v }))} options={[{ value: 'todos', label: 'Todos' }, { value: 'normal', label: 'Normal' }, { value: 'baixo', label: 'Baixo' }, { value: 'critico', label: 'Crítico' }, { value: 'excesso', label: 'Excesso' }]} />
-          <Select label="Categoria" value={filtros.categoria} onChange={v => setFiltros(f => ({ ...f, categoria: v }))} options={[{ value: 'todas', label: 'Todas' }, { value: 'eletronicos', label: 'Eletrônicos' }, { value: 'moveis', label: 'Móveis' }, { value: 'alimentos', label: 'Alimentos' }]} />
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Catálogo de Produtos</CardTitle>
-          <div className="flex flex-wrap gap-2">
-            <input
-              placeholder="Buscar por nome ou SKU..."
-              value={busca}
-              onChange={e => { setBusca(e.target.value); setPage(1); }}
-              className="h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-              type="text"
-            />
-            <Search className="absolute left-3 top-2.5 text-gray-400" />
-          </div>
-        </CardHeader>
-      </Card>
-
-      <div className="flex flex-wrap items-center gap-2">
-        {PILLS.map(s => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => { setPill(s); setPage(1); }}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${pill === s ? 'bg-primary-600 text-white' : 'border border-slate-200 text-slate-600 hover:border-primary-500 hover:text-primary-600 dark:border-slate-700 dark:text-slate-300'}`}
-          >
-            {s === 'Todos' ? 'Todos' : s === 'esgotado' ? 'Esgotado' : STATUS_CONFIG[s]?.label ?? s}
-          </button>
-        ))}
-      </div>
-
       {selecionados.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary-200 bg-primary-50 p-3 text-sm dark:border-primary-500/30 dark:bg-primary-500/10">
           <span className="font-medium text-slate-700 dark:text-slate-200">{selecionados.length} selecionado(s)</span>
@@ -374,6 +339,52 @@ function CatalogoProdutos() {
               Selecionar página
             </button>
           </CardHeader>
+
+          {/* Barra única de filtros — busca + status + categoria em 1 linha acima da tabela. */}
+          <div
+            className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3 dark:border-slate-800"
+            data-testid="barra-filtros"
+          >
+            <div className="relative min-w-56 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                placeholder="Buscar por nome ou SKU..."
+                value={busca}
+                onChange={e => { setBusca(e.target.value); setPage(1); }}
+                aria-label="Buscar produto"
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700 outline-none focus:border-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              />
+            </div>
+            <Select
+              value={filtros.status}
+              onChange={v => { setFiltros(f => ({ ...f, status: v })); setPage(1); }}
+              options={[
+                { value: 'todos', label: 'Status: todos' },
+                { value: 'normal', label: 'Normal' },
+                { value: 'baixo', label: 'Baixo' },
+                { value: 'critico', label: 'Crítico' },
+                { value: 'excesso', label: 'Excesso' },
+                { value: 'esgotado', label: 'Esgotado' },
+              ]}
+              className="w-40"
+              aria-label="Filtrar por status"
+            />
+            <Select
+              value={filtros.categoria}
+              onChange={v => { setFiltros(f => ({ ...f, categoria: v })); setPage(1); }}
+              options={[
+                { value: 'todas', label: 'Categoria: todas' },
+                ...categorias.map(c => ({ value: c, label: c })),
+              ]}
+              className="w-48"
+              aria-label="Filtrar por categoria"
+            />
+            <Button variant="secondary" onClick={limparFiltros}>
+              Limpar filtros
+            </Button>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

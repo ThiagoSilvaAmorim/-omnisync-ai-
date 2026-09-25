@@ -129,7 +129,11 @@ async function buscarOff(categoria, limit) {
 const VITE_API_URL = import.meta.env.VITE_API_URL || '';
 
 export async function buscarMercadoLivre(termo, limit = 12) {
-  const url = `${VITE_API_URL}/produtos/mercadolibre?q=${encodeURIComponent(termo || 'notebook')}&limit=${limit}`;
+  if (!VITE_API_URL) {
+    throw new Error('Busca no Mercado Livre indisponível: backend não configurado (VITE_API_URL).');
+  }
+  // VITE_API_URL não inclui /api — o mesmo prefixo usado em api.js (request()).
+  const url = `${VITE_API_URL}/api/produtos/mercadolibre?q=${encodeURIComponent(termo || 'notebook')}&limit=${limit}`;
   const res = await fetchComTimeout(url);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

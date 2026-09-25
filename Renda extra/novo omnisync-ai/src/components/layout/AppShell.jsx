@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { ShieldAlert } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShieldAlert } from 'lucide-react';
 import { Header } from './Header';
 import { MobileNav } from './MobileNav';
 import { Sidebar } from './Sidebar';
@@ -68,42 +68,73 @@ export function AppShell() {
   const { modoAtivo } = useApp();
   const navTop = modoAtivo.nav === 'topo';
 
-  // Largura da sidebar segue o estado de colapso (localStorage).
-  const [sidebarW, setSidebarW] = useState(() => {
+  // Barra lateral: trilha de ícones (w-16) ou oculta (w-0).
+  // Preferência persistida em localStorage (novo padrão de navegação).
+  const [sidebarOculta, setSidebarOculta] = useState(() => {
     try {
-      return localStorage.getItem('omnisync-sidebar-collapsed') === '1' ? 'w-16' : 'w-64';
+      return localStorage.getItem('omnisync-sidebar-hidden') === '1';
     } catch {
-      return 'w-64';
+      return false;
     }
   });
 
   useEffect(() => {
     const aplicar = () => {
       try {
-        setSidebarW(localStorage.getItem('omnisync-sidebar-collapsed') === '1' ? 'w-16' : 'w-64');
+        setSidebarOculta(localStorage.getItem('omnisync-sidebar-hidden') === '1');
       } catch {
-        setSidebarW('w-64');
+        setSidebarOculta(false);
       }
     };
-    aplicar();
     window.addEventListener('storage', aplicar);
-    // Sidebar grava no mesmo contexto: escuta custom event.
-    window.addEventListener('omnisync-sidebar-toggle', aplicar);
-    return () => {
-      window.removeEventListener('storage', aplicar);
-      window.removeEventListener('omnisync-sidebar-toggle', aplicar);
-    };
+    return () => window.removeEventListener('storage', aplicar);
   }, []);
 
-  const contentPad = sidebarW === 'w-16' ? 'md:pl-16' : 'md:pl-64';
-  const asideW = navTop ? 'w-64' : sidebarW;
+  const asideW = navTop ? 'w-64' : sidebarOculta ? 'w-0' : 'w-16';
+  const contentPad = asideW === 'w-0' ? 'md:pl-0' : asideW === 'w-16' ? 'md:pl-16' : 'md:pl-64';
+
+  const alternarSidebar = () => {
+    setSidebarOculta(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('omnisync-sidebar-hidden', next ? '1' : '0');
+      } catch {
+        // Armazenamento indisponível: segue só em memória.
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Navegação lateral fixa — desktop */}
-      <aside className={cn('fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-200 md:block print:hidden', asideW)}>
+      <aside className={cn(
+        'fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-200 md:block print:hidden',
+        asideW,
+        !navTop && sidebarOculta && 'invisible overflow-hidden'
+      )}>
         {navTop ? <TopNav /> : <Sidebar />}
       </aside>
+
+      {/* Botão fixo: ocultar/mostrar a barra lateral inteira */}
+      {!navTop && (
+        <button
+          type="button"
+          onClick={alternarSidebar}
+          aria-label={sidebarOculta ? 'Mostrar menu lateral' : 'Ocultar menu lateral'}
+          aria-pressed={sidebarOculta}
+          data-testid="btn-toggle-sidebar"
+          title={sidebarOculta ? 'Mostrar menu lateral' : 'Ocultar menu lateral'}
+          className={cn(
+            'fixed top-20 z-40 hidden h-12 w-6 items-center justify-center rounded-r-md border border-l-0 border-slate-200 bg-white text-slate-500 shadow-md transition-[left] duration-200 hover:text-primary-600',
+            'dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400',
+            'md:flex print:hidden',
+            sidebarOculta ? 'left-0' : 'left-16'
+          )}
+        >
+          {sidebarOculta ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </button>
+      )}
 
       {/* Drawer mobile (sempre expandido) */}
       <MobileNav navTop={navTop} />
