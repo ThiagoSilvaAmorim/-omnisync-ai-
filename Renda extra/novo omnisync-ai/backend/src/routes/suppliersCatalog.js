@@ -41,6 +41,18 @@ const bodyImportSchema = z.object({
   categoria: z.string().trim().max(60).optional(),
 });
 
+// ---- Catálogo mostra só quem é de REVENDA ----
+// Critérios com dados reais do banco: tem produto no catálogo,
+// vende em marketplace (ML/Shopee/TikTok) ou é atacado (wholesale).
+// Ex.: McKinsey/contabilidade (importados do OSM) ficam fora da lista.
+const filtroRevenda = {
+  OR: [
+    { products: { some: {} } },
+    { marketplaces: { isEmpty: false } },
+    { niche: 'wholesale' },
+  ],
+};
+
 function requireAuth(req, res, next) {
   const user = usuarioDoRequest(req);
   if (!user) return res.status(401).json({ error: 'Autenticação necessária' });
@@ -160,7 +172,7 @@ router.use(requireAuth);
 router.get('/niches', async (_req, res) => {
   try {
     const linhas = await prisma.supplier.findMany({
-      where: { niche: { not: null } },
+      where: { niche: { not: null }, ...filtroRevenda },
       distinct: ['niche'],
       orderBy: { niche: 'asc' },
       select: { niche: true },
@@ -179,7 +191,7 @@ router.get('/cidades', async (req, res) => {
     return res.status(400).json({ code: 'INVALID_UF', message: parsed.error.issues[0]?.message || 'UF inválida.' });
   }
   try {
-    const where = parsed.data.uf ? { uf: parsed.data.uf } : {};
+    const where = { ...filtroRevenda, ...(parsed.data.uf ? { uf: parsed.data.uf } : {}) };
     const linhas = await prisma.supplier.groupBy({ by: ['city'], where, orderBy: { city: 'asc' }, _count: { _all: true } });
     const cidades = linhas
       .filter(l => l.city)
@@ -200,7 +212,8 @@ router.get('/', async (req, res) => {
   }
   const { q, uf, niche, cidade, order, page, limit } = parsed.data;
 
-  const where = { acceptsDropshipping: true };
+  // filtroRevenda via AND para não colidir com o OR da busca textual (q).
+  const where = { acceptsDropshipping: true, AND: [filtroRevenda] };
   if (uf) where.uf = uf;
   if (niche) where.niche = { equals: niche, mode: 'insensitive' };
   if (cidade) where.city = { equals: cidade, mode: 'insensitive' };

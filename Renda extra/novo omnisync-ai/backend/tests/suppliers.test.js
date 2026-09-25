@@ -72,6 +72,15 @@ describe('GET /api/suppliers (catálogo)', () => {
     expect(opts.where.acceptsDropshipping).toBe(true);
     expect(opts.where.uf).toBe('SP');
     expect(opts.where.niche).toMatchObject({ equals: 'wholesale', mode: 'insensitive' });
+    // Só fornecedores de revenda: produtos, marketplaces ou atacado (AND não
+    // colide com o OR da busca textual).
+    expect(opts.where.AND).toEqual([{
+      OR: [
+        { products: { some: {} } },
+        { marketplaces: { isEmpty: false } },
+        { niche: 'wholesale' },
+      ],
+    }]);
     expect(opts.skip).toBe(0);
     expect(opts.take).toBe(24);
   });
@@ -118,7 +127,13 @@ describe('GET /api/suppliers (catálogo)', () => {
       { city: 'Campinas', total: 76 },
       { city: 'Valinhos', total: 1 },
     ]);
-    expect(prisma.supplier.groupBy.mock.calls[0][0].where).toEqual({ uf: 'SP' });
+    const agrup = prisma.supplier.groupBy.mock.calls[0][0];
+    expect(agrup.where.uf).toBe('SP');
+    expect(agrup.where.OR).toEqual([
+      { products: { some: {} } },
+      { marketplaces: { isEmpty: false } },
+      { niche: 'wholesale' },
+    ]);
   });
 
   it('cidades sem UF retorna todas com contagem', async () => {
@@ -129,7 +144,9 @@ describe('GET /api/suppliers (catálogo)', () => {
     const res = await request(app).get('/api/suppliers/cidades').set(auth());
     expect(res.status).toBe(200);
     expect(res.body.cidades[0]).toEqual({ city: 'São Paulo', total: 274 });
-    expect(prisma.supplier.groupBy.mock.calls[0][0].where).toEqual({});
+    const agrup = prisma.supplier.groupBy.mock.calls[0][0];
+    expect(agrup.where).toHaveProperty('OR');
+    expect(agrup.where).not.toHaveProperty('uf');
   });
 
   it('cidades com UF inválida retorna 400', async () => {
