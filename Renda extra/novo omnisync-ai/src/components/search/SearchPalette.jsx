@@ -36,6 +36,7 @@ const TELAS = [
   { nome: 'Calendário', rota: '/calendario' },
   { nome: 'Conteúdo IA', rota: '/conteudo-ia' },
   { nome: 'Integrações', rota: '/integracoes' },
+  { nome: 'Conexões (ML/Shopee)', rota: '/integrations' },
   { nome: 'Segurança e Usuários', rota: '/seguranca' },
 ];
 

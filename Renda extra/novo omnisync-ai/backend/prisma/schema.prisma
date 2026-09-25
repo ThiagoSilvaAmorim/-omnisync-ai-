@@ -243,20 +243,50 @@ model Supplier {
 // Não confundir com o model Product (estoque interno, tabela "Product").
 model CatalogProduct {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  supplierId String   @map("supplier_id") @db.Uuid
+  // Nullable: anúncios vindos do sync do Mercado Livre não têm fornecedor.
+  supplierId String?  @map("supplier_id") @db.Uuid
   name       String
   imageUrl   String?  @map("image_url")
   costPrice  Float?   @map("cost_price")
   sku        String?
   niche      String?
   category   String?
-  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  // Anúncio do Mercado Livre (sync inicial pós-OAuth): upsert por item_id.
+  mlItemId     String?   @unique @map("ml_item_id")
+  mlSellerId   String?   @map("ml_seller_id")
+  preco        Float?
+  moeda        String?
+  statusMl     String?   @map("status_ml")
+  vendidos     Int?
+  permalink    String?
+  sincronizadoEm DateTime? @map("sincronizado_em")
 
   @@unique([supplierId, sku])
   @@index([supplierId])
   @@index([niche])
   @@index([category])
   @@map("products")
+}
+
+// Tendências do Mercado Livre (/trends/MLB[/{categoria}]) com cache local.
+// A API devolve só { keyword, url } — sem métricas por termo.
+model Tendencia {
+  id            Int      @id @default(autoincrement())
+  termo         String
+  categoria     String   @default("")
+  termoUrl      String   @default("") @map("termo_url")
+  produtoTitulo String?  @map("produto_titulo")
+  produtoImagem String?  @map("produto_imagem")
+  produtoPreco  Float?   @map("produto_preco")
+  produtoLink   String?  @map("produto_link")
+  ordem         Int      @default(0)
+  atualizadoEm  DateTime @default(now()) @map("atualizado_em")
+
+  @@unique([categoria, termo])
+  @@index([categoria, atualizadoEm])
+  @@map("tendencias")
 }
 
 

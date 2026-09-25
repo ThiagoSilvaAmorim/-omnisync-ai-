@@ -484,4 +484,25 @@ export const api = {
       ? request(`/analise-mercado/posicionamento?termo=${encodeURIComponent(termo)}&produtoId=${encodeURIComponent(produtoId)}`)
       : semBackend()),
   },
+  // ---------- Tendências do ML (/trends oficial; cache de 24h no backend) ----------
+  // atualizar=1 força nova varredura ignorando o cache.
+  tendencias: (categoria, atualizar) => {
+    if (!API_URL) return semBackend();
+    const qs = new URLSearchParams();
+    if (categoria) qs.set('categoria', categoria);
+    if (atualizar) qs.set('atualizar', '1');
+    const query = qs.toString();
+    return request(`/tendencias${query ? `?${query}` : ''}`);
+  },
+  // ---------- Tela /integrations (OAuth ML + sync inicial; Shopee pendente) ----------
+  integracoesMl: {
+    status: () => (API_URL ? request('/integracoes/ml/status') : semBackend()),
+    // URL de authorize: o navegador navega direto (302 → auth.mercadolivre.com.br).
+    authorizeUrl: (empresaId) => (API_URL
+      ? `${API_URL}/api/integracoes/ml/authorize${empresaId ? `?empresaId=${encodeURIComponent(empresaId)}` : ''}`
+      : null),
+    shopeeStatus: () => (API_URL ? request('/auth/shopee/status') : semBackend()),
+    // Sem app oficial Shopee: backend responde 501 com a mensagem honesta.
+    shopeeStart: () => (API_URL ? request('/auth/shopee/start') : semBackend()),
+  },
 };

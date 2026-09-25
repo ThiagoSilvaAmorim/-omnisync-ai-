@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Download, RefreshCw, Search, X } from 'lucide-react';
+import { Download, ExternalLink, RefreshCw, Search, X } from 'lucide-react';
 // radarProdutos removido — usar dados reais do Mercado Livre
 import { useToast } from '../hooks/useToast';
 import { api } from '../services/api';
 import { CATEGORIAS_INTERNET, buscarMercadoLivre, buscarProdutosInternet, formatPrecoRadar } from '../services/marketplace';
-import { agruparPorCampo, topVendidos, topAvaliados, menorPreco } from '../lib/radarAgregacoes';
+import { agruparPorCampo } from '../lib/radarAgregacoes';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
@@ -128,6 +128,11 @@ export function RadarMercado() {
   // Aba de agregação sobre os itens reais visíveis (internet + ML).
   // Vendedores = campo marca (no ML, marca é o nickname do vendedor).
   const [abaRadar, setAbaRadar] = useState('vendedores');
+  // Tendências oficiais do ML (/trends) — carregadas sob demanda, cache 24h no backend.
+  const [tendencias, setTendencias] = useState(null);
+  const [carregandoTendencias, setCarregandoTendencias] = useState(false);
+  const [atualizandoTendencias, setAtualizandoTendencias] = useState(false);
+  const [erroTendencias, setErroTendencias] = useState('');
   // Acompanhamento de preços (watchlist local do navegador).
   const [watchlist, setWatchlist] = useState(() => {
     try {
@@ -177,6 +182,38 @@ export function RadarMercado() {
     { value: 'categorias', label: 'Categorias' },
     { value: 'tendencias', label: 'Tendências' },
   ];
+  // Colunas da tela de Tendências: faixas da lista oficial da API
+  // (/trends não expõe métricas por termo — a ordem é a da própria API).
+  const COLUNAS_TENDENCIAS = [
+    { label: 'Maior crescimento', de: 0, ate: 7 },
+    { label: 'Mais desejados', de: 7, ate: 14 },
+    { label: 'Mais buscados', de: 14, ate: 20 },
+  ];
+
+  // Carrega sob demanda ao entrar na aba (sem varredura em loop de fundo).
+  const carregarTendencias = useCallback(async (forcar = false) => {
+    if (forcar) setAtualizandoTendencias(true);
+    else setCarregandoTendencias(true);
+    setErroTendencias('');
+    try {
+      const r = await api.tendencias('', forcar);
+      setTendencias(r);
+      registrarLog(`Tendências: ${r.total} termo(s) (${r.cache ? 'cache 24h' : 'varredura nova'})`);
+    } catch (e) {
+      setErroTendencias(e.message);
+      setTendencias(null);
+    } finally {
+      setCarregandoTendencias(false);
+      setAtualizandoTendencias(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (abaRadar === 'tendencias' && tendencias === null && !carregandoTendencias && !erroTendencias) {
+      carregarTendencias(false);
+    }
+  }, [abaRadar, tendencias, carregandoTendencias, erroTendencias, carregarTendencias]);
 
   // Análise Gemini somente sobre os cards reais visíveis (nunca DummyJSON).
   // Margem indisponível: custo de aquisição não existe nesses cards.
@@ -512,7 +549,9 @@ export function RadarMercado() {
           <div>
             <CardTitle>Agregações do Radar</CardTitle>
             <p className="mt-0.5 text-xs text-slate-500">
-              Calculadas dos {itensAgregados.length} item(ns) reais visíveis acima (internet + ML). Vendedores = campo marca (no ML, é o nickname do vendedor). Preço médio em moeda mista das fontes.
+              {abaRadar === 'tendencias'
+                ? 'Termos da API oficial /trends do Mercado Livre (conta conectada) • ordem da própria API • cache local de 24h • clique no termo para abrir no ML.'
+                : `Calculadas dos ${itensAgregados.length} item(ns) reais visíveis acima (internet + ML). Vendedores = campo marca (no ML, é o nickname do vendedor). Preço médio em moeda mista das fontes.`}
             </p>
           </div>
         </CardHeader>
@@ -529,7 +568,75 @@ export function RadarMercado() {
               </button>
             ))}
           </div>
-          {itensAgregados.length === 0 ? (
+          {abaRadar === 'tendencias' ? (
+            <div>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-slate-500">
+                  A API /trends não expõe métricas por termo: as colunas são faixas da lista oficial (1º–7º, 8º–14º, 15º–20º).
+                  {tendencias?.atualizadoEm ? ` Atualizado em ${new Date(tendencias.atualizadoEm).toLocaleString('pt-BR')}.` : ''}
+                </p>
+                <Button
+                  variant="secondary"
+                  onClick={() => carregarTendencias(true)}
+                  disabled={atualizandoTendencias || carregandoTendencias}
+                >
+                  <RefreshCw className={`h-4 w-4 ${atualizandoTendencias ? 'animate-spin' : ''}`} />
+                  {atualizandoTendencias ? 'Atualizando...' : 'Atualizar'}
+                </Button>
+              </div>
+              {erroTendencias ? (
+                <EmptyState
+                  title="Sem tendências no momento"
+                  description={`${erroTendencias} — clique em "Atualizar" para tentar de novo.`}
+                />
+              ) : carregandoTendencias ? (
+                <div className="grid gap-4 md:grid-cols-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-40 rounded-xl" />
+                  ))}
+                </div>
+              ) : !tendencias || tendencias.termos.length === 0 ? (
+                <EmptyState
+                  title="Nenhum termo de tendência"
+                  description={'A API do Mercado Livre não devolveu termos agora. Use "Atualizar" para tentar de novo.'}
+                />
+              ) : (
+                <div className="grid gap-4 md:grid-cols-3">
+                  {COLUNAS_TENDENCIAS.map(coluna => (
+                    <div key={coluna.label}>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{coluna.label}</p>
+                      <div className="space-y-1">
+                        {tendencias.termos.slice(coluna.de, coluna.ate).map(t => {
+                          const href = t.produto?.link || t.termoUrl || null;
+                          return (
+                            <a
+                              key={t.ordem}
+                              href={href || undefined}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={e => { if (!href) e.preventDefault(); }}
+                              title={href ? `Abrir "${t.termo}" no Mercado Livre` : t.termo}
+                              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/60"
+                            >
+                              <span className="w-5 shrink-0 text-right text-[11px] text-slate-400">{t.ordem}</span>
+                              <span className="min-w-0 flex-1 truncate font-medium">{t.termo}</span>
+                              {t.produto?.titulo && (
+                                <span className="max-w-[45%] shrink-0 truncate text-[11px] text-slate-400">{t.produto.titulo}</span>
+                              )}
+                              {href && <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-400" />}
+                            </a>
+                          );
+                        })}
+                        {tendencias.termos.slice(coluna.de, coluna.ate).length === 0 && (
+                          <p className="px-2 py-1 text-xs text-slate-400">Sem termos nesta faixa.</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : itensAgregados.length === 0 ? (
             <EmptyState title="Sem itens para agregar" description="Busque produtos acima para ver vendedores, categorias e tendências." />
           ) : abaRadar === 'vendedores' ? (
             <div className="overflow-x-auto">
@@ -578,32 +685,8 @@ export function RadarMercado() {
               </table>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-3">
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Mais vendidos</p>
-                {topVendidos(itensAgregados).map(p => (
-                  <p key={p.id} className="truncate py-1 text-sm text-slate-700 dark:text-slate-200" title={p.nome}>
-                    {p.nome} <span className="text-slate-400">• {Number(p.vendidos).toLocaleString('pt-BR')}</span>
-                  </p>
-                ))}
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Melhor avaliados</p>
-                {topAvaliados(itensAgregados).map(p => (
-                  <p key={p.id} className="truncate py-1 text-sm text-slate-700 dark:text-slate-200" title={p.nome}>
-                    {p.nome} <span className="text-slate-400">• {p.avaliacao}</span>
-                  </p>
-                ))}
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Menor preço</p>
-                {menorPreco(itensAgregados).map(p => (
-                  <p key={p.id} className="truncate py-1 text-sm text-slate-700 dark:text-slate-200" title={p.nome}>
-                    {p.nome} <span className="text-slate-400">• {formatPrecoRadar(p)}</span>
-                  </p>
-                ))}
-              </div>
-            </div>
+            /* As abas restantes já renderizaram acima (vendedores/categorias). */
+            null
           )}
         </CardContent>
       </Card>

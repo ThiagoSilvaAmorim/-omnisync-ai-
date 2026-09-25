@@ -27,6 +27,8 @@ import cupomRoutes from './routes/cupons.js';
 import problemaRoutes from './routes/problemas.js';
 import metaRoutes from './routes/metas.js';
 import analiseMercadoRoutes from './routes/analiseMercado.js';
+import tendenciasRoutes from './routes/tendencias.js';
+import integracoesMlRoutes from './routes/integracoesMl.js';
 
 // ============================================
 // app.js — Express app com as rotas da API.
@@ -331,6 +333,12 @@ app.use('/api/metas', metaRoutes);
 
 // Análise de Mercado (catálogo oficial do ML; sem scrape).
 app.use('/api/analise-mercado', analiseMercadoRoutes);
+
+// Tendências do ML (/trends) com cache local de 24h (sem scrape).
+app.use('/api/tendencias', tendenciasRoutes);
+
+// Tela /integrations: OAuth ML + sync inicial + status (antes de /api/integracoes exato).
+app.use('/api/integracoes/ml', integracoesMlRoutes);
 
 // ---------- Shopee / TikTok Shop (somente preparação) ----------
 app.use('/api/auth/shopee', shopeeAuthRoutes);

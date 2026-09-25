@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppProvider } from '../context/AppContext';
+import { api } from '../services/api';
 import { RadarMercado } from '../pages/RadarMercado';
 
 vi.mock('../services/marketplace', () => ({
@@ -18,6 +19,19 @@ vi.mock('../services/api', () => ({
   api: {
     getProdutos: vi.fn(async () => ({ produtos: [] })),
     criarProduto: vi.fn(),
+    // Tendências oficiais do ML (/trends) — cache simulado com 3 termos.
+    tendencias: vi.fn(async () => ({
+      ok: true,
+      cache: true,
+      categoria: null,
+      atualizadoEm: '2026-09-25T10:00:00Z',
+      total: 3,
+      termos: [
+        { ordem: 1, termo: 'fone bluetooth', termoUrl: 'https://lista.mercadolivre.com.br/fone-bluetooth', produto: null },
+        { ordem: 2, termo: 'smartwatch', termoUrl: 'https://lista.mercadolivre.com.br/smartwatch', produto: null },
+        { ordem: 15, termo: 'case iphone', termoUrl: 'https://lista.mercadolivre.com.br/case-iphone', produto: null },
+      ],
+    })),
   },
 }));
 
@@ -44,6 +58,25 @@ describe('RadarMercado (abas de agregação)', () => {
     fireEvent.click(screen.getByText('Categorias'));
     expect(await screen.findByText('Eletrônicos')).toBeTruthy();
     fireEvent.click(screen.getByText('Tendências'));
-    expect(await screen.findByText('Melhor avaliados')).toBeTruthy();
+    expect(await screen.findByText('Maior crescimento')).toBeTruthy();
+  });
+
+  it('Tendências usa a API /trends: 3 colunas, termo clicável e botão Atualizar', async () => {
+    renderizar();
+    await screen.findByText('Agregações do Radar');
+    fireEvent.click(screen.getByText('Tendências'));
+
+    expect(await screen.findByText('Mais desejados')).toBeTruthy();
+    expect(await screen.findByText('Mais buscados')).toBeTruthy();
+
+    const link = await screen.findByRole('link', { name: /fone bluetooth/ });
+    expect(link).toHaveAttribute('href', 'https://lista.mercadolivre.com.br/fone-bluetooth');
+    expect(link).toHaveAttribute('target', '_blank');
+
+    // Forçar nova varredura passa atualizar=1 (ignora o cache de 24h).
+    fireEvent.click(screen.getByRole('button', { name: /Atualizar/ }));
+    await waitFor(() => {
+      expect(api.tendencias).toHaveBeenCalledWith('', true);
+    });
   });
 });

@@ -18,8 +18,12 @@ function checkEnv() {
   }
 }
 
-function generateState(empresaId, userId, codeVerifier) {
+function generateState(empresaId, userId, codeVerifier, retorno) {
   const payload = { empresaId, userId, ts: Date.now(), nonce: crypto.randomBytes(16).toString('hex'), codeVerifier };
+  // Página de destino pós-callback (ex.: /integrations). Só caminho interno.
+  if (typeof retorno === 'string' && retorno.startsWith('/') && !retorno.startsWith('//')) {
+    payload.retorno = retorno;
+  }
   return Buffer.from(JSON.stringify(payload)).toString('base64url');
 }
 
@@ -38,10 +42,10 @@ function generatePKCE() {
   return { codeVerifier, codeChallenge };
 }
 
-function buildAuthUrl({ empresaId, userId, usePKCE = true }) {
+function buildAuthUrl({ empresaId, userId, usePKCE = true, retorno }) {
   checkEnv();
   const { codeVerifier, codeChallenge } = generatePKCE();
-  const state = generateState(empresaId, userId, codeVerifier);
+  const state = generateState(empresaId, userId, codeVerifier, retorno);
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: process.env.ML_CLIENT_ID,

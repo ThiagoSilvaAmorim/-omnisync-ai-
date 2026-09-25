@@ -44,6 +44,7 @@ const Calendario = lazy(() => import('./pages/Calendario').then(m => ({ default:
 const ConteudoIA = lazy(() => import('./pages/ConteudoIA').then(m => ({ default: m.ConteudoIA })));
 const Integracoes = lazy(() => import('./pages/Integracao').then(m => ({ default: m.Integracao })));
 const Integracao = lazy(() => import('./pages/Integracao').then(m => ({ default: m.Integracao })));
+const Integrations = lazy(() => import('./pages/Integrations').then(m => ({ default: m.Integrations })));
 const Ads = lazy(() => import('./pages/Ads').then(m => ({ default: m.Ads })));
 const Marketing = lazy(() => import('./pages/Marketing').then(m => ({ default: m.Marketing })));
 const Configuracoes = lazy(() => import('./pages/Configuracoes').then(m => ({ default: m.Configuracoes })));
@@ -118,8 +119,9 @@ export default function App() {
             <Route path="/laboratorio-oportunidades" element={<LaboratorioOportunidades />} />
             <Route path="/calendario" element={<Calendario />} />
             <Route path="/conteudo-ia" element={<ConteudoIA />} />
-            <Route path="/integracao" element={<Integracoes />} />
-            <Route path="/integracoes" element={<Integracao />} />
+        <Route path="/integracao" element={<Integracoes />} />
+        <Route path="/integracoes" element={<Integracao />} />
+        <Route path="/integrations" element={<Integrations />} />
             <Route path="/marketing" element={<Marketing />} />
             <Route path="/configuracoes" element={<Configuracoes />} />
             <Route path="/ia-automacao" element={<Automacao />} />

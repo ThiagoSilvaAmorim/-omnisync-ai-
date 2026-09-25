@@ -110,6 +110,7 @@ const NAV_SECTIONS = [
     Icone: Plug,
     itens: [
       { nome: 'Integrações', rota: '/integracao', Icone: Plug },
+      { nome: 'Conexões (ML/Shopee)', rota: '/integrations', Icone: Plug },
     ],
   },
   {

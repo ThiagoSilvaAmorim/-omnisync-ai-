@@ -3,9 +3,17 @@
 
 import { Router } from 'express';
 import { mlOAuth } from '../services/mlOAuth.js';
+import { agendarSyncInicial } from '../services/mlSync.js';
 import { usuarioDoRequest } from '../auth.js';
 
 const router = Router();
+
+// Só caminhos internos (o state já nasce sanitizado; aqui é defesa em profundidade).
+function destinoRetorno(retorno, padrao) {
+  return typeof retorno === 'string' && retorno.startsWith('/') && !retorno.startsWith('//')
+    ? retorno
+    : padrao;
+}
 
 function requireAuth(req, res, next) {
   const user = usuarioDoRequest(req);
@@ -20,7 +28,8 @@ router.get('/start', requireAuth, (req, res) => {
   try {
     const { url, state } = mlOAuth.buildAuthUrl({ 
       empresaId: req.empresaId, 
-      userId: req.empresaId 
+      userId: req.empresaId,
+      retorno: '/integracoes',
     });
     res.json({ url, state });
   } catch (error) {
@@ -30,26 +39,28 @@ router.get('/start', requireAuth, (req, res) => {
 });
 
 // GET /api/auth/ml/callback
-// Callback OAuth Mercado Livre
+// Callback OAuth Mercado Livre (é o redirect_uri registrado no app do ML;
+// por isso /integrations também volta por aqui — o destino vem no state).
 router.get('/callback', async (req, res) => {
-  try {
-    const { code, state, error, error_description } = req.query;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const { code, state, error, error_description } = req.query;
+  const estado = state ? mlOAuth.parseState(state) : null;
+  const destino = destinoRetorno(estado?.retorno, '/integracoes');
 
+  try {
     if (error) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      return res.redirect(`${frontendUrl}/integracoes?error=${encodeURIComponent(error_description || error)}`);
+      return res.redirect(`${frontendUrl}${destino}?error=${encodeURIComponent(error_description || error)}`);
     }
 
     if (!code || !state) {
       return res.status(400).json({ error: 'Parâmetros code e state são obrigatórios' });
     }
 
-    const parsedState = mlOAuth.parseState(state);
-    if (!parsedState) {
+    if (!estado) {
       return res.status(400).json({ error: 'State inválido' });
     }
 
-    const { empresaId, userId, codeVerifier } = parsedState;
+    const { empresaId, userId, codeVerifier } = estado;
 
     const tokens = await mlOAuth.exchangeCodeForTokens({
       code,
@@ -66,12 +77,13 @@ router.get('/callback', async (req, res) => {
       mlUser,
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/integracoes?connected=mercadolivre`);
+    // Sync inicial dos anúncios em background (progresso via /integrations).
+    agendarSyncInicial(empresaId);
+
+    res.redirect(`${frontendUrl}${destino}?connected=mercadolivre`);
   } catch (error) {
     console.error('[MLAuth] Erro no callback:', error);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/integracoes?error=${encodeURIComponent('Falha ao conectar Mercado Livre')}`);
+    res.redirect(`${frontendUrl}${destino}?error=${encodeURIComponent('Falha ao conectar Mercado Livre')}`);
   }
 });
 
