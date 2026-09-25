@@ -21,6 +21,8 @@ const querySchema = z.object({
   uf: z.string().trim().transform(v => v.toUpperCase()).refine(v => v === '' || ufsValidas.has(v), 'UF inválida').optional().default(''),
   niche: z.string().trim().max(60).optional().default(''),
   category: z.string().trim().max(60).optional().default(''),
+  // fonte=ml → anúncios vindos do sync do Mercado Livre (supplierId nulo).
+  fonte: z.enum(['ml']).optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(LIMITE_MAXIMO).optional().default(LIMITE_PADRAO),
 });
@@ -40,7 +42,49 @@ router.get('/', async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ code: 'INVALID_QUERY', message: parsed.error.issues[0]?.message || 'Parâmetros inválidos.' });
   }
-  const { q, uf, niche, category, page, limit } = parsed.data;
+  const { q, uf, niche, category, fonte, page, limit } = parsed.data;
+
+  // Anúncios do Mercado Livre: não têm fornecedor (supplierId nulo) e não
+  // entram no catálogo de dropshipping — listagem própria, com dados do ML.
+  if (fonte === 'ml') {
+    try {
+      const where = { mlItemId: { not: null } };
+      if (q) {
+        where.OR = [
+          { name: { contains: q, mode: 'insensitive' } },
+          { mlItemId: { contains: q, mode: 'insensitive' } },
+        ];
+      }
+      const [itens, total] = await Promise.all([
+        prisma.catalogProduct.findMany({
+          where,
+          orderBy: [{ sincronizadoEm: { sort: 'desc', nulls: 'last' } }, { name: 'asc' }],
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.catalogProduct.count({ where }),
+      ]);
+      const items = itens.map(p => ({
+        id: p.id,
+        name: p.name,
+        imageUrl: p.imageUrl,
+        niche: p.niche,
+        category: p.category,
+        mlItemId: p.mlItemId,
+        mlSellerId: p.mlSellerId,
+        preco: p.preco,
+        moeda: p.moeda,
+        statusMl: p.statusMl,
+        vendidos: p.vendidos,
+        permalink: p.permalink,
+        sincronizadoEm: p.sincronizadoEm,
+      }));
+      return res.json({ items, total, page, limit, fonte: 'ml', categorias: [] });
+    } catch (e) {
+      console.error('[CatalogProducts] Erro ao buscar anúncios ML:', e.message);
+      return res.status(500).json({ error: 'Erro ao buscar anúncios do Mercado Livre' });
+    }
+  }
 
   const base = { supplier: { acceptsDropshipping: true } };
   if (uf) base.supplier.uf = uf;

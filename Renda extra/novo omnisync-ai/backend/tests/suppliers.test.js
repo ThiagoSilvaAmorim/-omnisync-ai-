@@ -268,6 +268,42 @@ describe('GET /api/products (catálogo de produtos)', () => {
     expect(res.body.total).toBe(0);
   });
 
+  it('fonte=ml lista anúncios do ML sem filtro de fornecedor (supplier nulo)', async () => {
+    prisma.catalogProduct.findMany.mockResolvedValue([
+      {
+        id: 'p9', name: 'Smartwatch X', imageUrl: 'https://http2.mlstatic.com/x.jpg', niche: null, category: 'Eletrônicos',
+        mlItemId: 'MLB1234', mlSellerId: '238610309', preco: 199.9, moeda: 'BRL', statusMl: 'active', vendidos: 3,
+        permalink: 'https://www.mercadolivre.com.br/anuncio/MLB1234', sincronizadoEm: new Date('2026-09-25T10:00:00Z'),
+        supplier: null,
+      },
+    ]);
+    prisma.catalogProduct.count.mockResolvedValue(1);
+    const res = await request(app).get('/api/products?fonte=ml').set(auth());
+
+    expect(res.status).toBe(200);
+    expect(res.body.fonte).toBe('ml');
+    expect(res.body.total).toBe(1);
+    expect(res.body.items[0]).toMatchObject({
+      name: 'Smartwatch X',
+      mlItemId: 'MLB1234',
+      preco: 199.9,
+      moeda: 'BRL',
+      statusMl: 'active',
+      vendidos: 3,
+      permalink: 'https://www.mercadolivre.com.br/anuncio/MLB1234',
+    });
+    const opts = prisma.catalogProduct.findMany.mock.calls[0][0];
+    expect(opts.where.mlItemId).toEqual({ not: null });
+    expect(opts.where.supplier).toBeUndefined();
+    expect(prisma.catalogProduct.groupBy).not.toHaveBeenCalled();
+  });
+
+  it('fonte inválida retorna 400 sem tocar no banco', async () => {
+    const res = await request(app).get('/api/products?fonte=outra').set(auth());
+    expect(res.status).toBe(400);
+    expect(prisma.catalogProduct.findMany).not.toHaveBeenCalled();
+  });
+
   it('filtra por categoria real do produto', async () => {
     prisma.catalogProduct.findMany.mockResolvedValue([
       { id: 'p1', name: 'Fone Bluetooth TWS', sku: 'S-FONE', imageUrl: null, costPrice: null, niche: null, category: 'Eletrônicos', supplier: { slug: '3g-foods', name: '3G Foods', uf: 'SP', city: 'Campinas' } },

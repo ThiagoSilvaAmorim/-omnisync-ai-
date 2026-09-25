@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, ExternalLink, RefreshCw, Search, X } from 'lucide-react';
 // radarProdutos removido — usar dados reais do Mercado Livre
 import { useToast } from '../hooks/useToast';
@@ -133,6 +133,10 @@ export function RadarMercado() {
   const [carregandoTendencias, setCarregandoTendencias] = useState(false);
   const [atualizandoTendencias, setAtualizandoTendencias] = useState(false);
   const [erroTendencias, setErroTendencias] = useState('');
+  // Seletor de categoria (menu do site ML, cache 24h no backend).
+  const [categoriaTendencia, setCategoriaTendencia] = useState('');
+  const [categoriasMl, setCategoriasMl] = useState([]);
+  const categoriasIniciadas = useRef(false);
   // Acompanhamento de preços (watchlist local do navegador).
   const [watchlist, setWatchlist] = useState(() => {
     try {
@@ -191,14 +195,14 @@ export function RadarMercado() {
   ];
 
   // Carrega sob demanda ao entrar na aba (sem varredura em loop de fundo).
-  const carregarTendencias = useCallback(async (forcar = false) => {
+  const carregarTendencias = useCallback(async (forcar = false, categoria = '') => {
     if (forcar) setAtualizandoTendencias(true);
     else setCarregandoTendencias(true);
     setErroTendencias('');
     try {
-      const r = await api.tendencias('', forcar);
+      const r = await api.tendencias(categoria, forcar);
       setTendencias(r);
-      registrarLog(`Tendências: ${r.total} termo(s) (${r.cache ? 'cache 24h' : 'varredura nova'})`);
+      registrarLog(`Tendências${categoria ? ` (${categoria})` : ''}: ${r.total} termo(s) (${r.cache ? 'cache 24h' : 'varredura nova'})`);
     } catch (e) {
       setErroTendencias(e.message);
       setTendencias(null);
@@ -211,9 +215,23 @@ export function RadarMercado() {
 
   useEffect(() => {
     if (abaRadar === 'tendencias' && tendencias === null && !carregandoTendencias && !erroTendencias) {
-      carregarTendencias(false);
+      carregarTendencias(false, categoriaTendencia);
     }
-  }, [abaRadar, tendencias, carregandoTendencias, erroTendencias, carregarTendencias]);
+  }, [abaRadar, tendencias, carregandoTendencias, erroTendencias, carregarTendencias, categoriaTendencia]);
+
+  // Menu de categorias: uma tentativa por sessão (falha → seletor fica oculto).
+  useEffect(() => {
+    if (abaRadar !== 'tendencias' || categoriasIniciadas.current) return;
+    categoriasIniciadas.current = true;
+    api.tendenciasCategorias()
+      .then(r => setCategoriasMl(r?.categorias || []))
+      .catch(() => setCategoriasMl([]));
+  }, [abaRadar]);
+
+  const trocarCategoriaTendencia = c => {
+    setCategoriaTendencia(c);
+    carregarTendencias(false, c);
+  };
 
   // Análise Gemini somente sobre os cards reais visíveis (nunca DummyJSON).
   // Margem indisponível: custo de aquisição não existe nesses cards.
@@ -575,14 +593,25 @@ export function RadarMercado() {
                   A API /trends não expõe métricas por termo: as colunas são faixas da lista oficial (1º–7º, 8º–14º, 15º–20º).
                   {tendencias?.atualizadoEm ? ` Atualizado em ${new Date(tendencias.atualizadoEm).toLocaleString('pt-BR')}.` : ''}
                 </p>
-                <Button
-                  variant="secondary"
-                  onClick={() => carregarTendencias(true)}
-                  disabled={atualizandoTendencias || carregandoTendencias}
-                >
-                  <RefreshCw className={`h-4 w-4 ${atualizandoTendencias ? 'animate-spin' : ''}`} />
-                  {atualizandoTendencias ? 'Atualizando...' : 'Atualizar'}
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {categoriasMl.length > 0 && (
+                    <Select
+                      value={categoriaTendencia}
+                      onChange={trocarCategoriaTendencia}
+                      options={[{ value: '', label: 'Geral (MLB)' }, ...categoriasMl.map(c => ({ value: c.id, label: c.nome }))]}
+                      className="w-56"
+                      aria-label="Categoria"
+                    />
+                  )}
+                  <Button
+                    variant="secondary"
+                    onClick={() => carregarTendencias(true, categoriaTendencia)}
+                    disabled={atualizandoTendencias || carregandoTendencias}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${atualizandoTendencias ? 'animate-spin' : ''}`} />
+                    {atualizandoTendencias ? 'Atualizando...' : 'Atualizar'}
+                  </Button>
+                </div>
               </div>
               {erroTendencias ? (
                 <EmptyState
@@ -620,8 +649,20 @@ export function RadarMercado() {
                             >
                               <span className="w-5 shrink-0 text-right text-[11px] text-slate-400">{t.ordem}</span>
                               <span className="min-w-0 flex-1 truncate font-medium">{t.termo}</span>
-                              {t.produto?.titulo && (
-                                <span className="max-w-[45%] shrink-0 truncate text-[11px] text-slate-400">{t.produto.titulo}</span>
+                              {t.produto && (
+                                <span className="flex min-w-0 max-w-[55%] shrink-0 items-center gap-1.5">
+                                  {t.produto.imagem && (
+                                    <img src={t.produto.imagem} alt="" loading="lazy" className="h-6 w-6 shrink-0 rounded object-cover" />
+                                  )}
+                                  {t.produto.titulo && (
+                                    <span className="min-w-0 truncate text-[11px] text-slate-400">{t.produto.titulo}</span>
+                                  )}
+                                  {t.produto.preco != null && (
+                                    <span className="shrink-0 text-[11px] font-semibold text-teal-600 dark:text-teal-400">
+                                      {Number(t.produto.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                    </span>
+                                  )}
+                                </span>
                               )}
                               {href && <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-400" />}
                             </a>

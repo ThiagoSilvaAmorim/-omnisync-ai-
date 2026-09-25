@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Plug, RefreshCw, Store, Unplug } from 'lucide-react';
+import { ExternalLink, Plug, RefreshCw, Store, Unplug } from 'lucide-react';
 // Tela /integrations — conexões de conta (Mercado Livre + Shopee).
 // Fonte única de verdade: GET /api/integracoes/ml/status (dados reais do
 // backend, incluindo o progresso do sync inicial em `products`).
@@ -31,6 +31,24 @@ export function Integrations() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [acao, setAcao] = useState('');
+  // Anúncios vindos do sync inicial (products com mlItemId).
+  const [anuncios, setAnuncios] = useState([]);
+  const [totalAnuncios, setTotalAnuncios] = useState(0);
+  const [carregandoAnuncios, setCarregandoAnuncios] = useState(false);
+
+  const carregarAnuncios = useCallback(async () => {
+    setCarregandoAnuncios(true);
+    try {
+      const r = await api.produtosMl(1, 48);
+      setAnuncios(Array.isArray(r?.items) ? r.items : []);
+      setTotalAnuncios(Number(r?.total) || 0);
+    } catch {
+      setAnuncios([]);
+      setTotalAnuncios(0);
+    } finally {
+      setCarregandoAnuncios(false);
+    }
+  }, []);
 
   const carregar = useCallback(async () => {
     try {
@@ -51,6 +69,19 @@ export function Integrations() {
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  // Anúncios sincronizados: carrega quando conectado e recarrega quando o
+  // sync finaliza (finalizadoEm muda) — nunca em loop de fundo.
+  const chaveSync = ml?.sincronizacao?.finalizadoEm || '';
+  useEffect(() => {
+    if (!ml?.conectado) {
+      setAnuncios([]);
+      setTotalAnuncios(0);
+      return undefined;
+    }
+    carregarAnuncios();
+    return undefined;
+  }, [ml?.conectado, chaveSync, carregarAnuncios]);
 
   // Retorno do OAuth (o callback redireciona para cá com ?connected= ou ?error=).
   useEffect(() => {
@@ -291,6 +322,71 @@ export function Integrations() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Anúncios vindos do sync inicial (products por mlItemId) */}
+      {ml?.conectado && (
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Anúncios sincronizados</CardTitle>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Gravados em products por item_id do ML (upsert automático após conectar). Total na base: {totalAnuncios}.
+              </p>
+            </div>
+            <Button variant="secondary" onClick={carregarAnuncios} disabled={carregandoAnuncios}>
+              <RefreshCw className={`h-4 w-4 ${carregandoAnuncios ? 'animate-spin' : ''}`} /> Atualizar lista
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {carregandoAnuncios ? (
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 rounded-lg" />
+                ))}
+              </div>
+            ) : anuncios.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                0 anúncios na conta — nada para sincronizar. Novos anúncios entram sozinhos na próxima conexão.
+              </p>
+            ) : (
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                {anuncios.map(a => (
+                  <li key={a.id} className="flex items-center gap-3 py-2.5">
+                    {a.imageUrl && (
+                      <img src={a.imageUrl} alt="" loading="lazy" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100" title={a.name}>{a.name}</p>
+                      <p className="text-[11px] text-slate-500">
+                        {a.mlItemId} • {a.statusMl || '—'} • {Number(a.vendidos || 0).toLocaleString('pt-BR')} vendidos
+                        {a.sincronizadoEm ? ` • sinc. ${new Date(a.sincronizadoEm).toLocaleString('pt-BR')}` : ''}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm font-semibold text-primary-600 dark:text-primary-400">
+                      {a.preco != null
+                        ? (a.moeda === 'BRL' || !a.moeda
+                          ? Number(a.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                          : `${Number(a.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${a.moeda}`)
+                        : '—'}
+                    </span>
+                    {a.permalink && (
+                      <a
+                        href={a.permalink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Abrir anúncio no Mercado Livre"
+                        className="shrink-0 rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-primary-600 dark:hover:bg-slate-800"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -494,6 +494,14 @@ export const api = {
     const query = qs.toString();
     return request(`/tendencias${query ? `?${query}` : ''}`);
   },
+  // Categorias do site (menu do seletor da tela de Tendências; cache 24h no BE).
+  tendenciasCategorias: () => (API_URL
+    ? request('/tendencias/categorias')
+    : semBackend()),
+  // Anúncios sincronizados do ML (products com mlItemId; supplier nulo).
+  produtosMl: (page = 1, limit = 48, q = '') => (API_URL
+    ? request(`/products?fonte=ml&page=${page}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ''}`)
+    : semBackend()),
   // ---------- Tela /integrations (OAuth ML + sync inicial; Shopee pendente) ----------
   integracoesMl: {
     status: () => (API_URL ? request('/integracoes/ml/status') : semBackend()),

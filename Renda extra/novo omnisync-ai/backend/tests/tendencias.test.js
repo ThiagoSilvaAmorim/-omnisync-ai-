@@ -166,4 +166,40 @@ describe('tendências ML (API oficial /trends, cache 24h)', () => {
     expect(res.body.code).toBe('ML_TRENDS_FAILED');
     expect(prisma.tendencia.createMany).not.toHaveBeenCalled();
   });
+
+  it('categorias: sem token retorna 401 e não consulta a API', async () => {
+    mlOAuth.getValidAccessToken.mockResolvedValue(null);
+    const res = await request(app).get('/api/tendencias/categorias').set(auth());
+
+    expect(res.status).toBe(401);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('categorias: falha da API vira 502 com código e não popula o cache', async () => {
+    global.fetch = vi.fn(async () => resposta(false, 500, { error: 'x' }));
+    const res = await request(app).get('/api/tendencias/categorias').set(auth());
+
+    expect(res.status).toBe(502);
+    expect(res.body.code).toBe('ML_CATEGORIES_FAILED');
+  });
+
+  it('categorias: mapeia id/nome e serve cache na chamada seguinte (1 fetch só)', async () => {
+    global.fetch = vi.fn(async () => resposta(true, 200, [
+      { id: 'MLB5672', name: 'Acessórios para Veículos' },
+      { id: 'MLB1000', name: 'Informática' },
+    ]));
+    const r1 = await request(app).get('/api/tendencias/categorias').set(auth());
+    const r2 = await request(app).get('/api/tendencias/categorias').set(auth());
+
+    expect(r1.status).toBe(200);
+    expect(r1.body.cache).toBe(false);
+    expect(r1.body.categorias).toEqual([
+      { id: 'MLB5672', nome: 'Acessórios para Veículos' },
+      { id: 'MLB1000', nome: 'Informática' },
+    ]);
+    expect(r2.status).toBe(200);
+    expect(r2.body.cache).toBe(true);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(String(global.fetch.mock.calls[0][0])).toContain('/sites/MLB/categories');
+  });
 });

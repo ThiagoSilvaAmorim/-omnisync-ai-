@@ -14,6 +14,7 @@ vi.mock('../services/api', () => ({
       shopeeStart: vi.fn(),
     },
     mlDisconnect: vi.fn(),
+    produtosMl: vi.fn(),
   },
 }));
 
@@ -63,6 +64,7 @@ describe('Integrations (/integrations) — cards ML e Shopee', () => {
       provider: 'shopee',
       conta: null,
     });
+    api.produtosMl.mockResolvedValue({ items: [], total: 0, fonte: 'ml' });
     window.history.replaceState({}, '', '/');
   });
 
@@ -130,5 +132,49 @@ describe('Integrations (/integrations) — cards ML e Shopee', () => {
       expect(api.integracoesMl.status).toHaveBeenCalledTimes(2);
     });
     expect(window.location.search).toBe('');
+  });
+
+  it('sem conta conectada não mostra nem busca a seção de anúncios', async () => {
+    renderizar();
+    expect(await screen.findByTestId('card-ml')).toBeTruthy();
+    expect(screen.queryByText('Anúncios sincronizados')).toBeNull();
+    expect(api.produtosMl).not.toHaveBeenCalled();
+  });
+
+  it('conectada lista os anúncios sincronizados (título, preço e link do ML)', async () => {
+    api.integracoesMl.status.mockResolvedValue(STATUS_ON);
+    api.produtosMl.mockResolvedValue({
+      items: [{
+        id: 'p9',
+        name: 'Smartwatch Pro 50m',
+        imageUrl: 'https://http2.mlstatic.com/sw.jpg',
+        mlItemId: 'MLB1234',
+        preco: 199.9,
+        moeda: 'BRL',
+        statusMl: 'active',
+        vendidos: 3,
+        permalink: 'https://www.mercadolivre.com.br/anuncio/MLB1234',
+        sincronizadoEm: '2026-09-25T10:00:00Z',
+      }],
+      total: 1,
+      fonte: 'ml',
+    });
+    renderizar();
+
+    expect(await screen.findByText('Anúncios sincronizados')).toBeTruthy();
+    expect(await screen.findByText('Smartwatch Pro 50m')).toBeTruthy();
+    expect(await screen.findByText('R$ 199,90')).toBeTruthy();
+    await waitFor(() => {
+      expect(api.produtosMl).toHaveBeenCalledWith(1, 48);
+    });
+    expect(screen.getByTitle('Abrir anúncio no Mercado Livre'))
+      .toHaveAttribute('href', 'https://www.mercadolivre.com.br/anuncio/MLB1234');
+  });
+
+  it('conectada sem anúncios mostra estado vazio honesto (0 anúncios na conta)', async () => {
+    api.integracoesMl.status.mockResolvedValue(STATUS_ON);
+    renderizar();
+    expect(await screen.findByText(/0 anúncios na conta/)).toBeTruthy();
+    expect(screen.getByText('Anúncios sincronizados')).toBeTruthy();
   });
 });

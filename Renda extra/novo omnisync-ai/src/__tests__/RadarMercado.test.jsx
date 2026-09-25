@@ -28,8 +28,27 @@ vi.mock('../services/api', () => ({
       total: 3,
       termos: [
         { ordem: 1, termo: 'fone bluetooth', termoUrl: 'https://lista.mercadolivre.com.br/fone-bluetooth', produto: null },
-        { ordem: 2, termo: 'smartwatch', termoUrl: 'https://lista.mercadolivre.com.br/smartwatch', produto: null },
+        {
+          ordem: 2,
+          termo: 'smartwatch',
+          termoUrl: 'https://lista.mercadolivre.com.br/smartwatch',
+          produto: {
+            titulo: 'Smartwatch Pro 50m',
+            imagem: 'https://http2.mlstatic.com/sw.jpg',
+            preco: 199.9,
+            link: 'https://www.mercadolivre.com.br/anuncio/9',
+          },
+        },
         { ordem: 15, termo: 'case iphone', termoUrl: 'https://lista.mercadolivre.com.br/case-iphone', produto: null },
+      ],
+    })),
+    // Menu de categorias do site ML (uma tentativa por sessão).
+    tendenciasCategorias: vi.fn(async () => ({
+      ok: true,
+      cache: false,
+      categorias: [
+        { id: 'MLB1051', nome: 'Celulares e Telefonia' },
+        { id: 'MLB1000', nome: 'Informática' },
       ],
     })),
   },
@@ -77,6 +96,28 @@ describe('RadarMercado (abas de agregação)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Atualizar/ }));
     await waitFor(() => {
       expect(api.tendencias).toHaveBeenCalledWith('', true);
+    });
+  });
+
+  it('linha com produto mostra imagem, título e preço (quando a busca por termo resolve)', async () => {
+    const { container } = renderizar();
+    await screen.findByText('Agregações do Radar');
+    fireEvent.click(screen.getByText('Tendências'));
+
+    expect(await screen.findByText('Smartwatch Pro 50m')).toBeTruthy();
+    expect(screen.getByText('R$ 199,90')).toBeTruthy();
+    expect(container.querySelector('img[src="https://http2.mlstatic.com/sw.jpg"]')).toBeTruthy();
+  });
+
+  it('seletor de categoria troca a categoria e recarrega as tendências', async () => {
+    renderizar();
+    await screen.findByText('Agregações do Radar');
+    fireEvent.click(screen.getByText('Tendências'));
+
+    const select = await screen.findByLabelText('Categoria');
+    fireEvent.change(select, { target: { value: 'MLB1051' } });
+    await waitFor(() => {
+      expect(api.tendencias).toHaveBeenCalledWith('MLB1051', false);
     });
   });
 });

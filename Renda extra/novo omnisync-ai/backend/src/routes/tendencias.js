@@ -101,6 +101,38 @@ function paraPublico(linhas) {
   };
 }
 
+// Categorias do site (menu da tela): /sites/MLB/categories exige token e
+// muda pouco — cache em memória de 24h por processo.
+const CACHE_CATEGORIAS_HORAS = 24;
+let cacheCategorias = { em: 0, dados: [] };
+
+router.get('/categorias', requireAuth, async (req, res) => {
+  const fresco = cacheCategorias.dados.length > 0
+    && Date.now() - cacheCategorias.em < CACHE_CATEGORIAS_HORAS * 3600 * 1000;
+  if (fresco) return res.json({ ok: true, cache: true, categorias: cacheCategorias.dados });
+
+  try {
+    const token = await mlOAuth.getValidAccessToken(req.empresaId);
+    if (!token) return res.status(401).json({ error: 'Conta do Mercado Livre não conectada' });
+
+    const r = await fetch(`${ML_API}/sites/MLB/categories`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    });
+    if (!r.ok) {
+      return res.status(502).json({ error: `Categorias do Mercado Livre responderam ${r.status}`, code: 'ML_CATEGORIES_FAILED' });
+    }
+    const data = await r.json().catch(() => null);
+    const categorias = Array.isArray(data)
+      ? data.map(c => ({ id: String(c?.id || ''), nome: String(c?.name || '') })).filter(c => c.id)
+      : [];
+    cacheCategorias = { em: Date.now(), dados: categorias };
+    return res.json({ ok: true, cache: false, categorias });
+  } catch (e) {
+    console.error('[Tendencias] Erro ao buscar categorias:', e.message);
+    return res.status(500).json({ error: 'Erro ao buscar categorias' });
+  }
+});
+
 router.get('/', requireAuth, async (req, res) => {
   const categoria = normalizarCategoria(req.query?.categoria);
   if (categoria === null) {
