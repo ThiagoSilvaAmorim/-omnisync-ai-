@@ -97,8 +97,13 @@ export async function buscarCnpj(cnpj) {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   let r;
   try {
+    // User-Agent próprio: a BrasilAPI (Cloudflare) bloqueia com 403 o UA
+    // padrão do Node/undici — identificar a app resolve sem inventar dados.
     r = await fetch(`${BRASILAPI_URL}/${digitos}`, {
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'OmniSync/1.0 (+https://omnisync.ai)',
+      },
       signal: controller.signal,
     });
   } catch {
