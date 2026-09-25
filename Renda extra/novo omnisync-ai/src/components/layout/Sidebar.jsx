@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronRight, LogOut, X, Infinity as InfinityIcon, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogOut, X, Infinity as InfinityIcon, Zap } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { SECTIONS as NAV_SECTIONS } from '../../lib/navigation';
@@ -29,6 +29,7 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
     return inicial;
   });
   const rootRef = useRef(null);
+  const timerFechamento = useRef(null);
 
   const secaoSelecionada = NAV_SECTIONS.find(s => s.titulo === secaoAtiva) || null;
 
@@ -50,6 +51,33 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
   }, [secaoAtiva]);
 
   const alternarSecao = titulo => setSecaoAtiva(prev => (prev === titulo ? null : titulo));
+
+  // Hover intent: o painel abre ao passar o mouse no ícone (sem clicar)
+  // e fecha 160ms após o ponteiro sair da barra — dá tempo de viajar
+  // do trilho até o painel, que é vizinho sem folga.
+  const abrirPorHover = titulo => {
+    clearTimeout(timerFechamento.current);
+    setSecaoAtiva(titulo);
+  };
+  const agendarFechamento = () => {
+    clearTimeout(timerFechamento.current);
+    timerFechamento.current = setTimeout(() => setSecaoAtiva(null), 160);
+  };
+  const cancelarFechamento = () => clearTimeout(timerFechamento.current);
+
+  // Não deixa timer de fechamento pendurar depois de desmontar.
+  useEffect(() => () => clearTimeout(timerFechamento.current), []);
+
+  // Oculta a barra inteira: grava a preferência e avisa o AppShell.
+  const ocultarBarra = () => {
+    try {
+      localStorage.setItem('omnisync-sidebar-hidden', '1');
+    } catch {
+      // Armazenamento indisponível: segue só em memória.
+    }
+    window.dispatchEvent(new Event('omnisync-sidebar-toggle'));
+  };
+
   const navegarNoPainel = () => {
     setSecaoAtiva(null);
     onNavigate?.();
@@ -65,6 +93,9 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
       {destaque ? <Zap className="h-4 w-4" /> : <Icone className="h-4 w-4" />}
     </span>
   );
+
+  // Ícone da seção aberta (cabeçalho do painel).
+  const IconeSecaoCabecalho = secaoSelecionada?.Icone || Zap;
 
   // ---------- Modo expandido (drawer mobile) ----------
   if (forceExpanded) {
@@ -180,7 +211,14 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
 
   // ---------- Modo trilha (desktop) ----------
   return (
-    <div ref={rootRef} className="relative flex h-full flex-col" style={{ background: 'var(--tl-sidebar-bg)' }}>
+    <div
+      ref={rootRef}
+      data-testid="sidebar-raiz"
+      onMouseEnter={cancelarFechamento}
+      onMouseLeave={agendarFechamento}
+      className="relative flex h-full flex-col"
+      style={{ background: 'var(--tl-sidebar-bg)' }}
+    >
       {/* Logo */}
       <div className="flex h-16 shrink-0 items-center justify-center" title="OmniSync AI">
         <span className="flex h-9 w-9 items-center justify-center bg-primary-600 [border-radius:var(--tl-radius-sm)]">
@@ -199,13 +237,14 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
               key={secao.titulo}
               type="button"
               onClick={() => alternarSecao(secao.titulo)}
+              onMouseEnter={() => abrirPorHover(secao.titulo)}
               title={secao.titulo}
               aria-label={secao.titulo}
               aria-expanded={aberta}
               aria-controls={aberta ? 'painel-secao' : undefined}
               data-testid={`rail-${slug(secao.titulo)}`}
               className={cn(
-                'flex w-full items-center justify-center rounded-lg py-2.5 transition-colors',
+                'relative flex w-full items-center justify-center rounded-lg py-2.5 transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400',
                 aberta
                   ? 'bg-white/15 text-white'
@@ -215,12 +254,18 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
               )}
             >
               <IconeSecao className="h-5 w-5" />
+              {temAtiva && !aberta && (
+                <span
+                  className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-400"
+                  aria-hidden="true"
+                />
+              )}
             </button>
           );
         })}
       </nav>
 
-      {/* Rodapé: usuário + sair */}
+      {/* Rodapé: usuário, sair e ocultar a barra (mesma estética dos ícones) */}
       <div className="flex shrink-0 flex-col items-center gap-1 border-t border-white/10 p-2">
         <div
           className="flex h-9 w-9 items-center justify-center bg-gradient-to-br from-primary-500 to-primary-700 text-sm font-semibold text-white [border-radius:var(--tl-radius-sm)]"
@@ -237,19 +282,30 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
         >
           <LogOut className="h-4 w-4" />
         </button>
+        <button
+          type="button"
+          onClick={ocultarBarra}
+          className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+          title="Ocultar menu lateral (tela cheia)"
+          aria-label="Ocultar menu lateral"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
       </div>
 
-      {/* Painel (flyout): nome da seção + itens */}
+      {/* Painel (flyout): nome da seção + itens.
+          z-40 na aside coloca este cabeçalho por cima da busca do Header. */}
       {secaoSelecionada && (
         <div
           id="painel-secao"
           data-testid="painel-secao"
-          className="absolute left-full top-0 z-40 flex h-full w-60 flex-col border-l border-white/10 shadow-2xl"
+          className="animate-slide-in absolute left-full top-0 z-40 flex h-full w-60 flex-col border-l border-white/10 shadow-2xl"
           style={{ background: 'var(--tl-sidebar-bg)' }}
         >
-          <div className="flex h-16 shrink-0 items-center justify-between gap-2 px-4">
-            <span className="truncate text-sm font-semibold uppercase tracking-wider text-white">
-              {secaoSelecionada.titulo}
+          <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-white/10 px-4">
+            <span className="flex min-w-0 items-center gap-2 text-sm font-semibold uppercase tracking-wider text-white">
+              <IconeSecaoCabecalho className="h-4 w-4 shrink-0 text-slate-300" />
+              <span className="truncate">{secaoSelecionada.titulo}</span>
             </span>
             <button
               type="button"

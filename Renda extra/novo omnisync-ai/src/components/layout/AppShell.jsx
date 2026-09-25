@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, ShieldAlert } from 'lucide-react';
+import { ChevronRight, ShieldAlert } from 'lucide-react';
 import { Header } from './Header';
 import { MobileNav } from './MobileNav';
 import { Sidebar } from './Sidebar';
@@ -87,7 +87,12 @@ export function AppShell() {
       }
     };
     window.addEventListener('storage', aplicar);
-    return () => window.removeEventListener('storage', aplicar);
+    // Botão "ocultar" dentro da própria Sidebar grava no mesmo contexto.
+    window.addEventListener('omnisync-sidebar-toggle', aplicar);
+    return () => {
+      window.removeEventListener('storage', aplicar);
+      window.removeEventListener('omnisync-sidebar-toggle', aplicar);
+    };
   }, []);
 
   const asideW = navTop ? 'w-64' : sidebarOculta ? 'w-0' : 'w-16';
@@ -107,32 +112,30 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      {/* Navegação lateral fixa — desktop */}
+      {/* Navegação lateral fixa — desktop.
+          z-40 > z-30 do Header: o cabeçalho do painel da sidebar
+          (nome da seção) fica visível por cima da busca global. */}
       <aside className={cn(
-        'fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-200 md:block print:hidden',
+        'fixed inset-y-0 left-0 z-40 hidden transition-[width] duration-200 md:block print:hidden',
         asideW,
         !navTop && sidebarOculta && 'invisible overflow-hidden'
       )}>
         {navTop ? <TopNav /> : <Sidebar />}
       </aside>
 
-      {/* Botão fixo: ocultar/mostrar a barra lateral inteira */}
-      {!navTop && (
+      {/* Aba discreta para reabrir a barra — só existe quando ela está
+          oculta; o botão de ocultar mora no rodapé da própria trilha. */}
+      {!navTop && sidebarOculta && (
         <button
           type="button"
           onClick={alternarSidebar}
-          aria-label={sidebarOculta ? 'Mostrar menu lateral' : 'Ocultar menu lateral'}
-          aria-pressed={sidebarOculta}
+          aria-label="Mostrar menu lateral"
           data-testid="btn-toggle-sidebar"
-          title={sidebarOculta ? 'Mostrar menu lateral' : 'Ocultar menu lateral'}
-          className={cn(
-            'fixed top-20 z-40 hidden h-12 w-6 items-center justify-center rounded-r-md border border-l-0 border-slate-200 bg-white text-slate-500 shadow-md transition-[left] duration-200 hover:text-primary-600',
-            'dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400',
-            'md:flex print:hidden',
-            sidebarOculta ? 'left-0' : 'left-16'
-          )}
+          title="Mostrar menu lateral"
+          style={{ background: 'var(--tl-sidebar-bg)' }}
+          className="fixed left-0 top-24 z-40 hidden h-10 w-5 items-center justify-center rounded-r-md text-slate-400 shadow-md transition-colors hover:text-white md:flex print:hidden"
         >
-          {sidebarOculta ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          <ChevronRight className="h-4 w-4" />
         </button>
       )}
 

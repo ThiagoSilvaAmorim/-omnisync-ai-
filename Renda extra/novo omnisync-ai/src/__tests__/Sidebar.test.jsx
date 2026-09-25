@@ -75,6 +75,22 @@ describe('Sidebar — trilha de ícones (desktop)', () => {
     expect(screen.queryByTestId('painel-secao')).toBeNull();
   });
 
+  it('hover no ícone abre o painel sem clicar e ele fecha ao sair da barra', async () => {
+    renderizar();
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Operação' }));
+    expect(screen.getByTestId('painel-secao')).toBeTruthy();
+
+    fireEvent.mouseLeave(screen.getByTestId('sidebar-raiz'));
+    await new Promise(r => setTimeout(r, 250));
+    expect(screen.queryByTestId('painel-secao')).toBeNull();
+  });
+
+  it('botão discreto do rodapé oculta a barra e persiste a preferência', () => {
+    renderizar();
+    fireEvent.click(screen.getByLabelText('Ocultar menu lateral'));
+    expect(localStorage.getItem('omnisync-sidebar-hidden')).toBe('1');
+  });
+
   it('dispara onNavigate ao clicar num item (fecha o drawer mobile)', () => {
     const onNavigate = vi.fn();
     renderizar({ onNavigate });
