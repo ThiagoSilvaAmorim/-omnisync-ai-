@@ -86,6 +86,7 @@ const NAV_SECTIONS = [
     Icone: Radar,
     itens: [
       { nome: 'Radar de Mercado', rota: '/radar-mercado', Icone: Radar },
+      { nome: 'Análise de Mercado', rota: '/analise-mercado', Icone: PackageSearch },
       { nome: 'Laboratório de Oportunidades', rota: '/laboratorio-oportunidades', Icone: FlaskConical },
       { nome: 'Inteligência do Produto', rota: '/produto-intel', Icone: PackageSearch },
       { nome: 'Simulador de Negócio', rota: '/simulador', Icone: Calculator },

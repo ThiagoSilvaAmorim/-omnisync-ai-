@@ -29,6 +29,7 @@ const TELAS = [
   { nome: 'Atividade', rota: '/atividade' },
   { nome: 'Comece por aqui', rota: '/onboarding' },
   { nome: 'Radar de Mercado', rota: '/radar-mercado' },
+  { nome: 'Análise de Mercado', rota: '/analise-mercado' },
   { nome: 'Simulador de Negócio', rota: '/simulador' },
   { nome: 'Central de IA', rota: '/central-ia' },
   { nome: 'Central de Publicações', rota: '/publicacoes' },

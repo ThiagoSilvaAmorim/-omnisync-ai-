@@ -36,6 +36,7 @@ const Tarefas = lazy(() => import('./pages/Tarefas').then(m => ({ default: m.Tar
 const Onboarding = lazy(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
 const GeradorEan = lazy(() => import('./pages/GeradorEan').then(m => ({ default: m.GeradorEan })));const Diretor = lazy(() => import('./pages/Diretor').then(m => ({ default: m.Diretor })));
 const Metas = lazy(() => import('./pages/Metas').then(m => ({ default: m.Metas })));
+const AnaliseMercado = lazy(() => import('./pages/AnaliseMercado').then(m => ({ default: m.AnaliseMercado })));
 const Relatorios = lazy(() => import('./pages/Relatorios').then(m => ({ default: m.Relatorios })));
 const Atividade = lazy(() => import('./pages/Atividade').then(m => ({ default: m.Atividade })));
 const LaboratorioOportunidades = lazy(() => import('./pages/LaboratorioOportunidades').then(m => ({ default: m.LaboratorioOportunidades })));
@@ -88,6 +89,7 @@ export default function App() {
             <Route path="/produto-intel" element={<ProdutoIntel />} />
             <Route path="/produtos" element={<Produtos />} />
             <Route path="/radar-mercado" element={<RadarMercado />} />
+            <Route path="/analise-mercado" element={<AnaliseMercado />} />
             <Route path="/estoque" element={<Estoque />} />
             <Route path="/simulador" element={<Simulador />} />
             <Route path="/ads" element={<Ads />} />

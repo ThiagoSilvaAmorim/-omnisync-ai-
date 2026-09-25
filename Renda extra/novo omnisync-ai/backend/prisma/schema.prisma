@@ -303,3 +303,48 @@ model Meta {
   @@map("Meta")
 }
 
+// Análise de Mercado: resultados do catálogo oficial do ML (/products/search)
+// para um termo, com cache de 6h. Fonte = catálogo (a busca de anúncios
+// /sites/MLB/search responde 403 para a credencial): vendas/preço/reputação/
+// frete não são expostos pela API de catálogo, ficam null e o front exibe "—".
+model AnaliseMercado {
+  id              Int           @id @default(autoincrement())
+  termo           String
+  chave           String
+  empresaId       Int           @default(1) @map("empresa_id")
+  fonte           String        @default("catalogo_ml")
+  totalResultados Int           @default(0)
+  criadaEm        DateTime      @default(now())
+  expiraEm        DateTime      @map("expira_em")
+  itens           AnaliseItem[]
+
+  @@index([chave, empresaId, expiraEm])
+  @@map("analises")
+}
+
+model AnaliseItem {
+  id          Int           @id @default(autoincrement())
+  analiseId   Int           @map("analise_id")
+  ordem       Int
+  produtoId   String        @map("produto_id")
+  nome        String
+  marca       String?
+  status      String?
+  dominio     String?       @map("dominio")
+  imagemUrl   String?       @map("imagem_url")
+  permalink   String?
+  criadoEm    DateTime?     @map("criado_em")
+  diasNoAr    Int?          @map("dias_no_ar")
+  preco       Float?
+  vendasMes   Float?        @map("vendas_mes")
+  vendasDia   Float?        @map("vendas_dia")
+  freteGratis Boolean?      @map("frete_gratis")
+  reputacao   String?
+  fotos       Int           @default(0)
+  variacoes   Int           @default(0)
+  analise     AnaliseMercado @relation(fields: [analiseId], references: [id], onDelete: Cascade)
+
+  @@index([analiseId])
+  @@map("analise_itens")
+}
+

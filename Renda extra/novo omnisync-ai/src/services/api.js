@@ -472,4 +472,16 @@ export const api = {
   triggerKillSwitch: () => (API_URL
     ? request('/director/killswitch/ativar', { method: 'POST', body: JSON.stringify({ motivo: 'Manual' }) })
     : semBackend()),
+  // ---------- Análise de Mercado (catálogo oficial do ML, sem scrape) ----------
+  analiseMercado: {
+    criar: (termo) => (API_URL
+      ? request('/analise-mercado', json({ termo }))
+      : semBackend()),
+    buscar: (id) => (API_URL
+      ? request(`/analise-mercado/${encodeURIComponent(id)}`)
+      : semBackend()),
+    posicionamento: (termo, produtoId) => (API_URL
+      ? request(`/analise-mercado/posicionamento?termo=${encodeURIComponent(termo)}&produtoId=${encodeURIComponent(produtoId)}`)
+      : semBackend()),
+  },
 };

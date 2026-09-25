@@ -34,7 +34,7 @@ const MATRIZ_ACESSO = {
 };
 
 // Rotas sensíveis exclusivas da direção (mesmo Comercial/Estoquista não entram).
-const MODULOS_DIRECAO = ['diretor', 'metas', 'seguranca', 'empresa', 'financeiro', 'fiscal', 'central-ia', 'central-bo', 'tarefas', 'simulador', 'radar-mercado', 'laboratorio-oportunidades', 'integracoes', 'integracao', 'configuracoes', 'ads'];
+const MODULOS_DIRECAO = ['diretor', 'metas', 'seguranca', 'empresa', 'financeiro', 'fiscal', 'central-ia', 'central-bo', 'tarefas', 'simulador', 'radar-mercado', 'analise-mercado', 'laboratorio-oportunidades', 'integracoes', 'integracao', 'configuracoes', 'ads'];
 
 export function podeAcessar(perfil, modulo) {
   const canonico = normalizarPerfil(perfil);
