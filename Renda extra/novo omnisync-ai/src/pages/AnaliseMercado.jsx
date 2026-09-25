@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Loader2, MapPin, Search, TrendingUp } from 'lucide-react';
+import { ExternalLink, Loader2, MapPin, Search, TrendingUp } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { ehDiretor } from '../lib/permissoes';
@@ -214,12 +214,42 @@ export function AnaliseMercado() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {i.imagemUrl ? (
-                          <img src={i.imagemUrl} alt="" className="h-8 w-8 rounded object-cover" loading="lazy" />
+                          <a
+                            href={i.urlPublica || undefined}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`Abrir ${i.nome} no Mercado Livre`}
+                            className="shrink-0"
+                          >
+                            <img src={i.imagemUrl} alt={i.nome} className="h-8 w-8 rounded object-cover" loading="lazy" />
+                          </a>
                         ) : (
-                          <span className="flex h-8 w-8 items-center justify-center rounded bg-slate-100 text-xs text-slate-400 dark:bg-slate-800">{VAZIO}</span>
+                          <a
+                            href={i.urlPublica || undefined}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`Buscar ${i.nome} no Mercado Livre`}
+                            className="flex h-8 w-8 items-center justify-center rounded bg-slate-100 text-xs text-slate-400 hover:bg-amber-100 hover:text-amber-600 dark:bg-slate-800 dark:hover:bg-amber-500/20"
+                          >
+                            {VAZIO}
+                          </a>
                         )}
                         <div>
-                          <p className="max-w-[260px] truncate font-medium text-slate-800 dark:text-slate-100" title={i.nome}>{i.nome}</p>
+                          <p className="max-w-[260px] truncate font-medium text-slate-800 dark:text-slate-100" title={i.nome}>
+                            {i.urlPublica ? (
+                              <a
+                                href={i.urlPublica}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 hover:text-amber-600 hover:underline dark:hover:text-amber-400"
+                              >
+                                {i.nome}
+                                <ExternalLink className="h-3 w-3 shrink-0" />
+                              </a>
+                            ) : (
+                              i.nome
+                            )}
+                          </p>
                           <p className="text-xs text-slate-400">{i.produtoId}</p>
                         </div>
                       </div>

@@ -90,3 +90,22 @@ export function precoCatalogo(produto) {
   const preco = produto?.buy_box_winner?.price;
   return Number.isFinite(preco) ? preco : null;
 }
+
+/**
+ * URL pública no Mercado Livre para abrir o produto.
+ * O permalink oficial do catálogo vem vazio (0/20), então o fallback é a
+ * busca oficial do ML (lista.mercadolivre.com.br/<slug>), formato validado
+ * com HTTP 200 — nunca uma URL inventada.
+ */
+export function urlPublicaMercadoLivre(permalink, nome) {
+  if (typeof permalink === 'string' && /^https?:\/\//i.test(permalink)) return permalink;
+  const slug = String(nome || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 100)
+    .replace(/-+$/, '');
+  return slug ? `https://lista.mercadolivre.com.br/${slug}` : null;
+}

@@ -19,6 +19,7 @@ vi.mock('../src/prisma/client.js', () => ({
 }));
 
 import { prisma } from '../src/prisma/client.js';
+import { urlPublicaMercadoLivre } from '../src/services/mlCatalogo.js';
 
 const PRODUTOS = [
   {
@@ -122,6 +123,8 @@ describe('analise-mercado (catálogo oficial do ML, sem scrape)', () => {
     expect(item.preco).toBeNull();
     expect(item.freteGratis).toBeNull();
     expect(item.reputacao).toBeNull();
+    // Link clicável: permalink oficial do detalhe quando existe.
+    expect(item.urlPublica).toBe('https://www.mercadolivre.com.br/produto/MLB111');
 
     const chamada = prisma.analiseMercado.create.mock.calls[0][0];
     expect(chamada.data.itens.create).toHaveLength(2);
@@ -225,5 +228,18 @@ describe('analise-mercado (catálogo oficial do ML, sem scrape)', () => {
     const res = await request(app).post('/api/analise-mercado').set(auth()).send({ termo: 'fone' });
     expect(res.status).toBe(401);
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('urlPublica: permalink oficial vence; sem permalink usa a busca oficial do ML', () => {
+    expect(urlPublicaMercadoLivre('https://www.mercadolivre.com.br/item/MLB1', 'Fone A'))
+      .toBe('https://www.mercadolivre.com.br/item/MLB1');
+    // Catálogo devolve permalink vazio: fallback = lista.mercadolivre.com.br/<slug>.
+    expect(urlPublicaMercadoLivre('', 'Fone de Ouvido Bluetooth 5.3'))
+      .toBe('https://lista.mercadolivre.com.br/fone-de-ouvido-bluetooth-5-3');
+    expect(urlPublicaMercadoLivre(null, 'Fone — edição especial!'))
+      .toBe('https://lista.mercadolivre.com.br/fone-edicao-especial');
+    expect(urlPublicaMercadoLivre(null, null)).toBeNull();
+    // Nunca https de fora do Mercado Livre.
+    expect(urlPublicaMercadoLivre('javascript:alert(1)', 'Fone')).toContain('lista.mercadolivre.com.br');
   });
 });

@@ -18,6 +18,7 @@ import {
   extrairMarca,
   primeiraImagem,
   precoCatalogo,
+  urlPublicaMercadoLivre,
 } from '../services/mlCatalogo.js';
 
 const router = Router();
@@ -77,6 +78,7 @@ function paraPublico(analise) {
       reputacao: i.reputacao,
       fotos: i.fotos,
       variacoes: i.variacoes,
+      urlPublica: urlPublicaMercadoLivre(i.permalink, i.nome),
     })),
   };
 }

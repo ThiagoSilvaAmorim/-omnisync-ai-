@@ -38,6 +38,7 @@ const ITEM = {
   reputacao: null,
   fotos: 3,
   variacoes: 1,
+  urlPublica: 'https://lista.mercadolivre.com.br/fone-a',
 };
 
 describe('Análise de Mercado (reais, sem mock de dados)', () => {
@@ -72,6 +73,12 @@ describe('Análise de Mercado (reais, sem mock de dados)', () => {
     // Métricas que o catálogo não expõe ficam em "—".
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(3);
     expect(screen.getByText(/A busca de anúncios está bloqueada \(403\)/i)).toBeTruthy();
+
+    // Nome e foto são links clicáveis que abrem no Mercado Livre (nova aba).
+    const link = screen.getByRole('link', { name: /Fone A/ });
+    expect(link.getAttribute('href')).toBe('https://lista.mercadolivre.com.br/fone-a');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
   });
 
   it('erro do backend é exibido sem inventar conteúdo', async () => {
