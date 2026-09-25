@@ -75,6 +75,42 @@ describe('SuppliersPage (catálogo de fornecedores)', () => {
     expect(screen.getByText('ML')).toBeTruthy();
   });
 
+  it('fornecedor de cadastro por CNPJ mostra descrição, selo verificado e situação', async () => {
+    api.getCatalogSuppliers.mockResolvedValue({
+      items: [{
+        id: 'u9',
+        slug: 'delta-atlantica',
+        name: 'Delta Atlântica',
+        uf: 'SP',
+        city: 'São Paulo',
+        niche: 'wholesale',
+        productCount: 0,
+        marketplaces: [],
+        acceptsDropshipping: false,
+        coverImages: [],
+        descricao: 'Comércio varejista de mercadorias em geral, desde 1995',
+        cnpjVerificado: true,
+        cnpj: '11.222.333/0001-81',
+        situacaoCadastral: 'ATIVA',
+        abertoEm: '1995-04-01',
+      }],
+      total: 1,
+      page: 1,
+      limit: 24,
+    });
+    renderizar();
+    expect(await screen.findByText('CNPJ verificado')).toBeTruthy();
+    expect(screen.getByText('ATIVA')).toBeTruthy();
+    expect(screen.getByText('Comércio varejista de mercadorias em geral, desde 1995')).toBeTruthy();
+    expect(screen.getByText(/\d+ anos/)).toBeTruthy();
+  });
+
+  it('botão Adicionar por CNPJ abre o diálogo de cadastro', async () => {
+    renderizar();
+    fireEvent.click(await screen.findByTestId('btn-add-cnpj'));
+    expect(await screen.findByText('Adicionar fornecedor por CNPJ')).toBeTruthy();
+  });
+
   it('troca para aba Produtos e busca em /api/products', async () => {
     api.getCatalogProducts.mockResolvedValue({
       items: [{

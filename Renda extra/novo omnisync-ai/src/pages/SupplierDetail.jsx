@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, MapPin, Package, Store } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BadgeCheck, CalendarDays, MapPin, Package, Store } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -102,6 +102,10 @@ export function SupplierDetail() {
   const f = estado.fornecedor;
   const capa = f.coverImages?.[0];
   const selos = (f.marketplaces || []).map(m => selosMarketplace[m]).filter(Boolean);
+  const situacao = f.situacaoCadastral;
+  const anos = f.abertoEm
+    ? new Date().getUTCFullYear() - new Date(f.abertoEm).getUTCFullYear()
+    : null;
 
   return (
     <div className="space-y-6">
@@ -154,6 +158,75 @@ export function SupplierDetail() {
           </div>
         </div>
       </div>
+
+      {f.cnpjVerificado && (
+        <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" data-testid="sobre-receita">
+          <div className="flex flex-wrap items-center gap-2">
+            <BadgeCheck className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Sobre (Receita Federal)</h2>
+            {situacao && (
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                  situacao === 'ATIVA'
+                    ? 'bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300'
+                    : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300'
+                }`}
+              >
+                {situacao}
+              </span>
+            )}
+          </div>
+
+          {f.descricao && <p className="text-sm text-slate-600 dark:text-slate-300">{f.descricao}</p>}
+
+          <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            {f.cnpj && (
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">CNPJ</dt>
+                <dd className="font-medium text-slate-700 dark:text-slate-200">{f.cnpj}</dd>
+              </div>
+            )}
+            {f.razaoSocial && (
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Razão social</dt>
+                <dd className="font-medium text-slate-700 dark:text-slate-200">{f.razaoSocial}</dd>
+              </div>
+            )}
+            {f.abertoEm && (
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Abertura</dt>
+                <dd className="flex items-center gap-1 font-medium text-slate-700 dark:text-slate-200">
+                  <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
+                  {new Date(f.abertoEm).toLocaleDateString('pt-BR')}
+                  {anos != null && anos >= 0 ? ` (${anos} ano${anos === 1 ? '' : 's'})` : ''}
+                </dd>
+              </div>
+            )}
+            {f.cnaeDescricao && (
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">CNAE</dt>
+                <dd className="font-medium text-slate-700 dark:text-slate-200">
+                  {f.cnae ? `${f.cnae} — ` : ''}{f.cnaeDescricao}
+                </dd>
+              </div>
+            )}
+            {f.capitalSocial != null && (
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Capital social</dt>
+                <dd className="font-medium text-slate-700 dark:text-slate-200">
+                  {Number(f.capitalSocial).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </dd>
+              </div>
+            )}
+            {f.endereco && (
+              <div className="sm:col-span-2 lg:col-span-3">
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Endereço</dt>
+                <dd className="font-medium text-slate-700 dark:text-slate-200">{f.endereco}</dd>
+              </div>
+            )}
+          </dl>
+        </section>
+      )}
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Catálogo de produtos</h2>

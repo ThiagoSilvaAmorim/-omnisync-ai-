@@ -3,7 +3,7 @@ import { Plug, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { podeAcessar } from '../lib/permissoes';
 import { AcessoRestrito } from '../components/ui/AcessoRestrito';
-import { Integracao } from './Integracao';
+import { Integrations } from './Integrations';
 import { Seguranca } from './Seguranca';
 
 // ============================================
@@ -49,7 +49,7 @@ export function ConfiguracoesHub() {
         ))}
       </div>
 
-      {ativa === 'integracoes' && <Integracao />}
+      {ativa === 'integracoes' && <Integrations />}
       {ativa === 'seguranca' && <Seguranca />}
     </div>
   );

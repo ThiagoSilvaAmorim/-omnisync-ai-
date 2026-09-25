@@ -15,7 +15,7 @@ const LAYOUT = [
   { secao: 'Fornecimento', rota: '/fornecedores' },
   { secao: 'Inteligência', rota: '/radar-mercado' },
   { secao: 'Finanças', rota: '/financeiro' },
-  { secao: 'Integrações', rota: '/integracao' },
+  { secao: 'Integrações', rota: '/integrations' },
   { secao: 'Configurações', rota: '/seguranca' },
 ];
 

@@ -35,8 +35,15 @@ vi.mock('../src/services/osm.js', () => ({
   importacaoRecente: vi.fn(() => null),
 }));
 
+vi.mock('../src/services/brasilApi.js', () => ({
+  buscarCnpj: vi.fn(),
+  formatarCnpj: vi.fn(c => c || null),
+  descreverFornecedor: vi.fn(() => 'descrição da Receita Federal'),
+}));
+
 import { prisma } from '../src/prisma/client.js';
 import { importarFornecedoresOsm } from '../src/services/osm.js';
+import { buscarCnpj } from '../src/services/brasilApi.js';
 
 function tokenValido() {
   return assinarToken({ email: 'teste@omnisync.ai', nome: 'Teste', perfil: 'Diretor' });
@@ -79,6 +86,9 @@ describe('GET /api/suppliers (catálogo)', () => {
         { products: { some: {} } },
         { marketplaces: { isEmpty: false } },
         { niche: 'wholesale' },
+        // Cadastro manual por CNPJ é decisão do usuário: aparece mesmo
+        // ainda sem produtos, senão o cadastro novo ficaria invisível.
+        { fonte: 'cnpj' },
       ],
     }]);
     expect(opts.skip).toBe(0);
@@ -133,6 +143,7 @@ describe('GET /api/suppliers (catálogo)', () => {
       { products: { some: {} } },
       { marketplaces: { isEmpty: false } },
       { niche: 'wholesale' },
+      { fonte: 'cnpj' },
     ]);
   });
 
@@ -620,5 +631,127 @@ describe('Google Places removido', () => {
     const res = await request(app).get('/api/fornecedores/buscar?query=distribuidor&cidade=sp').set(auth());
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('INVALID_ID');
+  });
+});
+
+describe('CNPJ real (BrasilAPI) — preview e cadastro de fornecedor', () => {
+  const CNPJ = '11222333000181';
+  const DADOS = {
+    cnpj: CNPJ,
+    razaoSocial: 'Delta Atlântica Comércio Ltda',
+    nomeFantasia: 'Delta Atlântica',
+    situacaoCadastral: 'ATIVA',
+    abertoEm: '1995-04-01',
+    cnae: '4712-100',
+    cnaeDescricao: 'Comércio varejista de mercadorias em geral',
+    capitalSocial: 100000,
+    endereco: {
+      logradouro: 'Av. Central',
+      numero: '1000',
+      bairro: 'Centro',
+      city: 'São Paulo',
+      uf: 'SP',
+    },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    buscarCnpj.mockResolvedValue(DADOS);
+    prisma.supplier.findUnique.mockResolvedValue(null);
+  });
+
+  it('GET /cnpj/:cnpj devolve o preview sem gravar nada', async () => {
+    const res = await request(app).get(`/api/suppliers/cnpj/${CNPJ}`).set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.dados).toMatchObject({
+      razaoSocial: 'Delta Atlântica Comércio Ltda',
+      situacaoCadastral: 'ATIVA',
+      cnae: '4712-100',
+      endereco: { city: 'São Paulo', uf: 'SP' },
+    });
+    expect(res.body.descricao).toBe('descrição da Receita Federal');
+    expect(res.body.jaCadastrado).toBeNull();
+    expect(buscarCnpj).toHaveBeenCalledWith(CNPJ);
+    expect(prisma.supplier.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+      where: { cnpj: CNPJ },
+    }));
+    expect(prisma.supplier.create).not.toHaveBeenCalled();
+  });
+
+  it('GET /cnpj/:cnpj inexistente → 404 com code honesto', async () => {
+    buscarCnpj.mockRejectedValue({ code: 'CNPJ_NAO_ENCONTRADO', message: 'CNPJ não encontrado na Receita.' });
+    const res = await request(app).get(`/api/suppliers/cnpj/${CNPJ}`).set(auth());
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('CNPJ_NAO_ENCONTRADO');
+    expect(prisma.supplier.create).not.toHaveBeenCalled();
+  });
+
+  it('GET /cnpj/:cnpj inválido → 400 sem tocar na BrasilAPI', async () => {
+    buscarCnpj.mockRejectedValue({ code: 'CNPJ_INVALIDO', message: 'CNPJ inválido.' });
+    const res = await request(app).get('/api/suppliers/cnpj/123').set(auth());
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('CNPJ_INVALIDO');
+  });
+
+  it('GET /cnpj/:cnpj já cadastrado expõe jaCadastrado com slug e nome', async () => {
+    prisma.supplier.findUnique.mockResolvedValue({ slug: 'delta-atlantica', name: 'Delta Atlântica' });
+    const res = await request(app).get(`/api/suppliers/cnpj/${CNPJ}`).set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.jaCadastrado).toEqual({ slug: 'delta-atlantica', name: 'Delta Atlântica' });
+  });
+
+  it('POST /api/suppliers cria fornecedor com fonte=cnpj e dados da Receita', async () => {
+    prisma.supplier.create.mockImplementation(async ({ data }) => ({ id: 42, ...data }));
+    const res = await request(app).post('/api/suppliers').set(auth()).send({ cnpj: CNPJ });
+    expect(res.status).toBe(201);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.fornecedor).toMatchObject({
+      fonte: 'cnpj',
+      cnpjVerificado: true,
+      razaoSocial: 'Delta Atlântica Comércio Ltda',
+      situacaoCadastral: 'ATIVA',
+      city: 'São Paulo',
+      uf: 'SP',
+      slug: 'delta-atlantica',
+    });
+    const opts = prisma.supplier.create.mock.calls[0][0];
+    expect(opts.data).toMatchObject({
+      fonte: 'cnpj',
+      cnpj: CNPJ,
+      name: 'Delta Atlântica',
+      acceptsDropshipping: true,
+      capitalSocial: 100000,
+    });
+  });
+
+  it('POST /api/suppliers com CNPJ repetido → 409 CNPJ_DUPLICADO', async () => {
+    prisma.supplier.findUnique.mockResolvedValue({ slug: 'delta-atlantica', name: 'Delta Atlântica' });
+    const res = await request(app).post('/api/suppliers').set(auth()).send({ cnpj: CNPJ });
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('CNPJ_DUPLICADO');
+    expect(res.body.slug).toBe('delta-atlantica');
+    expect(prisma.supplier.create).not.toHaveBeenCalled();
+  });
+
+  it('POST /api/suppliers sem município/UF na Receita → 422 CNPJ_SEM_ENDERECO', async () => {
+    buscarCnpj.mockResolvedValue({ ...DADOS, endereco: { logradouro: 'Av. Central' } });
+    const res = await request(app).post('/api/suppliers').set(auth()).send({ cnpj: CNPJ });
+    expect(res.status).toBe(422);
+    expect(res.body.code).toBe('CNPJ_SEM_ENDERECO');
+    expect(prisma.supplier.create).not.toHaveBeenCalled();
+  });
+
+  it('POST /api/suppliers sem cnpj → 400 INVALID_BODY', async () => {
+    const res = await request(app).post('/api/suppliers').set(auth()).send({});
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_BODY');
+    expect(buscarCnpj).not.toHaveBeenCalled();
+  });
+
+  it('sem token retorna 401 no preview de CNPJ', async () => {
+    const res = await request(app).get(`/api/suppliers/cnpj/${CNPJ}`);
+    expect(res.status).toBe(401);
+    expect(buscarCnpj).not.toHaveBeenCalled();
   });
 });

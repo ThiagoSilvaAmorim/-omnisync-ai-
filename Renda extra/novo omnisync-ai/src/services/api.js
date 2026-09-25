@@ -55,7 +55,7 @@ async function request(path, options) {
   if (!res.ok) {
     if (res.status === 401) invalidarSessaoExpirada();
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error || `Erro ${res.status}`);
+    throw new Error(err?.error || err?.message || `Erro ${res.status}`);
   }
   return res.json();
 }
@@ -201,6 +201,9 @@ export const api = {
   // Cidades do catálogo com contagem ({ city, total }[]) — filtro + ranking.
   getSupplierCidades: (uf) => request(`/suppliers/cidades${uf ? `?uf=${encodeURIComponent(uf)}` : ''}`),
   getSupplierBySlug: slug => request(`/suppliers/${encodeURIComponent(slug)}`),
+  // CNPJ real (Receita via BrasilAPI): preview antes de criar e criação.
+  buscarCnpjFornecedor: cnpj => request(`/suppliers/cnpj/${encodeURIComponent(cnpj)}`),
+  criarFornecedorPorCnpj: dados => request('/suppliers', json(dados)),
   getCatalogProducts: (params = {}) => {
     const sp = new URLSearchParams();
     if (params.q) sp.append('q', params.q);
@@ -512,5 +515,7 @@ export const api = {
     shopeeStatus: () => (API_URL ? request('/auth/shopee/status') : semBackend()),
     // Sem app oficial Shopee: backend responde 501 com a mensagem honesta.
     shopeeStart: () => (API_URL ? request('/auth/shopee/start') : semBackend()),
+  // TikTok Shop: mesmo padrão honesto do Shopee (sem app oficial → pendente).
+  tiktokShopStatus: () => (API_URL ? request('/auth/tiktok-shop/status') : semBackend()),
   },
 };

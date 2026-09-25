@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Package, Star, Store } from 'lucide-react';
+import { BadgeCheck, CalendarDays, MapPin, Package, Star, Store } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 
 // ============================================
@@ -38,6 +38,10 @@ export function SupplierCard({ fornecedor, posicao }) {
     .map(m => selosMarketplace[m])
     .filter(Boolean);
   const temScore = typeof fornecedor.score === 'number';
+  const situacao = fornecedor.situacaoCadastral;
+  const anos = fornecedor.abertoEm
+    ? new Date().getUTCFullYear() - new Date(fornecedor.abertoEm).getUTCFullYear()
+    : null;
 
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
@@ -77,6 +81,39 @@ export function SupplierCard({ fornecedor, posicao }) {
           </h3>
           {fornecedor.niche && <Badge variant="amber">{fornecedor.niche}</Badge>}
         </div>
+
+        {fornecedor.descricao && (
+          <p className="line-clamp-2 text-xs text-slate-500" title={fornecedor.descricao}>
+            {fornecedor.descricao}
+          </p>
+        )}
+
+        {fornecedor.cnpjVerificado && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-700 dark:bg-teal-500/10 dark:text-teal-300"
+              title={`CNPJ ${fornecedor.cnpj}`}
+            >
+              <BadgeCheck className="h-3 w-3" /> CNPJ verificado
+            </span>
+            {situacao && (
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                  situacao === 'ATIVA'
+                    ? 'bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300'
+                    : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300'
+                }`}
+              >
+                {situacao}
+              </span>
+            )}
+            {anos != null && anos >= 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                <CalendarDays className="h-3 w-3" /> {anos} ano{anos === 1 ? '' : 's'}
+              </span>
+            )}
+          </div>
+        )}
 
         <p className="flex items-center gap-1 text-xs text-slate-500">
           <MapPin className="h-3.5 w-3.5 shrink-0" />

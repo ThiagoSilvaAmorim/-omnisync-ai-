@@ -89,10 +89,10 @@ router.get('/status', requireAuth, async (req, res) => {
 
     let status = 'nao_configurado';
     let nickname = null;
+    const sellers = await mlOAuth.listarIntegracoes(req.empresaId);
     if (conta) {
       const integration = conta.ativo ? await mlOAuth.getIntegration(req.empresaId) : null;
       status = integration ? mlOAuth.getIntegrationStatus(integration) : (conta.ativo ? 'nao_configurado' : 'desconectado');
-      const sellers = await mlOAuth.listarIntegracoes(req.empresaId);
       nickname = sellers[0]?.nickname ?? null;
     }
 
@@ -107,6 +107,7 @@ router.get('/status', requireAuth, async (req, res) => {
       criadoEm: conta?.createdAt || null,
       atualizadoEm: conta?.updatedAt || null,
       sincronizacao: lerStatusSync(conta),
+      sellers,
     });
   } catch (error) {
     console.error('[IntegracoesMl] Erro no status:', error);

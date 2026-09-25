@@ -1,12 +1,13 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Building2, Crown, Package, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Building2, Crown, Package, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
 import { FiltersBar } from '../components/fornecedores/FiltersBar';
 import { SupplierCard } from '../components/fornecedores/SupplierCard';
 import { ProductCard } from '../components/fornecedores/ProductCard';
+import { CnpjDialog } from '../components/fornecedores/CnpjDialog';
 import { useSuppliers, useSuppliersNiches, useSuppliersCidades, LIMITE_PAGINA } from '../hooks/useSuppliers';
 
 // ============================================
@@ -26,6 +27,7 @@ const abas = [
 
 export function SuppliersPage() {
   const [params, setParams] = useSearchParams();
+  const [dialogCnpj, setDialogCnpj] = useState(false);
 
   const q = params.get('q') || '';
   const uf = params.get('uf') || '';
@@ -91,12 +93,21 @@ export function SuppliersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Fornecedores</h1>
-        <p className="text-sm text-slate-500">
-          Encontre produtos e fornecedores ideais para seu negócio — busca direta na base, sem chave externa.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Fornecedores</h1>
+          <p className="text-sm text-slate-500">
+            Encontre produtos e fornecedores ideais para seu negócio — busca direta na base, sem chave externa.
+          </p>
+        </div>
+        {tab === 'fornecedores' && (
+          <Button onClick={() => setDialogCnpj(true)} data-testid="btn-add-cnpj">
+            <Plus className="h-4 w-4" /> Adicionar por CNPJ
+          </Button>
+        )}
       </div>
+
+      <CnpjDialog open={dialogCnpj} onClose={() => setDialogCnpj(false)} />
 
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800">
         {abas.map(a => (

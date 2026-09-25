@@ -12,6 +12,7 @@ import { lookup } from 'node:dns/promises';
 import { prisma } from '../prisma/client.js';
 import { usuarioDoRequest } from '../auth.js';
 import { importarFornecedoresOsm } from '../services/osm.js';
+import { buscarCnpj, formatarCnpj, descreverFornecedor } from '../services/brasilApi.js';
 
 const router = Router();
 const LIMITE_PADRAO = 24;
@@ -41,17 +42,50 @@ const bodyImportSchema = z.object({
   categoria: z.string().trim().max(60).optional(),
 });
 
+const bodyCriaSchema = z.object({
+  cnpj: z.string().trim().min(1, 'Informe o CNPJ.').max(20),
+  niche: z.string().trim().max(60).optional().nullable(),
+  siteUrl: z.string().trim().max(200).optional().nullable(),
+  acceptsDropshipping: z.boolean().optional(),
+  marketplaces: z.array(z.string().trim().max(40)).max(5).optional(),
+});
+
 // ---- Catálogo mostra só quem é de REVENDA ----
 // Critérios com dados reais do banco: tem produto no catálogo,
 // vende em marketplace (ML/Shopee/TikTok) ou é atacado (wholesale).
 // Ex.: McKinsey/contabilidade (importados do OSM) ficam fora da lista.
+// fonte=cnpj: cadastro manual com CNPJ da Receita é decisão do usuário
+// (aparece mesmo ainda sem produtos, senão o cadastro novo ficaria invisível).
 const filtroRevenda = {
   OR: [
     { products: { some: {} } },
     { marketplaces: { isEmpty: false } },
     { niche: 'wholesale' },
+    { fonte: 'cnpj' },
   ],
 };
+
+// Mapeia erros do serviço BrasilAPI para status HTTP honestos.
+const STATUS_ERRO_CNPJ = {
+  CNPJ_INVALIDO: 400,
+  CNPJ_NAO_ENCONTRADO: 404,
+  CNPJ_DUPLICADO: 409,
+  BRASILAPI_RATE_LIMIT: 429,
+  BRASILAPI_TIMEOUT: 504,
+  BRASILAPI_UNAVAILABLE: 502,
+  BRASILAPI_FAILED: 502,
+};
+
+function responderErroCnpj(res, e, contexto) {
+  const status = STATUS_ERRO_CNPJ[e.code] || 500;
+  if (status >= 500) {
+    console.error(`[SuppliersCatalog] ${contexto}:`, e.code || 'SEM_CODE', e.message);
+  }
+  return res.status(status).json({
+    code: e.code || 'ERRO_CNPJ',
+    message: e.message || 'Erro ao consultar o CNPJ.',
+  });
+}
 
 function requireAuth(req, res, next) {
   const user = usuarioDoRequest(req);
@@ -151,6 +185,26 @@ async function paraPublico(s) {
     acceptsDropshipping: s.acceptsDropshipping,
     score,
     scoreCriterios: criterios,
+    // Dados reais da Receita (BrasilAPI) — cadastro por CNPJ.
+    fonte: s.fonte,
+    endereco: s.endereco || null,
+    cnpj: formatarCnpj(s.cnpj),
+    cnpjVerificado: Boolean(s.cnpj),
+    razaoSocial: s.razaoSocial || null,
+    situacaoCadastral: s.situacaoCadastral || null,
+    abertoEm: s.abertoEm || null,
+    cnae: s.cnae || null,
+    cnaeDescricao: s.cnaeDescricao || null,
+    capitalSocial: s.capitalSocial ?? null,
+    descricao: s.cnpj
+      ? descreverFornecedor({
+        razaoSocial: s.razaoSocial,
+        nomeFantasia: s.name,
+        cnaeDescricao: s.cnaeDescricao,
+        abertoEm: s.abertoEm,
+        endereco: { city: s.city, uf: s.uf },
+      })
+      : null,
   };
 }
 
@@ -252,6 +306,26 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/suppliers/cnpj/:cnpj — preview dos dados reais da Receita
+// (BrasilAPI) antes de criar o fornecedor. Não grava nada.
+router.get('/cnpj/:cnpj', async (req, res) => {
+  try {
+    const dados = await buscarCnpj(req.params.cnpj);
+    const existente = await prisma.supplier.findUnique({
+      where: { cnpj: dados.cnpj },
+      select: { slug: true, name: true },
+    });
+    return res.json({
+      ok: true,
+      dados: { ...dados, cnpj: formatarCnpj(dados.cnpj) },
+      descricao: descreverFornecedor(dados),
+      jaCadastrado: existente ? { slug: existente.slug, name: existente.name } : null,
+    });
+  } catch (e) {
+    return responderErroCnpj(res, e, 'Preview de CNPJ');
+  }
+});
+
 // GET /api/suppliers/:slug — detalhe do fornecedor com o catálogo dele.
 router.get('/:slug', async (req, res) => {
   const slug = String(req.params.slug || '').trim();
@@ -270,6 +344,78 @@ router.get('/:slug', async (req, res) => {
   } catch (e) {
     console.error('[SuppliersCatalog] Erro ao buscar fornecedor:', e.message);
     return res.status(500).json({ error: 'Erro ao buscar fornecedor' });
+  }
+});
+
+// POST /api/suppliers — cadastra fornecedor a partir de CNPJ real
+// (Receita via BrasilAPI): nome fantasia/razão social, endereço e
+// fonte='cnpj'. CNPJ repetido → 409.
+router.post('/', async (req, res) => {
+  const parsed = bodyCriaSchema.safeParse(req.body || {});
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return res.status(400).json({ code: 'INVALID_BODY', message: issue?.message || 'Parâmetros inválidos.' });
+  }
+
+  try {
+    const dados = await buscarCnpj(parsed.data.cnpj);
+
+    const existente = await prisma.supplier.findUnique({
+      where: { cnpj: dados.cnpj },
+      select: { slug: true, name: true },
+    });
+    if (existente) {
+      return res.status(409).json({
+        code: 'CNPJ_DUPLICADO',
+        message: `CNPJ já cadastrado como "${existente.name}".`,
+        slug: existente.slug,
+      });
+    }
+
+    const uf = dados.endereco?.uf || null;
+    const city = dados.endereco?.city || null;
+    if (!uf || !city || !ufsValidas.has(uf)) {
+      return res.status(422).json({
+        code: 'CNPJ_SEM_ENDERECO',
+        message: 'O cadastro da Receita não tem município/UF completo para este CNPJ.',
+      });
+    }
+
+    const nome = String(dados.nomeFantasia || dados.razaoSocial || 'Fornecedor sem nome').trim();
+    const partesEndereco = [
+      [dados.endereco.logradouro, dados.endereco.numero].filter(Boolean).join(', '),
+      dados.endereco.bairro,
+    ].filter(Boolean).join(' - ');
+
+    const slug = await slugUnico(nome);
+    const linha = await prisma.supplier.create({
+      data: {
+        name: nome,
+        slug,
+        uf,
+        city,
+        endereco: partesEndereco || null,
+        siteUrl: parsed.data.siteUrl || null,
+        niche: parsed.data.niche || null,
+        acceptsDropshipping: parsed.data.acceptsDropshipping ?? true,
+        marketplaces: parsed.data.marketplaces || [],
+        fonte: 'cnpj',
+        cnpj: dados.cnpj,
+        razaoSocial: dados.razaoSocial,
+        situacaoCadastral: dados.situacaoCadastral,
+        abertoEm: dados.abertoEm,
+        cnae: dados.cnae,
+        cnaeDescricao: dados.cnaeDescricao,
+        capitalSocial: dados.capitalSocial,
+      },
+    });
+
+    return res.status(201).json({ ok: true, fornecedor: await paraPublico(linha) });
+  } catch (e) {
+    if (e.code === 'P2002') {
+      return res.status(409).json({ code: 'CNPJ_DUPLICADO', message: 'CNPJ já cadastrado.' });
+    }
+    return responderErroCnpj(res, e, 'Criação por CNPJ');
   }
 });
 

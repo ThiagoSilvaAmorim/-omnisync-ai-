@@ -211,6 +211,8 @@ model Fornecedor {
 // Catálogo de fornecedores (busca pública sem chave externa).
 // Legados OSM: osmId/lat/lng/endereco/telefone/fonte sustentam a importação
 // POST /api/suppliers/import-osm; a busca em si usa só as colunas do catálogo.
+// Dados reais da Receita (BrasilAPI): fonte "cnpj" preenche cnpj/razaoSocial/
+// situacaoCadastral/abertoEm/cnae* — usados na descrição e no selo de verificação.
 model Supplier {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name               String
@@ -231,6 +233,15 @@ model Supplier {
   endereco           String?
   telefone           String?
   fonte              String   @default("osm")
+
+  // Receita Federal via BrasilAPI (cadastro por CNPJ).
+  cnpj               String?  @unique
+  razaoSocial        String?  @map("razao_social")
+  situacaoCadastral  String?  @map("situacao_cadastral")
+  abertoEm           DateTime? @map("aberto_em")
+  cnae               String?
+  cnaeDescricao      String?  @map("cnae_descricao")
+  capitalSocial      Float?   @map("capital_social")
 
   products CatalogProduct[]
 
