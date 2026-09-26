@@ -37,7 +37,7 @@ describe('Sidebar — trilha de ícones (desktop)', () => {
     expect(screen.queryByTestId('painel-secao')).toBeNull();
   });
 
-  it('clique no ícone abre o painel com nome da seção e itens; clique de novo fecha', () => {
+  it('clique no ícone abre o painel com nome da seção e itens; clique repetido mantém aberto', () => {
     renderizar();
     const trilha = screen.getByRole('button', { name: 'Operação' });
     fireEvent.click(trilha);
@@ -47,8 +47,9 @@ describe('Sidebar — trilha de ícones (desktop)', () => {
     expect(within(painel).getByText('Produtos')).toBeTruthy();
     expect(trilha.getAttribute('aria-expanded')).toBe('true');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Operação' }));
-    expect(screen.queryByTestId('painel-secao')).toBeNull();
+    // Clicar novamente não fecha: o painel só fecha com Esc ou clique fora.
+    fireEvent.click(trilha);
+    expect(screen.getByTestId('painel-secao')).toBeTruthy();
   });
 
   it('clique em item navega e fecha o painel', () => {

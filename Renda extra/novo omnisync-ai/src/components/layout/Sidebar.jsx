@@ -50,8 +50,6 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
     };
   }, [secaoAtiva]);
 
-  const alternarSecao = titulo => setSecaoAtiva(prev => (prev === titulo ? null : titulo));
-
   // Hover intent: o painel abre ao passar o mouse no ícone (sem clicar)
   // e fecha 160ms após o ponteiro sair da barra — dá tempo de viajar
   // do trilho até o painel, que é vizinho sem folga.
@@ -236,7 +234,7 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
             <button
               key={secao.titulo}
               type="button"
-              onClick={() => alternarSecao(secao.titulo)}
+              onClick={() => setSecaoAtiva(secao.titulo)}
               onMouseEnter={() => abrirPorHover(secao.titulo)}
               title={secao.titulo}
               aria-label={secao.titulo}
