@@ -2,6 +2,7 @@ import { Search, X } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { UFS } from '../../data/ufs';
+import { LocalAutocomplete } from './LocalAutocomplete';
 
 // ============================================
 // FiltersBar — busca + filtros do catálogo.
@@ -10,7 +11,13 @@ import { UFS } from '../../data/ufs';
 // Aba Produtos: UF, nicho e CATEGORIA.
 // A busca é emitida a cada tecla (debounce de
 // 300ms acontece no useSuppliers).
+// LocalAutocomplete (Google Places): escolher
+// uma sugestão aplica cidade/UF do catálogo —
+// ou cai na busca textual se a cidade ainda
+// não tem fornecedor cadastrado.
 // ============================================
+
+const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 const ufOptions = [
   { value: '', label: 'Todos os estados' },
@@ -44,17 +51,42 @@ export function FiltersBar({
   ];
   const temFiltro = Boolean(q || uf || niche || cidade || order || category);
 
+  // Sugestão do Google Places → filtros do catálogo.
+  function aplicarLocal(s) {
+    const sigla = UFS.find(u => norm(u.nome) === norm(s.estado))?.sigla || '';
+    const doCatalogo = cidades.find(c => norm(c.city) === norm(s.cidade));
+    if (doCatalogo) {
+      onQ('');
+      if (sigla) onUf(sigla);
+      onCidade?.(doCatalogo.city);
+      return;
+    }
+    // Cidade ainda sem fornecedor: busca textual + UF (estado vazio é honesto).
+    onCidade?.('');
+    if (s.cidade) {
+      onQ(s.cidade);
+      if (sigla) onUf(sigla);
+    } else {
+      onQ(s.principal || s.descricao || '');
+    }
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative w-full">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <Input
-          aria-label="Buscar no catálogo"
-          placeholder="Buscar por nome, cidade, nicho ou SKU..."
-          value={q}
-          onChange={e => onQ(e.target.value)}
-          className="pl-9"
-        />
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            aria-label="Buscar no catálogo"
+            placeholder="Buscar por nome, cidade, nicho ou SKU..."
+            value={q}
+            onChange={e => onQ(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="w-full sm:w-72">
+          <LocalAutocomplete onSelecionar={aplicarLocal} />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">

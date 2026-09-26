@@ -217,6 +217,8 @@ export const api = {
   },
   // Municípios oficiais da UF (IBGE via backend, cache 24h).
   getMunicipiosIbge: (uf) => request(`/ibge/municipios?uf=${encodeURIComponent(uf)}`),
+  // Autocomplete de local (Google Places via backend; a chave fica no servidor).
+  autocompleteLocal: q => request(`/places/autocomplete?q=${encodeURIComponent(q)}`),
   getFornecedoresSalvos: () => get('/fornecedores', []),
   salvarFornecedor: body => (API_URL
     ? request('/fornecedores', json(body))

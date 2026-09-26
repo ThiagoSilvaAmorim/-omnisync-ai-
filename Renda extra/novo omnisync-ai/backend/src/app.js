@@ -16,6 +16,7 @@ import supplierRoutes from './routes/suppliers.js';
 import supplierCatalogRoutes from './routes/suppliersCatalog.js';
 import catalogProductRoutes from './routes/catalogProducts.js';
 import ibgeRoutes from './routes/ibge.js';
+import placesRoutes from './routes/places.js';
 import mlAuthRoutes from './routes/mlAuth.js';
 import mlItemsRoutes from './routes/mlItems.js';
 import purchaseOrderRoutes from './routes/purchaseOrders.js';
@@ -253,6 +254,8 @@ app.use('/api/products', catalogProductRoutes);
 
 // Municípios oficiais por UF (IBGE, cache 24h).
 app.use('/api/ibge', ibgeRoutes);
+// Autocomplete de local (Google Places, API paga — exige login).
+app.use('/api/places', placesRoutes);
 // B.O.s reais (router de problemas com auth). Substitui o mock estático.
 app.use('/api/negocios', negocioRoutes);
 // Estágios são vocabulário fixo do domínio (fonte única no router de negócios).
