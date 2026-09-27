@@ -530,6 +530,10 @@ app.get('/api/approvals', exigirJwt, (req, res) => {
   res.json(approvals);
 });
 
+app.get('/api/approvals/estatisticas', exigirJwt, (_req, res) => {
+  res.json(approvalEngine.getEstatisticas());
+});
+
 app.get('/api/approvals/:id', exigirJwt, (req, res) => {
   const aprovacao = approvalEngine.getSolicitacao(req.params.id);
   if (!aprovacao) return res.status(404).json({ error: 'Aprovação não encontrada' });
@@ -570,10 +574,6 @@ app.post('/api/approvals/:id/executar', exigirJwt, (req, res) => {
   const result = approvalEngine.marcarExecutada(req.params.id, resultado || {});
   if (!result.success) return res.status(400).json(result);
   res.json(result);
-});
-
-app.get('/api/approvals/estatisticas', exigirJwt, (_req, res) => {
-  res.json(approvalEngine.getEstatisticas());
 });
 
 // ---------- Central IA - Novos Endpoints ----------
