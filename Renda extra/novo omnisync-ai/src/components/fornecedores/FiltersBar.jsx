@@ -52,8 +52,13 @@ export function FiltersBar({
   const temFiltro = Boolean(q || uf || niche || cidade || order || category);
 
   // Sugestão do Google Places → filtros do catálogo.
+  // O Google devolve a UF como SIGLA ("MG") ou por extenso
+  // ("Minas Gerais"), então casa os dois.
   function aplicarLocal(s) {
-    const sigla = UFS.find(u => norm(u.nome) === norm(s.estado))?.sigla || '';
+    const estadoNorm = norm(s.estado);
+    const sigla = UFS.find(u => norm(u.sigla) === estadoNorm)?.sigla
+      || UFS.find(u => norm(u.nome) === estadoNorm)?.sigla
+      || '';
     const doCatalogo = cidades.find(c => norm(c.city) === norm(s.cidade));
     if (doCatalogo) {
       onQ('');
