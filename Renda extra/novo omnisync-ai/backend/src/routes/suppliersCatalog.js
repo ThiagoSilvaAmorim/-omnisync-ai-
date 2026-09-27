@@ -196,6 +196,12 @@ async function paraPublico(s) {
     cnae: s.cnae || null,
     cnaeDescricao: s.cnaeDescricao || null,
     capitalSocial: s.capitalSocial ?? null,
+    // Contato direto do fornecedor (OSM) + localização.
+    telefone: s.telefone || null,
+    email: s.email || null,
+    whatsapp: s.whatsapp || null,
+    lat: s.lat ?? null,
+    lng: s.lng ?? null,
     descricao: s.cnpj
       ? descreverFornecedor({
         razaoSocial: s.razaoSocial,
@@ -204,7 +210,14 @@ async function paraPublico(s) {
         abertoEm: s.abertoEm,
         endereco: { city: s.city, uf: s.uf },
       })
-      : null,
+      // Fornecedor sem CNPJ (OSM): descrição montada com o que existe.
+      : [
+        s.niche ? `nicho ${s.niche}` : null,
+        s.telefone ? 'telefone disponível' : null,
+        s.siteUrl ? 'site no ar' : null,
+        s.acceptsDropshipping ? 'aceita dropshipping' : null,
+        `${s.city}/${s.uf}`,
+      ].filter(Boolean).join(' · ') || null,
   };
 }
 
@@ -446,6 +459,8 @@ router.post('/import-osm', async (req, res) => {
         city: item.cidade || cidade,
         uf: item.uf || uf,
         telefone: item.telefone,
+        email: item.email ?? null,
+        whatsapp: item.whatsapp ?? null,
         siteUrl: item.site,
         lat: item.lat,
         lng: item.lng,

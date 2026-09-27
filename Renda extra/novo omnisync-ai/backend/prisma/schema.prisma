@@ -232,6 +232,9 @@ model Supplier {
   lng                Float?
   endereco           String?
   telefone           String?
+  // Contato direto: e-mail e WhatsApp vindos do OSM (contact:email / contact:whatsapp).
+  email              String?
+  whatsapp           String?
   fonte              String   @default("osm")
 
   // Receita Federal via BrasilAPI (cadastro por CNPJ).

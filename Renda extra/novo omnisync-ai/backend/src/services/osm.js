@@ -117,6 +117,48 @@ async function comRetentativas(fn) {
 }
 
 /** Consulta Overpass no bbox da cidade e mapeia Poi → Supplier-like. */
+// Converte um elemento Overpass no formato interno de fornecedor.
+// Exportado para permitir teste unitário da leitura das tags
+// (telefone, e-mail, WhatsApp, site, geo).
+export function montarFornecedorOsm(el, { categoria, cidade, uf } = {}) {
+  const tags = el?.tags || {};
+  const nome = String(tags.name || '').trim();
+  if (!nome) return null;
+
+  const lat = Number.isFinite(Number(el.lat)) ? Number(el.lat) : Number(el.center?.lat);
+  const lng = Number.isFinite(Number(el.lon)) ? Number(el.lon) : Number(el.center?.lon);
+  const partes = [tags['addr:street'], tags['addr:housenumber']].filter(Boolean).join(', ');
+  const telefone = tags.phone || tags['contact:phone'] || null;
+  const site = tags.website || tags['contact:website'] || null;
+
+  // Contato direto (OSM): e-mail e WhatsApp.
+  const emailBruto = String(tags.email || tags['contact:email'] || '').trim();
+  const email = emailBruto.includes('@') ? emailBruto : null;
+
+  // WhatsApp no OSM: tag explícita com número, ou "yes" apontando
+  // para o telefone já capturado (contact:whatsapp=yes).
+  const tagWhats = String(tags['contact:whatsapp'] || tags.whatsapp || '').trim();
+  const positivo = /^(yes|true|1)$/i.test(tagWhats);
+  const negativo = /^(no|false|0)$/i.test(tagWhats);
+  const whatsapp = negativo ? null : positivo ? telefone : tagWhats || null;
+
+  return {
+    osmId: `${el.type}/${el.id}`,
+    nome,
+    categoria: tags.shop || tags.office || categoria || null,
+    endereco: partes || null,
+    cidade: tags['addr:city'] || cidade,
+    uf: (tags['addr:state'] || uf || '').toUpperCase() || uf,
+    telefone,
+    email,
+    whatsapp,
+    site,
+    lat: Number.isFinite(lat) ? lat : null,
+    lng: Number.isFinite(lng) ? lng : null,
+    fonte: 'osm',
+  };
+}
+
 export async function buscarPoisNaCidade({ uf, cidade, categoria, bbox }) {
   // Overpass bbox: (south,west,north,east) aplicado a cada seletor.
   const bb = `(${bbox.south},${bbox.west},${bbox.north},${bbox.east})`;
@@ -162,32 +204,12 @@ out center tags;`.trim();
   const vistos = new Set();
   const fornecedores = [];
   for (const el of elements) {
-    const tags = el.tags || {};
-    const nome = String(tags.name || '').trim();
-    if (!nome) continue;
     const osmId = `${el.type}/${el.id}`;
     if (vistos.has(osmId)) continue;
+    const item = montarFornecedorOsm(el, { categoria, cidade, uf });
+    if (!item) continue;
     vistos.add(osmId);
-
-    const lat = Number.isFinite(Number(el.lat)) ? Number(el.lat) : Number(el.center?.lat);
-    const lng = Number.isFinite(Number(el.lon)) ? Number(el.lon) : Number(el.center?.lon);
-    const partes = [tags['addr:street'], tags['addr:housenumber']].filter(Boolean).join(', ');
-    const telefone = tags.phone || tags['contact:phone'] || null;
-    const site = tags.website || tags['contact:website'] || null;
-
-    fornecedores.push({
-      osmId,
-      nome,
-      categoria: tags.shop || tags.office || categoria || null,
-      endereco: partes || null,
-      cidade: tags['addr:city'] || cidade,
-      uf: (tags['addr:state'] || uf || '').toUpperCase() || uf,
-      telefone,
-      site,
-      lat: Number.isFinite(lat) ? lat : null,
-      lng: Number.isFinite(lng) ? lng : null,
-      fonte: 'osm',
-    });
+    fornecedores.push(item);
   }
   return fornecedores;
 }

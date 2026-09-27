@@ -100,6 +100,30 @@ describe('googlePlaces — autocomplete de local', () => {
     await expect(autocompleteLocal('petrobras')).rejects.toMatchObject({ code: 'PLACES_RATE_LIMIT' });
   });
 
+  it('predição legada SEM types reconstitui cidade/UF pela ordem dos termos', async () => {
+    limparCachePlaces();
+    global.fetch.mockResolvedValue(resposta(200, {
+      status: 'OK',
+      predictions: [
+        {
+          place_id: 'p9',
+          description: 'Petrobras - EDISEN - Avenida Henrique Valadares - Centro, Rio de Janeiro - RJ, Brasil',
+          structured_formatting: { main_text: 'Petrobras - EDISEN', secondary_text: 'Avenida Henrique Valadares - Centro, Rio de Janeiro - RJ, Brasil' },
+          terms: [
+            { value: 'Petrobras - EDISEN', types: [] },
+            { value: 'Avenida Henrique Valadares', types: [] },
+            { value: 'Centro', types: [] },
+            { value: 'Rio de Janeiro', types: [] },
+            { value: 'RJ', types: [] },
+            { value: 'Brasil', types: [] },
+          ],
+        },
+      ],
+    }));
+    const sugestoes = await autocompleteLocal('edisen legado');
+    expect(sugestoes[0]).toMatchObject({ cidade: 'Rio de Janeiro', estado: 'RJ' });
+  });
+
   it('ZERO_RESULTS → lista vazia (sem erro)', async () => {
     global.fetch.mockResolvedValue(resposta(200, { status: 'ZERO_RESULTS', predictions: [] }));
     await expect(autocompleteLocal('zzzzqqqq')).resolves.toEqual([]);

@@ -35,12 +35,27 @@ function guardarNoCache(chave, valor) {
 
 // terms da predição: cidade (locality) e estado
 // (administrative_area_level_1) para o front mapear a UF.
+// A API legada vem SEM `types` nos termos — nesse caso a ordem é
+// fixa [nome, rua, bairro, cidade, UF, país], então a UF vira o
+// primeiro termo de 2 maiúsculas e a cidade é o anterior a ela.
 function extrairLocal(prediction) {
   const terms = prediction.terms || [];
-  const achar = tipo => terms.find(t => (t.types || []).includes(tipo))?.value || null;
+  const comTipo = tipo => terms.find(t => (t.types || []).includes(tipo))?.value || null;
+
+  let cidade = comTipo('locality') || comTipo('administrative_area_level_2');
+  let estado = comTipo('administrative_area_level_1');
+
+  if (!cidade || !estado) {
+    const idxUf = terms.findIndex(t => /^[A-Z]{2}$/.test(t.value || ''));
+    if (idxUf > 0) {
+      estado = estado || terms[idxUf].value;
+      cidade = cidade || terms[idxUf - 1].value;
+    }
+  }
+
   return {
-    cidade: achar('locality') || achar('administrative_area_level_2') || null,
-    estado: achar('administrative_area_level_1'),
+    cidade: cidade || prediction.structured_formatting?.main_text || null,
+    estado: estado || null,
   };
 }
 

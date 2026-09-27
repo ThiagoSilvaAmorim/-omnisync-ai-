@@ -234,6 +234,38 @@ describe('GET /api/suppliers/:slug (detalhe)', () => {
     expect(res.status).toBe(400);
     expect(prisma.supplier.findUnique).not.toHaveBeenCalled();
   });
+
+  it('expõe telefone, e-mail, WhatsApp, geo e descrição para fornecedor sem CNPJ', async () => {
+    prisma.supplier.findUnique.mockResolvedValue({
+      id: 'u3',
+      slug: 'atacado-central',
+      name: 'Atacado Central',
+      coverImages: [],
+      marketplaces: [],
+      acceptsDropshipping: true,
+      telefone: '(11) 3456-7890',
+      email: 'vendas@central.com.br',
+      whatsapp: '11987654321',
+      lat: -23.55,
+      lng: -46.63,
+      cnpj: null,
+      niche: 'wholesale',
+      city: 'São Paulo',
+      uf: 'SP',
+      products: [],
+    });
+    const res = await request(app).get('/api/suppliers/atacado-central').set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.fornecedor).toMatchObject({
+      telefone: '(11) 3456-7890',
+      email: 'vendas@central.com.br',
+      whatsapp: '11987654321',
+      lat: -23.55,
+      lng: -46.63,
+    });
+    expect(res.body.fornecedor.descricao).toContain('wholesale');
+    expect(res.body.fornecedor.descricao).toContain('São Paulo/SP');
+  });
 });
 
 describe('GET /api/products (catálogo de produtos)', () => {
@@ -371,6 +403,8 @@ describe('POST /api/suppliers/import-osm', () => {
           cidade: 'Campinas',
           uf: 'SP',
           telefone: null,
+          email: 'contato@atacadocentral.com.br',
+          whatsapp: '11987654321',
           site: null,
           lat: -22.9,
           lng: -47.06,
@@ -384,6 +418,8 @@ describe('POST /api/suppliers/import-osm', () => {
           cidade: 'Campinas',
           uf: 'SP',
           telefone: null,
+          email: null,
+          whatsapp: null,
           site: null,
           lat: null,
           lng: null,
@@ -414,6 +450,10 @@ describe('POST /api/suppliers/import-osm', () => {
     expect(importarFornecedoresOsm).toHaveBeenCalledWith({ uf: 'SP', cidade: 'Campinas', categoria: null });
     expect(prisma.supplier.create).toHaveBeenCalledTimes(1);
     expect(prisma.supplier.create.mock.calls[0][0].data.slug).toBeTruthy();
+    expect(prisma.supplier.create.mock.calls[0][0].data).toMatchObject({
+      email: 'contato@atacadocentral.com.br',
+      whatsapp: '11987654321',
+    });
     expect(prisma.supplier.update).toHaveBeenCalledTimes(1);
     expect(res.body.mensagem).toContain('1 novo');
   });

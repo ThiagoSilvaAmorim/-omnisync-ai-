@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, BadgeCheck, CalendarDays, MapPin, Package, Store } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BadgeCheck, CalendarDays, Mail, Map as MapIcon, MapPin, MessageCircle, Package, Phone, Store } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -9,9 +9,10 @@ import { api } from '../services/api';
 
 // ============================================
 // SupplierDetail — /fornecedores/:slug
-// Cabeçalho do fornecedor + catálogo de
-// produtos dele. 404 honesto para slug
-// desconhecido (ou fora do catálogo).
+// Cabeçalho do fornecedor + contato (telefone,
+// WhatsApp, e-mail) + link do Google Maps +
+// catálogo de produtos dele. 404 honesto para
+// slug desconhecido (ou fora do catálogo).
 // ============================================
 
 const selosMarketplace = {
@@ -19,6 +20,25 @@ const selosMarketplace = {
   tiktok: { label: 'TikTok Shop', variant: 'slate' },
   shopee: { label: 'Shopee', variant: 'red' },
 };
+
+// Link do Google Maps: prioriza as coordenadas do OSM;
+// sem geo, busca pelo endereço completo como fallback.
+function linkGoogleMaps(f) {
+  if (f.lat != null && f.lng != null) {
+    return `https://www.google.com/maps?q=${f.lat},${f.lng}`;
+  }
+  const endereco = [f.endereco, f.city, f.uf].filter(Boolean).join(', ');
+  return endereco
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`
+    : null;
+}
+
+// WhatsApp só vira link quando o número tem DDI/DDD plausível.
+function linkWhats(numero) {
+  const digitos = String(numero || '').replace(/\D/g, '');
+  const comDdi = digitos.startsWith('55') ? digitos : `55${digitos}`;
+  return digitos.length >= 10 ? `https://wa.me/${comDdi}` : null;
+}
 
 function iniciais(nome) {
   return String(nome || '?')
@@ -159,6 +179,95 @@ export function SupplierDetail() {
         </div>
       </div>
 
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" data-testid="bloco-contato">
+        <div className="flex flex-wrap items-center gap-2">
+          <Phone className="h-4 w-4 shrink-0 text-primary-600 dark:text-primary-400" />
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Contato</h2>
+          {!f.telefone && !f.email && !f.whatsapp && (
+            <span className="text-xs text-slate-400 dark:text-slate-500">
+              Este fornecedor não publicou telefone, WhatsApp ou e-mail.
+            </span>
+          )}
+        </div>
+
+        {f.descricao && (
+          <p className="text-sm text-slate-600 dark:text-slate-300" data-testid="descricao-fornecedor">
+            {f.descricao}
+          </p>
+        )}
+
+        <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+          {f.telefone && (
+            <div>
+              <dt className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+                <Phone className="h-3.5 w-3.5" /> Telefone
+              </dt>
+              <dd className="font-medium text-slate-700 dark:text-slate-200">
+                <a href={`tel:${String(f.telefone).replace(/[^\d+]/g, '')}`} className="hover:text-primary-600 hover:underline dark:hover:text-primary-400">
+                  {f.telefone}
+                </a>
+              </dd>
+            </div>
+          )}
+
+          {linkWhats(f.whatsapp || f.telefone) && (
+            <div>
+              <dt className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+                <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+              </dt>
+              <dd className="font-medium">
+                <a
+                  href={linkWhats(f.whatsapp || f.telefone)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  data-testid="link-whatsapp"
+                  className="text-emerald-600 hover:underline dark:text-emerald-400"
+                >
+                  Conversar no WhatsApp
+                </a>
+              </dd>
+            </div>
+          )}
+
+          {f.email && (
+            <div>
+              <dt className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+                <Mail className="h-3.5 w-3.5" /> E-mail
+              </dt>
+              <dd className="font-medium">
+                <a
+                  href={`mailto:${f.email}`}
+                  data-testid="link-email"
+                  className="break-all text-primary-600 hover:underline dark:text-primary-400"
+                >
+                  {f.email}
+                </a>
+              </dd>
+            </div>
+          )}
+
+          <div className={f.endereco ? 'sm:col-span-2 lg:col-span-3' : ''}>
+            <dt className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+              <MapPin className="h-3.5 w-3.5" /> Endereço
+            </dt>
+            <dd className="flex flex-wrap items-center gap-x-3 gap-y-1 font-medium text-slate-700 dark:text-slate-200">
+              <span>{f.endereco || `${f.city}/${f.uf}`}</span>
+              {linkGoogleMaps(f) && (
+                <a
+                  href={linkGoogleMaps(f)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  data-testid="link-maps"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:underline dark:text-primary-400"
+                >
+                  <MapIcon className="h-3.5 w-3.5" /> Ver no Google Maps
+                </a>
+              )}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
       {f.cnpjVerificado && (
         <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" data-testid="sobre-receita">
           <div className="flex flex-wrap items-center gap-2">
@@ -176,8 +285,6 @@ export function SupplierDetail() {
               </span>
             )}
           </div>
-
-          {f.descricao && <p className="text-sm text-slate-600 dark:text-slate-300">{f.descricao}</p>}
 
           <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
             {f.cnpj && (
@@ -216,12 +323,6 @@ export function SupplierDetail() {
                 <dd className="font-medium text-slate-700 dark:text-slate-200">
                   {Number(f.capitalSocial).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </dd>
-              </div>
-            )}
-            {f.endereco && (
-              <div className="sm:col-span-2 lg:col-span-3">
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Endereço</dt>
-                <dd className="font-medium text-slate-700 dark:text-slate-200">{f.endereco}</dd>
               </div>
             )}
           </dl>
