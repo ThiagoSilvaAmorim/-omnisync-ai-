@@ -1,23 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, LogOut, X, Infinity as InfinityIcon, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogOut, X, Infinity as InfinityIcon, Zap, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { SECTIONS as NAV_SECTIONS } from '../../lib/navigation';
 
 // ============================================
-// Sidebar — dois modos:
-// 1) Desktop: trilha de ícones por seção (w-16);
-//    clique abre painel (flyout) com nome da seção
-//    e itens. Esc/clique fora fecham. O botão fixo
-//    do AppShell oculta a barra inteira (w-0).
-// 2) forceExpanded (drawer mobile): menu expandido
-//    com seções e itens sempre visíveis.
+// Sidebar — três estados:
+// 1) Desktop expandido (padrão w-64): seções com títulos visíveis,
+//    itens expansíveis. Botão no rodapé recolhe para trilha.
+// 2) Desktop recolhida/trilha (w-16): apenas ícones por seção,
+//    hover/click abre painel flyout com itens.
+// 3) forceExpanded (drawer mobile): igual ao expandido mas com logo.
 // ============================================
 
 const slug = titulo => titulo.replace(/\s+/g, '-').toLowerCase();
 
-export function Sidebar({ onNavigate, forceExpanded = false }) {
+export function Sidebar({ onNavigate, forceExpanded = false, collapsed = false }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -33,9 +32,9 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
 
   const secaoSelecionada = NAV_SECTIONS.find(s => s.titulo === secaoAtiva) || null;
 
-  // Painel fecha ao clicar fora da barra ou com Esc.
+  // Painel fecha ao clicar fora da barra ou com Esc (apenas no modo trilha).
   useEffect(() => {
-    if (!secaoAtiva) return undefined;
+    if (!secaoAtiva || !collapsed) return undefined;
     const aoClicar = e => {
       if (rootRef.current && !rootRef.current.contains(e.target)) setSecaoAtiva(null);
     };
@@ -48,11 +47,9 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
       document.removeEventListener('mousedown', aoClicar);
       document.removeEventListener('keydown', aoTeclar);
     };
-  }, [secaoAtiva]);
+  }, [secaoAtiva, collapsed]);
 
-  // Hover intent: o painel abre ao passar o mouse no ícone (sem clicar)
-  // e fecha 160ms após o ponteiro sair da barra — dá tempo de viajar
-  // do trilho até o painel, que é vizinho sem folga.
+  // Hover intent: painel abre ao passar mouse no ícone (modo trilha).
   const abrirPorHover = titulo => {
     clearTimeout(timerFechamento.current);
     setSecaoAtiva(titulo);
@@ -63,18 +60,7 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
   };
   const cancelarFechamento = () => clearTimeout(timerFechamento.current);
 
-  // Não deixa timer de fechamento pendurar depois de desmontar.
   useEffect(() => () => clearTimeout(timerFechamento.current), []);
-
-  // Oculta a barra inteira: grava a preferência e avisa o AppShell.
-  const ocultarBarra = () => {
-    try {
-      localStorage.setItem('omnisync-sidebar-hidden', '1');
-    } catch {
-      // Armazenamento indisponível: segue só em memória.
-    }
-    window.dispatchEvent(new Event('omnisync-sidebar-toggle'));
-  };
 
   const navegarNoPainel = () => {
     setSecaoAtiva(null);
@@ -92,25 +78,27 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
     </span>
   );
 
-  // Ícone da seção aberta (cabeçalho do painel).
   const IconeSecaoCabecalho = secaoSelecionada?.Icone || Zap;
 
-  // ---------- Modo expandido (drawer mobile) ----------
-  if (forceExpanded) {
+  // ---------- Modo expandido (mobile drawer OU desktop expandido) ----------
+  if (forceExpanded || (!collapsed && !forceExpanded)) {
+    const isMobile = forceExpanded;
     return (
       <div ref={rootRef} className="flex h-full flex-col" style={{ background: 'var(--tl-sidebar-bg)' }}>
-        {/* Logo */}
-        <div className="flex h-16 shrink-0 items-center gap-2.5 px-5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center bg-primary-600 [border-radius:var(--tl-radius-sm)]">
-            <InfinityIcon className="h-5 w-5 text-white" />
-          </span>
-          <span className="min-w-0 flex-1 truncate text-base font-bold text-white">
-            OmniSync AI
-          </span>
-        </div>
+        {isMobile && (
+          // Logo só no mobile drawer
+          <div className="flex h-16 shrink-0 items-center gap-2.5 px-5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center bg-primary-600 [border-radius:var(--tl-radius-sm)]">
+              <InfinityIcon className="h-5 w-5 text-white" />
+            </span>
+            <span className="min-w-0 flex-1 truncate text-base font-bold text-white">
+              OmniSync AI
+            </span>
+          </div>
+        )}
 
-        {/* Navegação: seções expansíveis */}
-        <nav className="flex-1 space-y-1 overflow-y-auto py-3 pl-2 pr-0" aria-label="Menu principal">
+        {/* Navegação: seções expansíveis com títulos visíveis */}
+        <nav className="flex-1 space-y-1 overflow-y-auto py-3 px-2" aria-label="Menu principal">
           {NAV_SECTIONS.map(secao => {
             const aberta = secoesAbertas[secao.titulo] !== false;
             const temAtiva = secao.itens.some(itemAtivo);
@@ -121,18 +109,18 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
                   type="button"
                   onClick={() => setSecoesAbertas(prev => ({ ...prev, [secao.titulo]: !prev[secao.titulo] }))}
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors',
+                    'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400',
-                    temAtiva ? 'text-slate-200' : 'text-slate-500 hover:text-slate-300'
+                    temAtiva ? 'text-white' : 'text-slate-300 hover:text-white'
                   )}
                   aria-expanded={aberta}
                   aria-controls={`secao-${slug(secao.titulo)}`}
                 >
-                  <IconeSecao className="h-3.5 w-3.5 shrink-0" />
-                  <span className="flex-1 text-left">{secao.titulo}</span>
-                  <ChevronRight
+                  <IconeSecao className="h-5 w-5 shrink-0" />
+                  <span className="flex-1 text-left truncate">{secao.titulo}</span>
+                  <ChevronDown
                     className={cn(
-                      'h-3.5 w-3.5 shrink-0 transition-transform duration-150',
+                      'h-4 w-4 shrink-0 transition-transform duration-150',
                       aberta && 'rotate-90'
                     )}
                   />
@@ -148,7 +136,7 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
                             'flex items-center gap-3 rounded-lg py-2 pl-8 pr-3 text-sm transition-all duration-150',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400',
                             isActive
-                              ? 'font-medium text-slate-900'
+                              ? 'font-medium text-white'
                               : 'text-slate-300 hover:bg-white/8 hover:text-white',
                             item.destaque && !isActive && 'bg-emerald-500/10 hover:bg-emerald-500/20'
                           )}
@@ -179,35 +167,40 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
           })}
         </nav>
 
-        {/* Usuário no rodapé */}
-        <div className="shrink-0 border-t border-white/10 p-3">
-          <div className="flex items-center gap-3">
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center bg-gradient-to-br from-primary-500 to-primary-700 text-sm font-semibold text-white [border-radius:var(--tl-radius-sm)]"
-              title={user?.nome}
-            >
-              {user?.nome?.charAt(0) || 'U'}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-white">{user?.nome || 'Usuário'}</p>
-              <p className="truncate text-xs text-slate-400">{user?.email || 'Administrador'}</p>
-            </div>
+        {/* Rodapé: usuário, sair e botão recolher/expandir */}
+        <div className="flex shrink-0 flex-col items-center gap-1 border-t border-white/10 p-2">
+          <div
+            className="flex h-9 w-9 items-center justify-center bg-gradient-to-br from-primary-500 to-primary-700 text-sm font-semibold text-white [border-radius:var(--tl-radius-sm)]"
+            title={user?.nome}
+          >
+            {user?.nome?.charAt(0) || 'U'}
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+            title="Sair"
+            aria-label="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+          {!isMobile && (
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={() => window.dispatchEvent(new Event('omnisync-sidebar-toggle'))}
               className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
-              title="Sair"
-              aria-label="Sair"
+              title={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral (trilha de ícones)'}
+              aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
             >
-              <LogOut className="h-4 w-4" />
+              {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </button>
-          </div>
+          )}
         </div>
       </div>
     );
   }
 
-  // ---------- Modo trilha (desktop) ----------
+  // ---------- Modo trilha (desktop collapsed) ----------
   return (
     <div
       ref={rootRef}
@@ -217,7 +210,7 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
       className="relative flex h-full flex-col"
       style={{ background: 'var(--tl-sidebar-bg)' }}
     >
-      {/* Logo */}
+      {/* Logo compacto */}
       <div className="flex h-16 shrink-0 items-center justify-center" title="OmniSync AI">
         <span className="flex h-9 w-9 items-center justify-center bg-primary-600 [border-radius:var(--tl-radius-sm)]">
           <InfinityIcon className="h-5 w-5 text-white" />
@@ -263,7 +256,7 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
         })}
       </nav>
 
-      {/* Rodapé: usuário, sair e ocultar a barra (mesma estética dos ícones) */}
+      {/* Rodapé: usuário, sair e ocultar (mantido para compatibilidade) */}
       <div className="flex shrink-0 flex-col items-center gap-1 border-t border-white/10 p-2">
         <div
           className="flex h-9 w-9 items-center justify-center bg-gradient-to-br from-primary-500 to-primary-700 text-sm font-semibold text-white [border-radius:var(--tl-radius-sm)]"
@@ -282,7 +275,13 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
         </button>
         <button
           type="button"
-          onClick={ocultarBarra}
+          onClick={() => {
+            // Oculta completamente (w-0) - mantido como opção avançada
+            try {
+              localStorage.setItem('omnisync-sidebar-hidden', '1');
+            } catch { /* sem persistência */ }
+            window.dispatchEvent(new Event('omnisync-sidebar-toggle'));
+          }}
           className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
           title="Ocultar menu lateral (tela cheia)"
           aria-label="Ocultar menu lateral"
@@ -291,8 +290,7 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
         </button>
       </div>
 
-      {/* Painel (flyout): nome da seção + itens.
-          z-40 na aside coloca este cabeçalho por cima da busca do Header. */}
+      {/* Painel (flyout): nome da seção + itens. */}
       {secaoSelecionada && (
         <div
           id="painel-secao"
@@ -324,7 +322,7 @@ export function Sidebar({ onNavigate, forceExpanded = false }) {
                     'flex items-center gap-3 rounded-lg py-2 pl-3 pr-3 text-sm transition-all duration-150',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400',
                     isActive
-                      ? 'font-medium text-slate-900'
+                      ? 'font-medium text-white'
                       : 'text-slate-300 hover:bg-white/8 hover:text-white',
                     item.destaque && !isActive && 'bg-emerald-500/10 hover:bg-emerald-500/20'
                   )}

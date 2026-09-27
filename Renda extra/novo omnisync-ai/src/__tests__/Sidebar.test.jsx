@@ -10,11 +10,11 @@ function Sonda() {
   return <div data-testid="sonda">{pathname}</div>;
 }
 
-function renderizar({ forceExpanded = false, onNavigate } = {}) {
+function renderizar({ forceExpanded = false, collapsed = false, onNavigate } = {}) {
   return render(
     <MemoryRouter initialEntries={['/dashboard']}>
       <AuthProvider>
-        <Sidebar forceExpanded={forceExpanded} onNavigate={onNavigate} />
+        <Sidebar forceExpanded={forceExpanded} collapsed={collapsed} onNavigate={onNavigate} />
         <Routes>
           <Route path="*" element={<Sonda />} />
         </Routes>
@@ -23,13 +23,13 @@ function renderizar({ forceExpanded = false, onNavigate } = {}) {
   );
 }
 
-describe('Sidebar — trilha de ícones (desktop)', () => {
+describe('Sidebar — trilha de ícones (desktop, collapsed)', () => {
   beforeEach(() => {
     localStorage.setItem('omnisync-user', JSON.stringify({ nome: 'Ana Souza', email: 'ana@x.com', perfil: 'Diretor' }));
   });
 
   it('mostra exatamente um botão de trilha por seção', () => {
-    renderizar();
+    renderizar({ collapsed: true });
     expect(screen.queryAllByTestId(/^rail-/).length).toBe(SECTIONS.length);
     SECTIONS.forEach(secao => {
       expect(screen.getByRole('button', { name: secao.titulo })).toBeTruthy();
@@ -38,7 +38,7 @@ describe('Sidebar — trilha de ícones (desktop)', () => {
   });
 
   it('clique no ícone abre o painel com nome da seção e itens; clique repetido mantém aberto', () => {
-    renderizar();
+    renderizar({ collapsed: true });
     const trilha = screen.getByRole('button', { name: 'Operação' });
     fireEvent.click(trilha);
     const painel = screen.getByTestId('painel-secao');
@@ -53,7 +53,7 @@ describe('Sidebar — trilha de ícones (desktop)', () => {
   });
 
   it('clique em item navega e fecha o painel', () => {
-    renderizar();
+    renderizar({ collapsed: true });
     fireEvent.click(screen.getByRole('button', { name: 'Inteligência' }));
     fireEvent.click(within(screen.getByTestId('painel-secao')).getByText('Radar de Mercado'));
     expect(screen.getByTestId('sonda').textContent).toBe('/radar-mercado');
@@ -61,7 +61,7 @@ describe('Sidebar — trilha de ícones (desktop)', () => {
   });
 
   it('clique fora da barra fecha o painel', () => {
-    renderizar();
+    renderizar({ collapsed: true });
     fireEvent.click(screen.getByRole('button', { name: 'Finanças' }));
     expect(screen.getByTestId('painel-secao')).toBeTruthy();
     fireEvent.mouseDown(document.body);
@@ -69,7 +69,7 @@ describe('Sidebar — trilha de ícones (desktop)', () => {
   });
 
   it('Esc fecha o painel', () => {
-    renderizar();
+    renderizar({ collapsed: true });
     fireEvent.click(screen.getByRole('button', { name: 'Configurações' }));
     expect(screen.getByTestId('painel-secao')).toBeTruthy();
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -77,7 +77,7 @@ describe('Sidebar — trilha de ícones (desktop)', () => {
   });
 
   it('hover no ícone abre o painel sem clicar e ele fecha ao sair da barra', async () => {
-    renderizar();
+    renderizar({ collapsed: true });
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Operação' }));
     expect(screen.getByTestId('painel-secao')).toBeTruthy();
 
@@ -87,14 +87,14 @@ describe('Sidebar — trilha de ícones (desktop)', () => {
   });
 
   it('botão discreto do rodapé oculta a barra e persiste a preferência', () => {
-    renderizar();
+    renderizar({ collapsed: true });
     fireEvent.click(screen.getByLabelText('Ocultar menu lateral'));
     expect(localStorage.getItem('omnisync-sidebar-hidden')).toBe('1');
   });
 
   it('dispara onNavigate ao clicar num item (fecha o drawer mobile)', () => {
     const onNavigate = vi.fn();
-    renderizar({ onNavigate });
+    renderizar({ collapsed: true, onNavigate });
     fireEvent.click(screen.getByRole('button', { name: 'Principal' }));
     fireEvent.click(within(screen.getByTestId('painel-secao')).getByText('Dashboard'));
     expect(onNavigate).toHaveBeenCalledTimes(1);

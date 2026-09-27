@@ -68,11 +68,17 @@ export function AppShell() {
   const { modoAtivo } = useApp();
   const navTop = modoAtivo.nav === 'topo';
 
-  // Barra lateral: trilha de ícones (w-16) ou oculta (w-0).
-  // Preferência persistida em localStorage (novo padrão de navegação).
+  // Estados da sidebar: expandida (padrão), recolhida (trilha w-16), oculta (w-0).
   const [sidebarOculta, setSidebarOculta] = useState(() => {
     try {
       return localStorage.getItem('omnisync-sidebar-hidden') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [sidebarRecolhida, setSidebarRecolhida] = useState(() => {
+    try {
+      return localStorage.getItem('omnisync-sidebar-collapsed') === '1';
     } catch {
       return false;
     }
@@ -82,12 +88,13 @@ export function AppShell() {
     const aplicar = () => {
       try {
         setSidebarOculta(localStorage.getItem('omnisync-sidebar-hidden') === '1');
+        setSidebarRecolhida(localStorage.getItem('omnisync-sidebar-collapsed') === '1');
       } catch {
         setSidebarOculta(false);
+        setSidebarRecolhida(false);
       }
     };
     window.addEventListener('storage', aplicar);
-    // Botão "ocultar" dentro da própria Sidebar grava no mesmo contexto.
     window.addEventListener('omnisync-sidebar-toggle', aplicar);
     return () => {
       window.removeEventListener('storage', aplicar);
@@ -95,19 +102,43 @@ export function AppShell() {
     };
   }, []);
 
-  const asideW = navTop ? 'w-64' : sidebarOculta ? 'w-0' : 'w-16';
-  const contentPad = asideW === 'w-0' ? 'md:pl-0' : asideW === 'w-16' ? 'md:pl-16' : 'md:pl-64';
+  let asideW;
+  let contentPad;
+  if (navTop) {
+    asideW = 'w-64';
+    contentPad = 'md:pl-64';
+  } else if (sidebarOculta) {
+    asideW = 'w-0';
+    contentPad = 'md:pl-0';
+  } else if (sidebarRecolhida) {
+    asideW = 'w-16';
+    contentPad = 'md:pl-16';
+  } else {
+    asideW = 'w-64';
+    contentPad = 'md:pl-64';
+  }
 
-  const alternarSidebar = () => {
-    setSidebarOculta(prev => {
+  const _alternarSidebar = () => {
+    // Alterna entre expandida (w-64) e recolhida/trilha (w-16).
+    setSidebarRecolhida(prev => {
       const next = !prev;
       try {
-        localStorage.setItem('omnisync-sidebar-hidden', next ? '1' : '0');
+        localStorage.setItem('omnisync-sidebar-collapsed', next ? '1' : '0');
       } catch {
         // Armazenamento indisponível: segue só em memória.
       }
       return next;
     });
+  };
+
+  const _ocultarSidebar = () => {
+    // Oculta completamente (w-0) - mantido para compatibilidade.
+    try {
+      localStorage.setItem('omnisync-sidebar-hidden', '1');
+    } catch {
+      // Armazenamento indisponível.
+    }
+    window.dispatchEvent(new Event('omnisync-sidebar-toggle'));
   };
 
   return (
@@ -120,15 +151,15 @@ export function AppShell() {
         asideW,
         !navTop && sidebarOculta && 'invisible overflow-hidden'
       )}>
-        {navTop ? <TopNav /> : <Sidebar />}
+        {navTop ? <TopNav /> : <Sidebar collapsed={sidebarRecolhida} />}
       </aside>
 
       {/* Aba discreta para reabrir a barra — só existe quando ela está
-          oculta; o botão de ocultar mora no rodapé da própria trilha. */}
+          oculta (w-0); o botão recolher/expandir mora no rodapé da Sidebar. */}
       {!navTop && sidebarOculta && (
         <button
           type="button"
-          onClick={alternarSidebar}
+          onClick={() => setSidebarOculta(false)}
           aria-label="Mostrar menu lateral"
           data-testid="btn-toggle-sidebar"
           title="Mostrar menu lateral"
