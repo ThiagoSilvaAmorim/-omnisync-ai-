@@ -184,6 +184,26 @@ describe('POST /api/ai/analyze/:dominio', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it('purchase aceita id UUID do catálogo (formato real do banco)', async () => {
+    const uuid = 'f207b624-a1bc-4752-a1b5-d72a21212bed';
+    prisma.catalogProduct.findUnique.mockResolvedValue({
+      id: uuid, name: 'Fone Bluetooth TWS', costPrice: 45.9, category: null, niche: null,
+      supplier: { name: '360 Tour', city: 'São Bernardo do Campo', uf: 'SP', acceptsDropshipping: true, telefone: null, siteUrl: null },
+    });
+    prisma.catalogProduct.findMany.mockResolvedValue([
+      { id: uuid, name: 'Fone Bluetooth TWS', sku: 'A', costPrice: 45.9, supplier: { name: '360 Tour', city: 'São Bernardo do Campo', uf: 'SP', acceptsDropshipping: true, telefone: null, siteUrl: null } },
+      { id: 'outro-uuid', name: 'Fone Bluetooth TWS', sku: 'B', costPrice: 48, supplier: { name: 'Akki', city: 'São Paulo', uf: 'SP', acceptsDropshipping: true, telefone: null, siteUrl: null } },
+      { id: 'terceiro-uuid', name: 'Fone Bluetooth TWS', sku: 'C', costPrice: 52, supplier: { name: '3G Foods', city: 'Campinas', uf: 'SP', acceptsDropshipping: true, telefone: null, siteUrl: null } },
+    ]);
+
+    const res = await request(app).post('/api/ai/analyze/purchase').set(auth()).send({ produtoId: uuid });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: true, tipo: 'purchase' });
+    expect(res.body.source[0].ofertas).toBe(3);
+    expect(prisma.catalogProduct.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: uuid } }));
+  });
+
   it('purchase com 3 ofertas envia custos reais e devolve análise estruturada', async () => {
     prisma.catalogProduct.findUnique.mockResolvedValue({
       id: 7, name: 'Fone Bluetooth TWS', costPrice: 52, category: 'eletrônicos', niche: null,

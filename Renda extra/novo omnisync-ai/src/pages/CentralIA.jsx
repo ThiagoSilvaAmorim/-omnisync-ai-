@@ -41,7 +41,7 @@ function VisaoGeral() {
         </div>
         <div>
           <h3 className="text-xl font-bold text-gray-900">Visão Geral da Central IA</h3>
-          <p className="text-gray-500">Monitoramento e controle global do sistema NEXORA</p>
+          <p className="text-gray-500">Monitoramento e controle global do sistema OmniSync</p>
         </div>
       </div>
 
@@ -106,7 +106,7 @@ function Agentes({ onPerguntar, onConfigurar }) {
   return (
     <div className="p-6 bg-white rounded-xl shadow-sm space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-gray-900">Gestão dos 8 Agentes NEXORA</h3>
+        <h3 className="text-xl font-bold text-gray-900">Gestão dos 8 Agentes OmniSync</h3>
         <span className="text-sm text-gray-500">{agentes.length} agentes registrados</span>
       </div>
 
@@ -493,13 +493,25 @@ function Automacoes() {
 // ABA 8: CONFIGURAÇÕES
 // ==========================================
 function Configuracoes() {
-  const [limites, setLimites] = useState({ valorMaximoAcao: 10000, valorMaximoDiario: 50000, maxAcoesAgenteHora: 10 });
+  const [limites, setLimites] = useState({ valorMaximoAcao: 10000, valorMaximoDiario: 50000, maxAcoesPorAgenteHora: 10 });
   const [loading, setLoading] = useState(false);
   const [provedores, setProvedores] = useState({ provedores: [], ordem: [] });
   const [testando, setTestando] = useState(null);
 
   useEffect(() => {
     api.fetchProvedoresIA().then(setProvedores).catch(() => {});
+    // Carrega os limites reais do Risk Engine (mesmas chaves do backend).
+    api.fetchRiscoEstatisticas()
+      .then(r => {
+        const l = r?.limites;
+        if (!l) return;
+        setLimites(prev => ({
+          valorMaximoAcao: l.valorMaximoAcao ?? prev.valorMaximoAcao,
+          valorMaximoDiario: l.valorMaximoDiario ?? prev.valorMaximoDiario,
+          maxAcoesPorAgenteHora: l.maxAcoesPorAgenteHora ?? prev.maxAcoesPorAgenteHora,
+        }));
+      })
+      .catch(() => {});
   }, []);
 
   const recarregarProvedores = () => {
@@ -602,7 +614,7 @@ function Configuracoes() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <InputLabel label="Valor Máx. por Ação (R$)" value={limites.valorMaximoAcao} onChange={e => setLimites(l => ({ ...l, valorMaximoAcao: Number(e.target.value) }))} />
         <InputLabel label="Valor Máx. Diário (R$)" value={limites.valorMaximoDiario} onChange={e => setLimites(l => ({ ...l, valorMaximoDiario: Number(e.target.value) }))} />
-        <InputLabel label="Máx. Ações/Agente/Hora" value={limites.maxAcoesAgenteHora} onChange={e => setLimites(l => ({ ...l, maxAcoesAgenteHora: Number(e.target.value) }))} />
+        <InputLabel label="Máx. Ações/Agente/Hora" value={limites.maxAcoesPorAgenteHora} onChange={e => setLimites(l => ({ ...l, maxAcoesPorAgenteHora: Number(e.target.value) }))} />
       </div>
 
       <div className="bg-red-50 border border-red-200 rounded-xl p-4">
@@ -1058,7 +1070,7 @@ export function CentralIA() {
       <header className="flex justify-between items-center p-6 bg-white border-b shadow-sm">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Central de IA</h1>
-          <p className="text-sm text-gray-500">Monitoramento e controle global do sistema NEXORA</p>
+          <p className="text-sm text-gray-500">Monitoramento e controle global do sistema OmniSync</p>
         </div>
         <div className="flex items-center gap-4">
           <span className={`px-3 py-1 rounded-full text-sm font-bold ${isSystemActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -1100,7 +1112,7 @@ export function CentralIA() {
 
       {/* Rodapé */}
       <footer className="p-4 bg-white border-t text-center text-sm text-gray-400">
-        Central de IA - NEXORA/OmniSync AI v2.0
+        Central de IA - OmniSync AI v2.0
       </footer>
     </div>
   );

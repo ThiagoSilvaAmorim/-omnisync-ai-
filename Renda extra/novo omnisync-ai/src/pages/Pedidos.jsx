@@ -34,15 +34,15 @@ export function Pedidos() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [perPage] = useState(10);
-  const [search] = useState('');
-  const [statusFilter] = useState('Todos');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Todos');
 
   const carregarPedidos = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await api.getPedidos(
-        statusFilter !== 'Todos' ? `status=${statusFilter}` : undefined
+        statusFilter !== 'Todos' ? statusFilter : undefined
       );
       const data = response || [];
       setPedidos(Array.isArray(data) ? data : []);
@@ -58,6 +58,10 @@ export function Pedidos() {
   useEffect(() => {
     carregarPedidos();
   }, [carregarPedidos]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
 
   const handleStatusChange = async (pedidoId, novoStatus) => {
     try {
@@ -157,6 +161,31 @@ export function Pedidos() {
       </header>
 
       <section className="space-y-4">
+        {/* Filtros: busca por ID/cliente + status */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por ID ou cliente..."
+            aria-label="Buscar pedidos"
+            className="w-full sm:max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          />
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            aria-label="Filtrar por status"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-slate-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          >
+            <option value="Todos">Todos os status</option>
+            {Object.entries(STATUS_LABELS).map(([valor, rotulo]) => (
+              <option key={valor} value={valor}>
+                {rotulo}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Resumo Superior */}
         <Card>
           <div className="p-4">

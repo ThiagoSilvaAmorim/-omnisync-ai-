@@ -256,8 +256,8 @@ export function Integrations() {
 
   const kpisCards = [
     { label: 'Integrações ativas', valor: kpis.integracaoAtiva, destaque: true },
-    { label: 'Total de envios', valor: kpis.totalEnvios, destaque: true },
-    { label: 'Taxa de sucesso', valor: `${kpis.taxaSucesso}%`, destaque: false },
+    { label: 'Total de envios', valor: kpis.totalEnvios ?? '—', destaque: true },
+    { label: 'Taxa de sucesso', valor: kpis.taxaSucesso == null ? '—' : `${kpis.taxaSucesso}%`, destaque: false },
     { label: 'Pendências', valor: kpis.pending, destaque: true },
   ].map(item => (
     <div

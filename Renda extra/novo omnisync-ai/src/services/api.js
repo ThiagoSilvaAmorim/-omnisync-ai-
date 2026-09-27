@@ -120,7 +120,7 @@ export const api = {
   getProdutoDestaque: () => get('/produtos/destaque', mock.produtoDestaque),
   getProduto: (id) => get(`/produtos/${id}`, mock.produtos.find(p => p.id === id)),
   criarProduto: body => (API_URL ? request('/produtos', json(body)) : semBackend()),
-  atualizarProduto: (id, body) => (API_URL ? request(`/produtos/${id}`, { method: 'PUT', ...json(body) }) : semBackend()),
+  atualizarProduto: (id, body) => (API_URL ? request(`/produtos/${id}`, { ...json(body), method: 'PUT' }) : semBackend()),
   removerProduto: id => (API_URL ? request(`/produtos/${id}`, { method: 'DELETE' }) : semBackend()),
 
   // ---------- Estoque ----------
@@ -138,7 +138,7 @@ export const api = {
   },
   getEstoqueParado: () => get('/estoque/parado', mock.estoqueParadoFaixas),
   getPrevisaoEstoque: () => get('/estoque/previsao', mock.previsaoEstoque),
-  atualizarEstoque: (id, estoque) => (API_URL ? request(`/produtos/${id}/estoque`, { method: 'PUT', ...json({ estoque }) }) : semBackend()),
+  atualizarEstoque: (id, estoque) => (API_URL ? request(`/produtos/${id}/estoque`, { ...json({ estoque }), method: 'PUT' }) : semBackend()),
   movimentarEstoque: (data) => (API_URL ? request('/estoque/movimentacao', { method: 'POST', ...json(data) }) : semBackend()),
   getMovimentacoes: (productId, params = {}) => {
     const searchParams = new URLSearchParams();
@@ -154,6 +154,11 @@ export const api = {
   getPedidos: status => get(status ? `/pedidos?status=${status}` : '/pedidos', mock.pedidos),
   criarPedido: body => (API_URL ? request('/pedidos', json(body)) : semBackend()),
   removerPedido: id => (API_URL ? request(`/pedidos/${id}`, { method: 'DELETE' }) : semBackend()),
+  atualizarStatusPedido: (id, status) => (API_URL ? request(`/pedidos/${id}`, { ...json({ status }), method: 'PUT' }) : semBackend()),
+
+  // ---------- Risco / limites ----------
+  fetchRiscoEstatisticas: () => get('/risk/estatisticas', null),
+  atualizarLimite: (chave, valor) => (API_URL ? request('/limites', json({ chave, valor })) : semBackend()),
 
   // ---------- Clientes ----------
   getClientes: () => get('/clientes', mock.clientes),
@@ -224,7 +229,7 @@ export const api = {
     ? request('/fornecedores', json(body))
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   verificarFornecedor: (id, body) => (API_URL
-    ? request(`/fornecedores/${id}/verificar`, { method: 'PATCH', ...json(body) })
+    ? request(`/fornecedores/${id}/verificar`, { ...json(body), method: 'PATCH' })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   excluirFornecedor: id => (API_URL
     ? request(`/fornecedores/${id}`, { method: 'DELETE' })
@@ -249,10 +254,10 @@ export const api = {
   getFornecedor: id => get(`/fornecedores/${id}`, null),
   listarOrdensCompra: () => get('/purchase-orders', []),
   favoritarFornecedor: (id, favorito) => (API_URL
-    ? request(`/fornecedores/${id}/favorito`, { method: 'PATCH', ...json({ favorito }) })
+    ? request(`/fornecedores/${id}/favorito`, { ...json({ favorito }), method: 'PATCH' })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   arquivarFornecedor: (id, arquivado) => (API_URL
-    ? request(`/fornecedores/${id}/arquivar`, { method: 'PATCH', ...json({ arquivado }) })
+    ? request(`/fornecedores/${id}/arquivar`, { ...json({ arquivado }), method: 'PATCH' })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
 
   // ---------- Marketplaces ----------
@@ -291,7 +296,7 @@ export const api = {
     const entregasEmProgresso = lista.filter(e => ['em trânsito', 'em-rota', 'pendente'].includes(e.status)).length;
     const concluidas = lista.filter(e => e.status === 'entregue').length;
     const taxaEntregaOnTime = lista.length ? Math.round((concluidas / lista.length) * 100) : 0;
-    return { entregasEmProgresso, taxaEntregaOnTime, custoMedioFrete: 42.5, pendentes: lista.filter(e => e.status === 'pendente').length };
+    return { entregasEmProgresso, taxaEntregaOnTime, custoMedioFrete: null, pendentes: lista.filter(e => e.status === 'pendente').length };
   },
 
   // ---------- Marketing (base local + /api/oportunidades real) ----------
@@ -304,7 +309,7 @@ export const api = {
   getKpisMarketing: async () => {
     const pubs = await api.getPublicacoes();
     const lista = pubs || [];
-    return { campanhasAtivas: lista.length, reachTotal: lista.length * 1200, engajamentoMedio: 4.8, conversoes: Math.round(lista.length * 12) };
+    return { campanhasAtivas: lista.length, reachTotal: null, engajamentoMedio: null, conversoes: null };
   },
 
   // ---------- Relatórios (usa /api/dashboard/analytics + /api/transacoes reais) ----------
@@ -334,7 +339,7 @@ export const api = {
     const lista = await api.getIntegracoes();
     const arr = lista || [];
     const ativas = arr.filter(i => i.status === 'conectado').length;
-    return { integracaoAtiva: ativas, totalEnvios: arr.length * 37, taxaSucesso: arr.length ? Math.round((ativas / arr.length) * 100) : 100, pending: arr.filter(i => i.status !== 'conectado').length };
+    return { integracaoAtiva: ativas, totalEnvios: null, taxaSucesso: null, pending: arr.filter(i => i.status !== 'conectado').length };
   },
 
   // ---------- MercadoLivre OAuth ----------
@@ -392,7 +397,7 @@ export const api = {
     ? request('/negocios', json(body))
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   moverNegocio: (id, estagio) => (API_URL
-    ? request(`/negocios/${id}/estagio`, { method: 'PATCH', ...json({ estagio }) })
+    ? request(`/negocios/${id}/estagio`, { ...json({ estagio }), method: 'PATCH' })
     : Promise.reject(new Error('Backend indisponível: configure VITE_API_URL'))),
   // Health check do backend
   healthCheck: () => get('/health', { status: 'online', timestamp: new Date().toISOString(), environment: 'development', ml_configured: false }),
@@ -408,14 +413,14 @@ export const api = {
     return {
       usuariosAtivos: (usuarios || []).filter(u => u.status === 'ativo').length,
       ultimosAcessos: (audit || []).length,
-      storageTotal: 128,
+      storageTotal: null,
     };
   },
 
   // ---------- Cupons (Central de Ofertas) ----------
   getCupons: () => get('/cupons', []),
   criarCupom: body => (API_URL ? request('/cupons', json(body)) : semBackend()),
-  atualizarCupom: (id, body) => (API_URL ? request(`/cupons/${id}`, { method: 'PUT', ...json(body) }) : semBackend()),
+  atualizarCupom: (id, body) => (API_URL ? request(`/cupons/${id}`, { ...json(body), method: 'PUT' }) : semBackend()),
   removerCupom: id => (API_URL ? request(`/cupons/${id}`, { method: 'DELETE' }) : semBackend()),
 
   // ---------- Central IA ----------
@@ -436,7 +441,7 @@ export const api = {
   fetchProvedoresIA: () => get('/ai/provedores', { provedores: [], ordem: [] }),
   fetchChavesIA: () => get('/ai/chaves', []),
   criarChaveIA: body => (API_URL ? request('/ai/chaves', json(body)) : semBackend()),
-  alternarChaveIA: (id, ativo) => (API_URL ? request(`/ai/chaves/${id}`, { method: 'PUT', ...json({ ativo }) }) : semBackend()),
+  alternarChaveIA: (id, ativo) => (API_URL ? request(`/ai/chaves/${id}`, { ...json({ ativo }), method: 'PUT' }) : semBackend()),
   removerChaveIA: id => (API_URL ? request(`/ai/chaves/${id}`, { method: 'DELETE' }) : semBackend()),
   statusDrive: () => get('/integracoes/drive/status', { vinculado: false }),
   enviarDrive: body => (API_URL ? request('/integracoes/drive/upload', json(body)) : Promise.reject(new Error('Drive indisponível sem backend'))),

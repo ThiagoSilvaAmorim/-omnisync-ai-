@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Infinity as InfinityIcon, Mail } from 'lucide-react';
+import { ArrowLeft, Infinity as InfinityIcon, Mail } from 'lucide-react';
 
 // ============================================
-// EsqueciSenha — recuperação de senha (mock).
+// EsqueciSenha — solicitação de redefinição.
+// O backend ainda não possui envio de e-mail: a
+// confirmação é honesta e orienta ao administrador.
 // ============================================
 
 export function EsqueciSenha() {
@@ -29,10 +31,13 @@ export function EsqueciSenha() {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {enviado ? (
             <div className="text-center">
-              <CheckCircle2 className="mx-auto h-12 w-12 text-teal-500" />
-              <p className="mt-4 font-medium text-slate-800 dark:text-slate-100">Enviamos um e-mail!</p>
+              <Mail className="mx-auto h-12 w-12 text-amber-500" />
+              <p className="mt-4 font-medium text-slate-800 dark:text-slate-100">
+                Recuperação automática indisponível
+              </p>
               <p className="mt-2 text-sm text-slate-500">
-                Se <strong>{email}</strong> estiver cadastrado, você receberá um link para redefinir sua senha.
+                Este ambiente ainda não envia e-mail de redefinição. Para alterar a senha de{' '}
+                <strong>{email}</strong>, solicite ao administrador do sistema.
               </p>
               <Link
                 to="/login"
@@ -44,7 +49,7 @@ export function EsqueciSenha() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-slate-500">
-                Digite seu e-mail e enviaremos um link para redefinir sua senha.
+                Informe o e-mail da sua conta para solicitar a redefinição de senha.
               </p>
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-slate-500">E-mail</span>
@@ -64,7 +69,7 @@ export function EsqueciSenha() {
                 type="submit"
                 className="h-10 w-full rounded-lg bg-primary-600 font-medium text-white transition-all hover:bg-primary-500 active:scale-95"
               >
-                Enviar link
+                Solicitar redefinição
               </button>
               <Link
                 to="/login"

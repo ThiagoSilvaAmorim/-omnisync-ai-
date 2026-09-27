@@ -22,7 +22,7 @@ export function Configuracoes() {
   const [kpisState, setKpisState] = useState({
     usuariosAtivos: 0,
     ultimosAcessos: 0,
-    storageTotal: 0
+    storageTotal: null
   });
   const [configuracoes, setConfiguracoes] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
@@ -64,7 +64,7 @@ export function Configuracoes() {
   const dadosKpis = [
     { label: 'Usuários Ativos', valor: k.usuariosAtivos, destaque: true },
     { label: 'Últimos Acessos', valor: k.ultimosAcessos, destaque: true },
-    { label: 'Storage Total', valor: `R$ ${k.storageTotal.toLocaleString('pt-BR')}`, destaque: false },
+    { label: 'Storage Total', valor: k.storageTotal == null ? '—' : `R$ ${k.storageTotal.toLocaleString('pt-BR')}`, destaque: false },
   ];
 
   const filtrados = configuracoes.filter(c => {

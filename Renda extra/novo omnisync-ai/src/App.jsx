@@ -21,6 +21,7 @@ const Simulador = lazy(() => import('./pages/Simulador').then(m => ({ default: m
 const CentralIA = lazy(() => import('./pages/CentralIA').then(m => ({ default: m.CentralIA })));
 const Publicacoes = lazy(() => import('./pages/Publicacoes').then(m => ({ default: m.Publicacoes })));
 const Seguranca = lazy(() => import('./pages/Seguranca').then(m => ({ default: m.Seguranca })));
+const Usuarios = lazy(() => import('./pages/Usuarios').then(m => ({ default: m.Usuarios })));
 const Vendas = lazy(() => import('./pages/Vendas').then(m => ({ default: m.Vendas })));
 const Pedidos = lazy(() => import('./pages/Pedidos').then(m => ({ default: m.Pedidos })));
 const Compras = lazy(() => import('./pages/Compras').then(m => ({ default: m.Compras })));
@@ -95,6 +96,7 @@ export default function App() {
             <Route path="/central-ia" element={<CentralIA />} />
             <Route path="/publicacoes" element={<Publicacoes />} />
             <Route path="/seguranca" element={<Seguranca />} />
+            <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/empresa" element={<Empresa />} />
             <Route path="/vendas" element={<Vendas />} />
             <Route path="/pedidos" element={<Pedidos />} />

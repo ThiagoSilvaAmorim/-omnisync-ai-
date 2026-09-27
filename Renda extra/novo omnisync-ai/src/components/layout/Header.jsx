@@ -343,7 +343,7 @@ export function Header() {
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 rounded {m.style.chip}" />
+                      <span className={`h-4 w-4 border border-slate-300 bg-slate-200 dark:border-slate-600 dark:bg-slate-600 ${m.style.chip}`} />
                       <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{m.nome}</span>
                     </span>
                     {modo === m.id && <Check className="h-4 w-4 text-primary-600" />}

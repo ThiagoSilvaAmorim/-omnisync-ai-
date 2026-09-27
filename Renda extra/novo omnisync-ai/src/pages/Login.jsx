@@ -7,6 +7,10 @@ import { useAuth } from '../context/AuthContext';
 // Login — tela de autenticação.
 // ============================================
 
+// Credenciais do ambiente de demonstração: usadas apenas pelo botão
+// "modo demonstração", nunca exibidas na interface nem no HTML.
+const DEMO = { email: 'admin@omnisync.ai', senha: '123456' };
+
 export function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -26,6 +30,19 @@ export function Login() {
     setLoading(true);
     try {
       await login(email, senha);
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const entrarDemo = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await login(DEMO.email, DEMO.senha);
       navigate(from, { replace: true });
     } catch (err) {
       setError(err.message);
@@ -111,11 +128,14 @@ export function Login() {
             </button>
           </div>
 
-          <div className="mt-5 rounded-lg bg-slate-50 p-3 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-            <p className="mb-1 font-medium text-slate-600 dark:text-slate-300">Credenciais de demonstração:</p>
-            <p>E-mail: <span className="font-mono">admin@omnisync.ai</span> ou <span className="font-mono">t.bruno000@gmail.com</span></p>
-            <p>Senha: <span className="font-mono">123456</span></p>
-          </div>
+          <button
+            type="button"
+            onClick={entrarDemo}
+            disabled={loading}
+            className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white font-medium text-slate-600 transition-all hover:bg-slate-50 active:scale-95 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+          >
+            Entrar em modo demonstração
+          </button>
 
           <div className="mt-4 flex items-center justify-between text-sm">
             <Link to="/esqueci-senha" className="text-primary-600 hover:underline dark:text-primary-400">

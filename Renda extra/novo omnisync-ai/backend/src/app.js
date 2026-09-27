@@ -30,6 +30,7 @@ import metaRoutes from './routes/metas.js';
 import analiseMercadoRoutes from './routes/analiseMercado.js';
 import tendenciasRoutes from './routes/tendencias.js';
 import integracoesMlRoutes from './routes/integracoesMl.js';
+import orderRoutes from './routes/orders.js';
 
 // ============================================
 // app.js — Express app com as rotas da API.
@@ -75,19 +76,14 @@ app.use((req, res, next) => {
 // Fim do middleware de cache e rate limiting
 // ============================================
 
-// Middleware de RBAC — define req.user a partir do token ou sessão.
-// Em produção, viria do JWT. Para o protótipo, usamos o perfil do usuário logado.
+// Middleware de RBAC — valida o token Bearer (HMAC) e define req.user.
+// Sem token válido → 401; perfis fora da lista permitida → 403.
 function requireAuth(perfisPermitidos = []) {
   return async (req, res, next) => {
     try {
-      // Simulação: tenta ler usuário do corpo ou usa um usuário "padrão"
-      const userData = req.body.usuario || req.query.usuario || { id: 1, nome: 'Admin', perfil: 'Admin', mfaConfigurado: true };
-      
-      // Verificação de MFA para perfis sensíveis
-      if (!userData.mfaConfigurado && perfisPermitidos.includes(userData.perfil)) {
-        return res.status(403).json({ error: 'MFA necessário para esta operação' });
-      }
-      
+      const userData = usuarioDoRequest(req);
+      if (!userData) return res.status(401).json({ error: 'Autenticação necessária' });
+
       req.user = {
         id: userData.id,
         nome: userData.nome,
@@ -95,12 +91,12 @@ function requireAuth(perfisPermitidos = []) {
         perfil: userData.perfil,
         mfaConfigurado: userData.mfaConfigurado || false,
       };
-      
+
       // Verificação de perfil
       if (perfisPermitidos.length > 0 && !perfisPermitidos.includes(req.user.perfil)) {
         return res.status(403).json({ error: 'Permissão negada. Perfis permitidos: ' + perfisPermitidos.join(', ') });
       }
-      
+
       next();
     } catch (err) {
       next(err);
@@ -166,6 +162,11 @@ app.delete('/api/pedidos/:id', async (req, res) => {
   }
 });
 
+// Router de pedidos com detalhe, edição (PUT /:id → status + recálculo de
+// lucro), resumo e sincronização ML. Montado DEPOIS das rotas inline: GET/POST/DELETE
+// acima vencem; PUT /:id e GET /:id caem aqui.
+app.use('/api/pedidos', orderRoutes);
+
 // ---------- Clientes ----------
 app.get('/api/clientes', async (req, res) => {
   const clientes = await prisma.customer.findMany({ orderBy: { id: 'asc' } });
@@ -214,8 +215,8 @@ app.get('/api/compras', async (_req, res) => {
     const compras = await prisma.purchaseOrder.findMany({ orderBy: { data: 'desc' } });
     res.json(compras);
   } catch (e) {
-    console.error('[API] Erro ao listar compras, usando fallback estático:', e.message);
-    res.json(data.compras);
+    console.error('[API] Erro ao listar compras:', e.message);
+    res.status(500).json({ error: 'Erro ao consultar compras no banco de dados' });
   }
 });
 app.get('/api/fiscal', async (_req, res) => {
@@ -223,8 +224,8 @@ app.get('/api/fiscal', async (_req, res) => {
     const notas = await prisma.notaFiscal.findMany({ orderBy: { id: 'desc' } });
     res.json(notas);
   } catch (e) {
-    console.error('[API] Erro ao listar notas fiscais, usando fallback estático:', e.message);
-    res.json(data.notasFiscais);
+    console.error('[API] Erro ao listar notas fiscais:', e.message);
+    res.status(500).json({ error: 'Erro ao consultar notas fiscais no banco de dados' });
   }
 });
 app.get('/api/logistica', send(data.entregas));
@@ -238,8 +239,8 @@ app.get('/api/transacoes', async (_req, res) => {
     const despesas = compras.map(c => ({ id: `OC-${c.id}`, tipo: 'despesa', descricao: `Compra ${c.id} — ${c.fornecedor}`, categoria: 'Compras', data: c.data, valor: -Math.abs(Number(c.total) || 0) }));
     res.json([...receitas, ...despesas]);
   } catch (e) {
-    console.error('[API] Erro ao montar transações, usando fallback estático:', e.message);
-    res.json(data.transacoes);
+    console.error('[API] Erro ao montar transações:', e.message);
+    res.status(500).json({ error: 'Erro ao montar transações no banco de dados' });
   }
 });
 app.get('/api/oportunidades', send(data.oportunidades));

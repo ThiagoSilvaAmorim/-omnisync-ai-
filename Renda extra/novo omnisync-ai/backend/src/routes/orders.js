@@ -270,11 +270,11 @@ router.post('/sync/mercadolivre', async (req, res) => {
         id: `ML-${pedido.id}`,
         cliente: pedido.buyer?.nickname || 'Cliente MercadoLivre',
         data: pedido.date_created ? new Date(pedido.date_created).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
-        total: pedido.price,
+        total: Number(pedido.total_amount ?? pedido.price ?? 0),
         itens: items.length,
         status: pedido.status || 'pending',
         custoFornecedor: custoTotal,
-        taxaMarketplace: pedido.categories && categories.includes('MLB') ? pedido.official_service_fee || 0 : 0,
+        taxaMarketplace: Array.isArray(pedido.categories) && pedido.categories.includes('MLB') ? pedido.official_service_fee || 0 : 0,
         frete: pedido.shipping_cost || 0,
         origem: 'mercadolivre',
       };

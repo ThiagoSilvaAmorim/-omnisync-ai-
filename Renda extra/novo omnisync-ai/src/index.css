@@ -52,6 +52,21 @@
   .animate-slide-in {
     animation: slide-in 0.2s ease-out;
   }
+
+  /* Transição de entrada entre páginas (AppShell) */
+  @keyframes page-in {
+    from {
+      transform: translateY(6px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  .animate-page {
+    animation: page-in 0.25s ease-out;
+  }
 }
 
 /* Impressão: margens da página e fundo branco */

@@ -322,9 +322,19 @@ const analisadores = {
   // Melhor compra: mesmo produto ofertado por 2+ fornecedores do catálogo.
   // Os preços vêm do banco; o modelo só escolhe e justifica — nunca inventa.
   async purchase(payload = {}) {
-    const produtoId = Number(payload.produtoId);
-    if (!Number.isInteger(produtoId) || produtoId <= 0) {
-      return insufficient('purchase', 'produtoId inválido');
+    // id do catálogo é UUID (string); aceita também id numérico antigo.
+    const bruto = payload.produtoId;
+    let produtoId;
+    if (typeof bruto === 'number') {
+      if (!Number.isInteger(bruto) || bruto <= 0) {
+        return insufficient('purchase', 'produtoId inválido');
+      }
+      produtoId = bruto;
+    } else {
+      produtoId = String(bruto ?? '').trim();
+      if (!produtoId || produtoId.length > 64 || produtoId === 'undefined' || produtoId === 'null') {
+        return insufficient('purchase', 'produtoId inválido');
+      }
     }
 
     const produto = await prisma.catalogProduct.findUnique({

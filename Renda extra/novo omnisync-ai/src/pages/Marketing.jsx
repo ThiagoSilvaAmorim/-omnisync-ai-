@@ -30,9 +30,9 @@ export function Marketing() {
   const [loading, setLoading] = useState(true);
   const [kpisState, setKpisState] = useState({
     campanhasAtivas: 0,
-    reachTotal: 0,
-    engajamentoMedio: 0,
-    conversoes: 0
+    reachTotal: null,
+    engajamentoMedio: null,
+    conversoes: null
   });
   const [publicacoes, setPublicacoes] = useState([]);
   const [produtosOferta, setProdutosOferta] = useState([]);
@@ -124,9 +124,9 @@ export function Marketing() {
   const k = kpisState;
   const dadosKpis = [
     { label: 'Campanhas ativas', valor: k.campanhasAtivas, destaque: true },
-    { label: 'Alcance total', valor: `R$ ${k.reachTotal.toLocaleString('pt-BR')}`, destaque: true },
-    { label: 'Engajamento médio', valor: `${k.engajamentoMedio}%`, destaque: false },
-    { label: 'Conversões', valor: k.conversoes, destaque: true },
+    { label: 'Alcance total', valor: k.reachTotal == null ? '—' : k.reachTotal.toLocaleString('pt-BR'), destaque: true },
+    { label: 'Engajamento médio', valor: k.engajamentoMedio == null ? '—' : `${k.engajamentoMedio}%`, destaque: false },
+    { label: 'Conversões', valor: k.conversoes ?? '—', destaque: true },
   ];
 
   const filtrados = publicacoes.filter(p => {

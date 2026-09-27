@@ -8,6 +8,9 @@
 import crypto from 'node:crypto';
 
 const SEGREDO = process.env.JWT_SECRET || 'omnisync-dev-secret';
+if (!process.env.JWT_SECRET) {
+  console.warn('[auth] JWT_SECRET ausente — usando segredo de desenvolvimento. Defina JWT_SECRET em produção.');
+}
 const VALIDADE_MS = 12 * 60 * 60 * 1000;
 
 export const PERFIS = ['Diretor', 'Comercial', 'Estoquista'];

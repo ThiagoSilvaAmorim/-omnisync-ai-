@@ -36,7 +36,7 @@ export function Logistica() {
   const [kpisState, setKpisState] = useState({
     entregasEmProgresso: 0,
     taxaEntregaOnTime: 0,
-    custoMedioFrete: 0,
+    custoMedioFrete: null,
     pendentes: 0
   });
   const [entregas, setEntregas] = useState([]);
@@ -112,7 +112,7 @@ export function Logistica() {
   const dadosKpis = [
     { label: 'Entregas em progresso', valor: k.entregasEmProgresso, destaque: true },
     { label: 'Taxa de entrega on-time', valor: `${k.taxaEntregaOnTime}%`, destaque: true },
-    { label: 'Custo médio frete', valor: `R$ ${k.custoMedioFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, destaque: false },
+    { label: 'Custo médio frete', valor: k.custoMedioFrete == null ? '—' : `R$ ${k.custoMedioFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, destaque: false },
     { label: 'Pendentes', valor: k.pendentes, destaque: true },
   ];
 
