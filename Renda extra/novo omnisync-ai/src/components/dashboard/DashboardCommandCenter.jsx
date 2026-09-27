@@ -19,7 +19,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Skeleton } from '../ui/Skeleton';
 import { AreaChart } from '../charts/AreaChart';
 import { BarChart } from '../charts/BarChart';
-import { AlertList } from './AlertList';
 import { ProximosPassos } from './ProximosPassos';
 
 const ATALHOS = [
@@ -122,8 +121,6 @@ export function DashboardCommandCenter({ period, customRange }) {
     { canal: 'Manual', valor: pedidos.filter(p => !p.origem || p.origem === 'manual').length },
   ].filter(c => c.valor > 0);
 
-  const alertasPri = [];
-
   const analisarPeriodo = async () => {
     setAnalise(null);
     return api.analisarDominio('dashboard', {
@@ -193,64 +190,41 @@ export function DashboardCommandCenter({ period, customRange }) {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Alertas importantes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AlertList alerts={alertasPri} loading={loading} onOpen={() => {}} />
-            </CardContent>
-          </Card>
-
+        <div className="lg:col-span-1">
           <ProximosPassos loading={loading} />
+        </div>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Atalhos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Atalhos loading={loading} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Atalhos</CardTitle>
+              <CardTitle>Vendas por canal</CardTitle>
             </CardHeader>
             <CardContent>
-              <Atalhos loading={loading} />
+              {loading ? (
+                <Skeleton className="h-[240px] rounded-lg" />
+              ) : canais.length > 0 ? (
+                <BarChart data={canais} theme={theme} label="Vendas" />
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  Conecte pedidos para ver vendas por canal
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Vendas por canal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-[240px] rounded-lg" />
-            ) : canais.length > 0 ? (
-              <BarChart data={canais} theme={theme} label="Vendas" />
-            ) : (
-              <div className="text-center py-8 text-slate-500">
-                Conecte pedidos para ver vendas por canal
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Pedidos por armazém</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-[240px] rounded-lg" />
-            ) : (
-              <div className="text-center py-8 text-slate-500">
-                Dados de armazém não disponíveis
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="rounded-2xl border border-primary-500/30 bg-gradient-to-r from-primary-50 to-primary-100 p-6 dark:border-primary-500/30 dark:from-primary-500/10 dark:to-primary-500/10">
+        <div className="rounded-2xl border border-primary-500/30 bg-gradient-to-r from-primary-50 to-primary-100 p-6 dark:border-primary-500/30 dark:from-primary-500/10 dark:to-primary-500/10">
         <div className="flex flex-wrap items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white">
             <Bot className="h-4 w-4" />
@@ -296,6 +270,7 @@ export function DashboardCommandCenter({ period, customRange }) {
           </p>
         )}
       </div>
+    </div>
     </div>
   );
 }

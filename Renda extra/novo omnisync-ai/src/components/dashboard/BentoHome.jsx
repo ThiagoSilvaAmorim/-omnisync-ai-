@@ -10,8 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Skeleton } from '../ui/Skeleton';
 import { AreaChart } from '../charts/AreaChart';
 import { DonutChart } from '../charts/DonutChart';
-import { RadialGauge } from '../charts/RadialGauge';
-import { StackBarChart } from '../charts/StackBarChart';
 
 const ATALHOS = [
   { nome: 'Radar', rota: '/radar-mercado', Icone: PackageSearch },
@@ -89,12 +87,6 @@ export function BentoHome({ period, customRange }) {
     { canal: 'Manual', valor: pedidos.filter(p => !p.origem || p.origem === 'manual').length },
   ].filter(c => c.valor > 0);
 
-  const empilhado = pedidos.slice(0, 6).map(p => ({
-    data: p.data,
-    Pagamento: Math.round((Number(p.total) || 0) * 0.6),
-    Pix: Math.round((Number(p.total) || 0) * 0.4),
-  }));
-
   const donut = canais.map(c => ({ name: c.canal, valor: c.valor }));
 
   const analisarPeriodo = async () => {
@@ -170,44 +162,6 @@ export function BentoHome({ period, customRange }) {
               />
             ))}
       </div>
-
-      <div className="grid grid-cols-2 gap-4 lg:col-span-2">
-        {[
-          { valor: 0, label: 'Meta mensal' },
-          { valor: 0, label: 'Entregas no prazo' },
-        ].map((g, i) => (
-          <Card key={i}>
-            <CardContent className="flex items-center justify-center p-2">
-              {loading ? (
-                <Skeleton className="h-[160px] w-full rounded-xl" />
-              ) : (
-                <RadialGauge value={g.valor} label={g.label} theme={theme} size={170} />
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="lg:col-span-2">
-        <CardHeader>
-          <CardTitle>Formas de recebimento</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <Skeleton className="h-[220px] rounded-xl" />
-          ) : (
-            <StackBarChart
-              data={empilhado}
-              theme={theme}
-              xKey="data"
-              series={[
-                { key: 'Pix', name: 'Pix', color: 'var(--primary-500)' },
-                { key: 'Pagamento', name: 'Pagamento', color: '#0ea5e9' },
-              ]}
-            />
-          )}
-        </CardContent>
-      </Card>
 
       <Card className="lg:col-span-2">
         <CardHeader>
