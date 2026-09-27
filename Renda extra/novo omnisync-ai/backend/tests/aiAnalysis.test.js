@@ -8,6 +8,7 @@ vi.mock('../src/prisma/client.js', () => ({
     order: { findMany: vi.fn(), findUnique: vi.fn() },
     product: { findMany: vi.fn(), findUnique: vi.fn() },
     fornecedor: { findFirst: vi.fn() },
+    catalogProduct: { findUnique: vi.fn(), findMany: vi.fn() },
   },
 }));
 
@@ -53,6 +54,8 @@ describe('POST /api/ai/analyze/:dominio', () => {
     prisma.product.findMany.mockResolvedValue([]);
     prisma.product.findUnique.mockResolvedValue(null);
     prisma.fornecedor.findFirst.mockResolvedValue(null);
+    prisma.catalogProduct.findUnique.mockResolvedValue(null);
+    prisma.catalogProduct.findMany.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -159,6 +162,50 @@ describe('POST /api/ai/analyze/:dominio', () => {
   it('order desconhecido retorna 404', async () => {
     const res = await request(app).post('/api/ai/analyze/order').set(auth()).send({ pedidoId: 'X' });
     expect(res.status).toBe(404);
+  });
+
+  it('purchase sem produtoId retorna INSUFFICIENT_DATA sem tocar no Gemini', async () => {
+    const res = await request(app).post('/api/ai/analyze/purchase').set(auth()).send({});
+    expect(res.body).toMatchObject({ ok: false, code: 'INSUFFICIENT_DATA' });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('purchase com produto único retorna INSUFFICIENT_DATA (precisa de 2+ ofertas)', async () => {
+    prisma.catalogProduct.findUnique.mockResolvedValue({
+      id: 7, name: 'Fone Bluetooth TWS', costPrice: 45.9, category: 'eletrônicos', niche: null,
+      supplier: { name: '360 Tour', city: 'São Bernardo do Campo', uf: 'SP', acceptsDropshipping: true, telefone: null, siteUrl: null },
+    });
+    prisma.catalogProduct.findMany.mockResolvedValue([
+      { id: 7, name: 'Fone Bluetooth TWS', sku: 'A', costPrice: 45.9, supplier: { name: '360 Tour', city: 'São Bernardo do Campo', uf: 'SP', acceptsDropshipping: true, telefone: null, siteUrl: null } },
+    ]);
+    const res = await request(app).post('/api/ai/analyze/purchase').set(auth()).send({ produtoId: 7 });
+    expect(res.body).toMatchObject({ ok: false, code: 'INSUFFICIENT_DATA' });
+    expect(res.body.detalhe).toMatch(/2 ou mais/);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('purchase com 3 ofertas envia custos reais e devolve análise estruturada', async () => {
+    prisma.catalogProduct.findUnique.mockResolvedValue({
+      id: 7, name: 'Fone Bluetooth TWS', costPrice: 52, category: 'eletrônicos', niche: null,
+      supplier: { name: 'Akki Atacadista', city: 'São Paulo', uf: 'SP', acceptsDropshipping: true, telefone: null, siteUrl: null },
+    });
+    prisma.catalogProduct.findMany.mockResolvedValue([
+      { id: 7, name: 'Fone Bluetooth TWS', sku: 'DEMO-FONE-001', costPrice: 45.9, supplier: { name: '360 Tour', city: 'São Bernardo do Campo', uf: 'SP', acceptsDropshipping: true, telefone: '(11) 3000-0000', siteUrl: 'https://360tour.com.br' } },
+      { id: 8, name: 'Fone Bluetooth TWS', sku: 'DEMO-FONE-003', costPrice: 48, supplier: { name: 'Akki Atacadista', city: 'São Paulo', uf: 'SP', acceptsDropshipping: true, telefone: null, siteUrl: null } },
+      { id: 9, name: 'Fone Bluetooth TWS', sku: 'DEMO-FONE-002', costPrice: 52, supplier: { name: '3G Foods', city: 'Campinas', uf: 'SP', acceptsDropshipping: true, telefone: null, siteUrl: null } },
+    ]);
+
+    const res = await request(app).post('/api/ai/analyze/purchase').set(auth()).send({ produtoId: 7 });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: true, tipo: 'purchase' });
+    expect(res.body.source[0].ofertas).toBe(3);
+
+    const corpoEnviado = global.fetch.mock.calls[0][1].body;
+    expect(corpoEnviado).toContain('360 Tour');
+    expect(corpoEnviado).toContain('45.9');
+    expect(corpoEnviado).toContain('diferenca');
+    expect(corpoEnviado).not.toContain('senha');
   });
 
   it('429 do Gemini vira 429', async () => {

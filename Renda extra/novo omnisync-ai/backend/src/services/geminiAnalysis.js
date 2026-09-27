@@ -318,6 +318,80 @@ const analisadores = {
     const r = await chamarGemini(`${PROMPT_BASE} Contexto: pedido real. Sugerir próxima ação manual; nunca cancelar, reembolsar ou enviar mensagens.`, contexto);
     return envelope('order', [{ origem: 'banco', tabelas: ['order'] }], r);
   },
+
+  // Melhor compra: mesmo produto ofertado por 2+ fornecedores do catálogo.
+  // Os preços vêm do banco; o modelo só escolhe e justifica — nunca inventa.
+  async purchase(payload = {}) {
+    const produtoId = Number(payload.produtoId);
+    if (!Number.isInteger(produtoId) || produtoId <= 0) {
+      return insufficient('purchase', 'produtoId inválido');
+    }
+
+    const produto = await prisma.catalogProduct.findUnique({
+      where: { id: produtoId },
+      include: { supplier: { select: { name: true, city: true, uf: true, acceptsDropshipping: true, telefone: true, siteUrl: true } } },
+    });
+    if (!produto) {
+      const e = new Error('Produto não encontrado');
+      e.code = 'PRODUCT_NOT_FOUND';
+      e.status = 404;
+      throw e;
+    }
+
+    const chave = String(produto.name || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/\s+/g, ' ').trim();
+
+    const irmas = await prisma.catalogProduct.findMany({
+      where: { costPrice: { not: null }, supplier: { acceptsDropshipping: true } },
+      include: { supplier: { select: { name: true, city: true, uf: true, acceptsDropshipping: true, telefone: true, siteUrl: true } } },
+      orderBy: { costPrice: 'asc' },
+      take: 400,
+    });
+
+    const ofertas = irmas
+      .filter(c => {
+        const k = String(c.name || '')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase().replace(/\s+/g, ' ').trim();
+        return k === chave;
+      })
+      .map(c => ({
+        produto: c.name,
+        sku: c.sku || null,
+        custo: numero(c.costPrice),
+        fornecedor: c.supplier?.name || null,
+        cidade: c.supplier ? `${c.supplier.city}/${c.supplier.uf}` : null,
+        telefone: c.supplier?.telefone || null,
+        site: c.supplier?.siteUrl || null,
+        dropshipping: Boolean(c.supplier?.acceptsDropshipping),
+      }));
+
+    if (ofertas.length < 2) {
+      return insufficient('purchase', `produto ofertado por ${ofertas.length} fornecedor(es); comparação precisa de 2 ou mais`);
+    }
+
+    const custos = ofertas.map(o => o.custo);
+    const contexto = expurgarSegredos({
+      produto: produto.name,
+      categoria: produto.category || produto.niche || null,
+      ofertas,
+      menorCusto: Math.min(...custos),
+      maiorCusto: Math.max(...custos),
+      diferenca: Math.round((Math.max(...custos) - Math.min(...custos)) * 100) / 100,
+      aviso: 'Compare apenas custo, localização, telefone/site e dropshipping. Não há histórico de qualidade, prazo ou confiabilidade dos fornecedores — não afirme nada sobre isso.',
+    });
+
+    const r = await chamarGemini(
+      `${PROMPT_BASE} Contexto: MESMO produto ofertado por fornecedores diferentes do catálogo. ` +
+      'Na analysis, indique o fornecedor de MENOR custo e cite a diferença em reais. ' +
+      'Nas recommendations, liste: 1) fornecedor mais barato; 2) o que verificar antes de comprar (telefone, site, dropshipping); ' +
+      '3) quando o mais barato NÃO é a melhor escolha (sem telefone/site). ' +
+      'Em risks, coloque o que não dá para saber com esses dados (prazo, qualidade, reputação).',
+      contexto
+    );
+    return envelope('purchase', [{ origem: 'banco', tabelas: ['catalogProduct', 'supplier'], ofertas: ofertas.length }], r);
+  },
 };
 
 export async function analisarDominio(tipo, ctx = {}) {

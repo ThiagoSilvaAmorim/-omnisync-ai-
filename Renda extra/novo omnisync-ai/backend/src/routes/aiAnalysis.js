@@ -35,7 +35,7 @@ function responderErro(res, e) {
   return res.status(status).json({ error: e?.message || mensagens[status] || 'Falha na análise.' });
 }
 
-const DOMINIOS = ['dashboard', 'sales', 'market', 'supplier', 'inventory', 'order'];
+const DOMINIOS = ['dashboard', 'sales', 'market', 'supplier', 'inventory', 'order', 'purchase'];
 
 // POST /api/ai/analyze/:dominio
 router.post('/analyze/:dominio', requireAuth, async (req, res) => {

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+﻿import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AppProvider } from '../context/AppContext';
 import { api } from '../services/api';
@@ -8,6 +8,7 @@ import { SupplierDetail } from '../pages/SupplierDetail';
 vi.mock('../services/api', () => ({
   api: {
     getSupplierBySlug: vi.fn(),
+    analisarDominio: vi.fn(),
   },
 }));
 
@@ -151,3 +152,120 @@ describe('SupplierDetail — bloco Contato', () => {
     expect(within(bloco).queryByTestId('link-whatsapp')).toBeNull();
   });
 });
+
+describe('SupplierDetail — seção Catálogo (link do site)', () => {
+  const PRODUTO = {
+    id: 'p7',
+    name: 'Fone Bluetooth TWS',
+    sku: 'DEMO-FONE-003',
+    costPrice: 52,
+    category: 'eletrônicos',
+    imageUrl: null,
+    comparacoes: {
+      outrasOfertas: [{
+        productId: 'p9',
+        name: 'Fone Bluetooth TWS',
+        sku: 'DEMO-FONE-001',
+        costPrice: 48,
+        supplier: { slug: '3g-foods', name: '3G Foods', city: 'Campinas', uf: 'SP', acceptsDropshipping: true, telefone: null, productCount: 3 },
+      }],
+      resumo: { custoAtual: 52, menorCusto: 48, diferenca: 4, souOMenor: false, totalOfertas: 2 },
+    },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  it('com site, mostra o link "Ver catálogo no site do fornecedor" apontando para fora', async () => {
+    api.getSupplierBySlug.mockResolvedValue({
+      fornecedor: { ...FORNECEDOR_CNPJ, siteUrl: 'https://deltaatlantica.com.br' },
+      produtos: [],
+    });
+    renderizar();
+
+    await screen.findByTestId('bloco-catalogo');
+    const link = screen.getByTestId('link-catalogo-site');
+    expect(link.getAttribute('href')).toBe('https://deltaatlantica.com.br');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.textContent).toMatch(/Ver catálogo no site/);
+    // ainda sem produtos: avisa honestamente e mantém o link
+    expect(screen.getByText(/Use o link acima para ver o catálogo/i)).toBeTruthy();
+  });
+
+  it('sem site, não há link e o vazio explica a situação', async () => {
+    api.getSupplierBySlug.mockResolvedValue({
+      fornecedor: { ...FORNECEDOR_CNPJ, siteUrl: null },
+      produtos: [],
+    });
+    renderizar();
+
+    await screen.findByTestId('bloco-catalogo');
+    expect(screen.queryByTestId('link-catalogo-site')).toBeNull();
+    expect(screen.getByText(/não informou site público/i)).toBeTruthy();
+  });
+
+  it('renderiza os produtos com bloco de comparação e botão Gemini', async () => {
+    api.getSupplierBySlug.mockResolvedValue({
+      fornecedor: { ...FORNECEDOR_CNPJ, siteUrl: 'https://deltaatlantica.com.br', productCount: 1 },
+      produtos: [PRODUTO],
+    });
+    renderizar();
+
+    const card = (await screen.findAllByText('Fone Bluetooth TWS'))[0].closest('article');
+    expect(card).toBeTruthy();
+
+    // bloco de comparação com a oferta do concorrente
+    const comp = within(card).getByTestId('comparacao-ofertas');
+    expect(within(comp).getByText('3G Foods')).toBeTruthy();
+    expect(within(comp).getByText('R$ 48,00')).toBeTruthy();
+    // Intl pt-BR usa espaço não separável depois de "R$" → casa com \s
+    expect(within(comp).getByTestId('diferenca-preco').textContent).toMatch(/R\$\s*4,00/);
+
+    // botão do Gemini presente no mesmo card
+    expect(within(card).getByTestId('btn-melhor-compra')).toBeTruthy();
+  });
+
+  it('clicar em "Melhor compra" chama o Gemini com o produtoId e mostra a análise', async () => {
+    api.getSupplierBySlug.mockResolvedValue({
+      fornecedor: { ...FORNECEDOR_CNPJ, productCount: 1 },
+      produtos: [PRODUTO],
+    });
+    api.analisarDominio.mockResolvedValue({
+      ok: true,
+      analysis: 'O menor custo é da 3G Foods (R$ 48,00).',
+      recommendations: ['Compre na 3G Foods em Campinas.'],
+      risks: ['Confirme o lote antes de fechar.'],
+    });
+
+    renderizar();
+    const card = (await screen.findAllByText('Fone Bluetooth TWS'))[0].closest('article');
+
+    fireEvent.click(within(card).getByTestId('btn-melhor-compra'));
+
+    expect(api.analisarDominio).toHaveBeenCalledWith('purchase', { produtoId: 'p7' });
+    const analise = await within(card).findByTestId('analise-melhor-compra');
+    expect(within(analise).getByText(/menor custo é da 3G Foods/)).toBeTruthy();
+    expect(within(analise).getByText(/Compre na 3G Foods/)).toBeTruthy();
+    expect(within(analise).getByText(/Confirme o lote/)).toBeTruthy();
+  });
+
+  it('falha do Gemini vira mensagem honesta no card (sem quebrar a página)', async () => {
+    api.getSupplierBySlug.mockResolvedValue({
+      fornecedor: { ...FORNECEDOR_CNPJ, productCount: 1 },
+      produtos: [PRODUTO],
+    });
+    api.analisarDominio.mockResolvedValue({ ok: false, message: 'Dados insuficientes para recomendar.' });
+
+    renderizar();
+    const card = (await screen.findAllByText('Fone Bluetooth TWS'))[0].closest('article');
+
+    fireEvent.click(within(card).getByTestId('btn-melhor-compra'));
+
+    const erro = await within(card).findByTestId('erro-melhor-compra');
+    expect(erro.textContent).toBe('Dados insuficientes para recomendar.');
+    expect(within(card).queryByTestId('analise-melhor-compra')).toBeNull();
+  });
+});
+

@@ -16,6 +16,7 @@ vi.mock('../src/prisma/client.js', () => ({
     supplier: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       count: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
@@ -35,6 +36,13 @@ vi.mock('../src/services/osm.js', () => ({
   importacaoRecente: vi.fn(() => null),
 }));
 
+vi.mock('../src/services/googlePlaces.js', () => ({
+  autocompleteLocal: vi.fn(),
+  buscarFornecedoresPlaces: vi.fn(),
+  chavePlaces: vi.fn(() => 'chave-teste'),
+  limparCachePlaces: vi.fn(),
+}));
+
 vi.mock('../src/services/brasilApi.js', () => ({
   buscarCnpj: vi.fn(),
   formatarCnpj: vi.fn(c => c || null),
@@ -43,6 +51,7 @@ vi.mock('../src/services/brasilApi.js', () => ({
 
 import { prisma } from '../src/prisma/client.js';
 import { importarFornecedoresOsm } from '../src/services/osm.js';
+import { buscarFornecedoresPlaces } from '../src/services/googlePlaces.js';
 import { buscarCnpj } from '../src/services/brasilApi.js';
 
 function tokenValido() {
@@ -89,6 +98,8 @@ describe('GET /api/suppliers (catálogo)', () => {
         // Cadastro manual por CNPJ é decisão do usuário: aparece mesmo
         // ainda sem produtos, senão o cadastro novo ficaria invisível.
         { fonte: 'cnpj' },
+        // Importado do Google Places também é escolha do usuário.
+        { fonte: 'places' },
       ],
     }]);
     expect(opts.skip).toBe(0);
@@ -144,6 +155,7 @@ describe('GET /api/suppliers (catálogo)', () => {
       { marketplaces: { isEmpty: false } },
       { niche: 'wholesale' },
       { fonte: 'cnpj' },
+      { fonte: 'places' },
     ]);
   });
 
@@ -198,6 +210,8 @@ describe('GET /api/suppliers (catálogo)', () => {
 describe('GET /api/suppliers/:slug (detalhe)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // nenhum concorrente por padrão; testes de comparação sobrescrevem
+    prisma.catalogProduct.findMany.mockResolvedValue([]);
   });
 
   it('retorna fornecedor com catálogo de produtos', async () => {
@@ -265,6 +279,65 @@ describe('GET /api/suppliers/:slug (detalhe)', () => {
     });
     expect(res.body.fornecedor.descricao).toContain('wholesale');
     expect(res.body.fornecedor.descricao).toContain('São Paulo/SP');
+  });
+
+  it('enriquece cada produto com comparacoes de outros fornecedores', async () => {
+    prisma.supplier.findUnique.mockResolvedValue({
+      id: 'u4',
+      slug: 'akki-atacadista',
+      name: 'Akki Atacadista',
+      coverImages: [],
+      marketplaces: [],
+      acceptsDropshipping: true,
+      city: 'São Paulo',
+      uf: 'SP',
+      products: [{ id: 'p7', name: 'Fone Bluetooth TWS', sku: 'DEMO-FONE-003', imageUrl: null, costPrice: 52, niche: null, supplierId: 'u4' }],
+    });
+    // respeita o where: só de OUTROS fornecedores (p7 da u4 fica de fora)
+    prisma.catalogProduct.findMany.mockResolvedValue([
+      {
+        id: 'p9', name: 'Fone Bluetooth TWS', costPrice: 48,
+        supplier: { id: 'u5', name: '3G Foods', slug: '3g-foods', city: 'Campinas', uf: 'SP', acceptsDropshipping: true, telefone: null, productCount: 3 },
+      },
+      {
+        id: 'p1', name: 'Caneca Térmica 350ml', costPrice: 18.5,
+        supplier: { id: 'u6', name: '360 Tour', slug: '360-tour', city: 'São Bernardo do Campo', uf: 'SP', acceptsDropshipping: true, telefone: null, productCount: 5 },
+      },
+    ]);
+
+    const res = await request(app).get('/api/suppliers/akki-atacadista').set(auth());
+
+    expect(res.status).toBe(200);
+    expect(res.body.produtos).toHaveLength(1);
+    const p = res.body.produtos[0];
+
+    // busca só concorrentes (nunca o próprio fornecedor)
+    const whereUsado = prisma.catalogProduct.findMany.mock.calls[0][0].where;
+    expect(whereUsado.supplierId).toEqual({ not: 'u4' });
+
+    // só o MESMO produto aparece como oferta irmã (Caneca fica de fora)
+    expect(p.comparacoes.outrasOfertas).toHaveLength(1);
+    expect(p.comparacoes.outrasOfertas[0]).toMatchObject({
+      productId: 'p9', costPrice: 48,
+      supplier: { slug: '3g-foods', city: 'Campinas', uf: 'SP' },
+    });
+    // próprio custo (52) > menor (48) → há economia de 4,00
+    expect(p.comparacoes.resumo).toMatchObject({
+      custoAtual: 52, menorCusto: 48, diferenca: 4, souOMenor: false, totalOfertas: 2,
+    });
+  });
+
+  it('produto sem concorrência recebe outrasOfertas vazio e resumo null', async () => {
+    prisma.supplier.findUnique.mockResolvedValue({
+      id: 'u7', slug: 'unico', name: 'Único', coverImages: [], marketplaces: [],
+      acceptsDropshipping: true, products: [{ id: 'p10', name: 'Item exclusivo', costPrice: 10 }],
+    });
+    prisma.catalogProduct.findMany.mockResolvedValue([]);
+
+    const res = await request(app).get('/api/suppliers/unico').set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.produtos[0].comparacoes).toMatchObject({ outrasOfertas: [] });
+    expect(res.body.produtos[0].comparacoes.resumo).toBeNull();
   });
 });
 
@@ -493,6 +566,154 @@ describe('POST /api/suppliers/import-osm', () => {
       .send({ uf: 'SP', cidade: 'Campinas' });
     expect(res.status).toBe(429);
     expect(res.body.code).toBe('OSM_RATE_LIMIT');
+  });
+});
+
+describe('POST /api/suppliers/import-places', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sem token retorna 401 sem gastar cota do Google', async () => {
+    const res = await request(app).post('/api/suppliers/import-places').send({ uf: 'SP', cidade: 'Campinas' });
+    expect(res.status).toBe(401);
+    expect(buscarFornecedoresPlaces).not.toHaveBeenCalled();
+  });
+
+  it('UF inválida retorna 400 INVALID_UF', async () => {
+    const res = await request(app)
+      .post('/api/suppliers/import-places')
+      .set(auth())
+      .send({ uf: 'S', cidade: 'Campinas' });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_UF');
+  });
+
+  it('sem cidade retorna 400 INVALID_CIDADE', async () => {
+    const res = await request(app)
+      .post('/api/suppliers/import-places')
+      .set(auth())
+      .send({ uf: 'SP' });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_CIDADE');
+  });
+
+  it('importa, deduplica entre termos e faz upsert por placeId', async () => {
+    buscarFornecedoresPlaces.mockImplementation(async ({ termo }) => {
+      // o mesmo lugar aparece nas duas buscas → deve contar 1x
+      const base = [{
+        placeId: 'ChIJAVEC',
+        nome: 'AVEC CAMPINAS DISTRIBUIDORA LTDA',
+        telefone: '(19) 3728-2200',
+        site: 'http://ecomaveccampinas.com.br/',
+        endereco: 'Av. Ricardo Bassoli Cezare, 281 - Campinas - SP',
+        lat: -22.9099,
+        lng: -47.0626,
+      }];
+      if (termo.startsWith('exportadora')) {
+        return [...base, {
+          placeId: 'ChIJBRINK',
+          nome: 'Brink Toys Distribuidora de Artigos Importados',
+          telefone: '(19) 3268-8670',
+          site: null,
+          endereco: 'R. Martinópolis, 583 - Campinas - SP',
+          lat: -22.92,
+          lng: -47.07,
+        }];
+      }
+      return base;
+    });
+    prisma.supplier.findUnique.mockResolvedValue(null); // placeId novo
+    prisma.supplier.findFirst.mockResolvedValue(null);  // nome também novo
+    prisma.supplier.create.mockImplementation(async ({ data }) => ({ id: 1, ...data }));
+    prisma.supplier.update.mockResolvedValue({ id: 9 });
+    prisma.supplier.findMany.mockResolvedValue([]);
+    prisma.supplier.count.mockResolvedValue(2);
+
+    const res = await request(app)
+      .post('/api/suppliers/import-places')
+      .set(auth())
+      .send({ uf: 'SP', cidade: 'Campinas', termos: ['importadora e distribuidora', 'exportadora de produtos'] });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: true, fonte: 'Google Places', novos: 2, atualizados: 0, encontrados: 2 });
+    expect(buscarFornecedoresPlaces).toHaveBeenCalledTimes(2);
+    expect(prisma.supplier.create).toHaveBeenCalledTimes(2);
+    expect(prisma.supplier.create.mock.calls[0][0].data).toMatchObject({
+      fonte: 'places',
+      placeId: 'ChIJAVEC',
+      telefone: '(19) 3728-2200',
+      siteUrl: 'http://ecomaveccampinas.com.br/',
+      uf: 'SP',
+      city: 'Campinas',
+    });
+    expect(res.body.mensagem).toContain('2 novo');
+  });
+
+  it('lugar já conhecido pelo placeId atualiza sem duplicar', async () => {
+    buscarFornecedoresPlaces.mockResolvedValue([{
+      placeId: 'ChIJAVEC',
+      nome: 'AVEC CAMPINAS DISTRIBUIDORA LTDA',
+      telefone: '(19) 3728-2200',
+      site: null,
+      endereco: 'Av. Ricardo Bassoli, 281',
+      lat: null,
+      lng: null,
+    }]);
+    prisma.supplier.findUnique.mockResolvedValue({ id: 42, placeId: 'ChIJAVEC' });
+    prisma.supplier.findMany.mockResolvedValue([]);
+    prisma.supplier.count.mockResolvedValue(1);
+
+    const res = await request(app)
+      .post('/api/suppliers/import-places')
+      .set(auth())
+      .send({ uf: 'SP', cidade: 'Campinas' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ novos: 0, atualizados: 1, encontrados: 1 });
+    expect(prisma.supplier.create).not.toHaveBeenCalled();
+    expect(prisma.supplier.update).toHaveBeenCalledTimes(1);
+    expect(prisma.supplier.update.mock.calls[0][0].where).toEqual({ id: 42 });
+    // não apaga dado existente com null (site veio null desta vez)
+    expect(prisma.supplier.update.mock.calls[0][0].data).not.toHaveProperty('siteUrl');
+  });
+
+  it('sem chave do Google vira 503 com mensagem clara', async () => {
+    const err = new Error('Google Places não configurado (falta GOOGLE_PLACES_KEY ou GOOGLE_MAPS_API_KEY).');
+    err.code = 'SEM_CHAVE';
+    buscarFornecedoresPlaces.mockRejectedValue(err);
+    const res = await request(app)
+      .post('/api/suppliers/import-places')
+      .set(auth())
+      .send({ uf: 'SP', cidade: 'Campinas' });
+    expect(res.status).toBe(503);
+    expect(res.body.code).toBe('SEM_CHAVE');
+  });
+
+  it('rate limit do Google vira 429', async () => {
+    const err = new Error('Cota do Google Places excedida. Tente mais tarde.');
+    err.code = 'PLACES_RATE_LIMIT';
+    buscarFornecedoresPlaces.mockRejectedValue(err);
+    const res = await request(app)
+      .post('/api/suppliers/import-places')
+      .set(auth())
+      .send({ uf: 'SP', cidade: 'Campinas' });
+    expect(res.status).toBe(429);
+    expect(res.body.code).toBe('PLACES_RATE_LIMIT');
+  });
+
+  it('nenhum resultado devolve mensagem honesta (sem criar nada)', async () => {
+    buscarFornecedoresPlaces.mockResolvedValue([]);
+    prisma.supplier.findMany.mockResolvedValue([]);
+    prisma.supplier.count.mockResolvedValue(0);
+    const res = await request(app)
+      .post('/api/suppliers/import-places')
+      .set(auth())
+      .send({ uf: 'SP', cidade: 'Campinas' });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ novos: 0, encontrados: 0 });
+    expect(res.body.mensagem).toMatch(/Nenhum fornecedor/);
+    expect(prisma.supplier.create).not.toHaveBeenCalled();
   });
 });
 

@@ -329,13 +329,30 @@ export function SupplierDetail() {
         </section>
       )}
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Catálogo de produtos</h2>
+      <section className="space-y-4" data-testid="bloco-catalogo">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Catálogo de produtos</h2>
+          {f.siteUrl && (
+            <a
+              href={f.siteUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              data-testid="link-catalogo-site"
+              className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:underline dark:text-primary-400"
+            >
+              <Store className="h-4 w-4" /> Ver catálogo no site do fornecedor
+            </a>
+          )}
+        </div>
         {estado.produtos.length === 0 ? (
           <EmptyState
             icon={Package}
-            title="Nenhum produto cadastrado"
-            description="Este fornecedor ainda não tem produtos no catálogo."
+            title="Nenhum produto cadastrado aqui"
+            description={
+              f.siteUrl
+                ? 'Este fornecedor ainda não tem produtos no app. Use o link acima para ver o catálogo no site dele.'
+                : 'Este fornecedor ainda não tem produtos no catálogo e não informou site público.'
+            }
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">

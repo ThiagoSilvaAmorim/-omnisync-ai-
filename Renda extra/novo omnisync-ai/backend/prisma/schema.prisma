@@ -236,6 +236,8 @@ model Supplier {
   email              String?
   whatsapp           String?
   fonte              String   @default("osm")
+  // Place ID do Google Places (import de importação/exportação) — upsert idempotente.
+  placeId            String?  @unique @map("place_id")
 
   // Receita Federal via BrasilAPI (cadastro por CNPJ).
   cnpj               String?  @unique

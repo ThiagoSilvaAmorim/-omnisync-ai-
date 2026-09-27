@@ -11,7 +11,7 @@ vi.mock('../src/prisma/client.js', () => ({
   },
 }));
 
-import { autocompleteLocal, limparCachePlaces } from '../src/services/googlePlaces.js';
+import { autocompleteLocal, buscarFornecedoresPlaces, limparCachePlaces } from '../src/services/googlePlaces.js';
 
 const CHAVE = 'chave-teste-places';
 
@@ -171,5 +171,119 @@ describe('GET /api/places/autocomplete (rota)', () => {
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('INPUT_CURTO');
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('googlePlaces — buscarFornecedoresPlaces (Text Search)', () => {
+  const PLACES = {
+    places: [
+      {
+        id: 'ChIJAVEC',
+        displayName: { text: 'AVEC CAMPINAS DISTRIBUIDORA LTDA' },
+        nationalPhoneNumber: '(19) 3728-2200',
+        websiteUri: 'http://ecomaveccampinas.com.br/',
+        formattedAddress: 'Av. Ricardo Bassoli Cezare, 281, Campinas - SP',
+        location: { latitude: -22.9099, longitude: -47.0626 },
+      },
+      { id: 'sem-nome', displayName: null },
+    ],
+  };
+
+  beforeEach(() => {
+    limparCachePlaces();
+    process.env.GOOGLE_PLACES_KEY = CHAVE;
+    global.fetch = vi.fn(async () => resposta(200, PLACES));
+  });
+
+  afterEach(() => {
+    delete global.fetch;
+    delete process.env.GOOGLE_PLACES_KEY;
+    delete process.env.GOOGLE_MAPS_API_KEY;
+  });
+
+  it('POST com textQuery em pt-BR e FieldMask; mapeia telefone/site/geo', async () => {
+    const itens = await buscarFornecedoresPlaces({ termo: 'importadora e distribuidora', cidade: 'Campinas', uf: 'sp', limite: 8 });
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const [url, opts] = global.fetch.mock.calls[0];
+    expect(url).toContain('places:searchText');
+    expect(opts.method).toBe('POST');
+    expect(opts.headers['X-Goog-Api-Key']).toBe(CHAVE);
+    expect(opts.headers['X-Goog-FieldMask']).toContain('places.displayName');
+    const corpo = JSON.parse(opts.body);
+    expect(corpo).toMatchObject({
+      textQuery: 'importadora e distribuidora em Campinas SP',
+      languageCode: 'pt-BR',
+      regionCode: 'BR',
+      maxResultCount: 8,
+    });
+
+    // item sem nome é descartado; o válido vira fornecedor pronto
+    expect(itens).toHaveLength(1);
+    expect(itens[0]).toMatchObject({
+      placeId: 'ChIJAVEC',
+      nome: 'AVEC CAMPINAS DISTRIBUIDORA LTDA',
+      telefone: '(19) 3728-2200',
+      site: 'http://ecomaveccampinas.com.br/',
+      lat: -22.9099,
+      lng: -47.0626,
+    });
+  });
+
+  it('cacheia a consulta por 5min (repetir não volta à rede)', async () => {
+    await buscarFornecedoresPlaces({ termo: 'importadora', cidade: 'Campinas', uf: 'SP' });
+    await buscarFornecedoresPlaces({ termo: 'importadora', cidade: 'Campinas', uf: 'SP' });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('termo vazio → TERMO_INVALIDO sem rede', async () => {
+    await expect(buscarFornecedoresPlaces({ termo: '   ', cidade: 'Campinas', uf: 'SP' }))
+      .rejects.toMatchObject({ code: 'TERMO_INVALIDO' });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('sem cidade → CIDADE_INVALIDA sem rede', async () => {
+    await expect(buscarFornecedoresPlaces({ termo: 'importadora' }))
+      .rejects.toMatchObject({ code: 'CIDADE_INVALIDA' });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('sem chave → SEM_CHAVE sem rede', async () => {
+    delete process.env.GOOGLE_PLACES_KEY;
+    await expect(buscarFornecedoresPlaces({ termo: 'importadora', cidade: 'Campinas', uf: 'SP' }))
+      .rejects.toMatchObject({ code: 'SEM_CHAVE' });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('429 → PLACES_RATE_LIMIT', async () => {
+    global.fetch.mockResolvedValue(resposta(429, {}));
+    await expect(buscarFornecedoresPlaces({ termo: 'importadora', cidade: 'Campinas', uf: 'SP' }))
+      .rejects.toMatchObject({ code: 'PLACES_RATE_LIMIT' });
+  });
+
+  it('403 → PLACES_NEGADO com a mensagem do Google', async () => {
+    global.fetch.mockResolvedValue(resposta(403, { error: { message: 'API key inválida' } }));
+    await expect(buscarFornecedoresPlaces({ termo: 'importadora', cidade: 'Campinas', uf: 'SP' }))
+      .rejects.toMatchObject({ code: 'PLACES_NEGADO', message: 'API key inválida' });
+  });
+
+  it('fetch falhando → PLACES_TIMEOUT', async () => {
+    global.fetch.mockRejectedValue(new Error('abort'));
+    await expect(buscarFornecedoresPlaces({ termo: 'importadora', cidade: 'Campinas', uf: 'SP' }))
+      .rejects.toMatchObject({ code: 'PLACES_TIMEOUT' });
+  });
+
+  it('corpo não-JSON → PLACES_INVALIDO', async () => {
+    global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => { throw new Error('bad json'); } });
+    await expect(buscarFornecedoresPlaces({ termo: 'importadora', cidade: 'Campinas', uf: 'SP' }))
+      .rejects.toMatchObject({ code: 'PLACES_INVALIDO' });
+  });
+
+  it('aceita GOOGLE_MAPS_API_KEY (nome usado no Railway)', async () => {
+    delete process.env.GOOGLE_PLACES_KEY;
+    process.env.GOOGLE_MAPS_API_KEY = 'chave-railway';
+    await buscarFornecedoresPlaces({ termo: 'importadora', cidade: 'Campinas', uf: 'SP' });
+    const [, opts] = global.fetch.mock.calls[0];
+    expect(opts.headers['X-Goog-Api-Key']).toBe('chave-railway');
   });
 });
