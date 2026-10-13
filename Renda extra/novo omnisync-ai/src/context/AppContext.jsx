@@ -165,9 +165,10 @@ export function AppProvider({ children }) {
   }, []);
 
   // Adiciona um toast e agenda a remoção automática (~3s).
-  const addToast = useCallback(message => {
+  // tipo: 'sucesso' (padrão) | 'erro' | 'aviso' — define ícone e cor no Toast.
+  const addToast = useCallback((message, tipo = 'sucesso') => {
     const id = nextToastId();
-    setToasts(prev => [...prev, { id, message }]);
+    setToasts(prev => [...prev, { id, message, tipo }]);
     setTimeout(() => removeToast(id), 3000);
   }, [removeToast]);
 

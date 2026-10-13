@@ -71,7 +71,7 @@ export function Integrations() {
       })));
       setTiktok(tiktokData);
     } catch {
-      toast('Erro ao carregar dados de integrações');
+      toast('Erro ao carregar dados de integrações', 'erro');
     } finally {
       setCarregandoExtras(false);
     }
@@ -549,7 +549,7 @@ export function Integrations() {
             <div className="min-w-0">
               <CardTitle>Integrações registradas</CardTitle>
               <p className="mt-0.5 text-xs text-slate-500">
-                Lista de plataformas cadastradas (GET /api/integracoes). Total: {filtradas.length}
+                Plataformas cadastradas — total: {filtradas.length}
                 {filtradas.length !== registradas.length ? ` de ${registradas.length}` : ''}.
               </p>
             </div>
