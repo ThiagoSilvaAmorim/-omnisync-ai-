@@ -123,9 +123,16 @@ export function BentoHome({ period, customRange }) {
         </div>
         {loading ? (
           <Skeleton className="mt-6 h-[180px] rounded-xl" />
-        ) : (
+        ) : serie.length > 0 ? (
           <div className="mt-6">
             <AreaChart data={serie} theme={theme} label="Faturamento" height={180} />
+          </div>
+        ) : (
+          /* G15: sem série real → estado vazio honesto (nunca eixos vazios plotados). */
+          <div className="mt-6 flex h-[180px] flex-col items-center justify-center gap-1.5 text-center">
+            <TrendingUp className="h-7 w-7 text-primary-400/80" />
+            <p className="text-sm font-medium text-primary-800 dark:text-primary-200">Sem pedidos no período</p>
+            <p className="text-xs text-primary-700/70 dark:text-primary-300/70">A série do faturamento aparece quando houver pedidos reais.</p>
           </div>
         )}
       </div>

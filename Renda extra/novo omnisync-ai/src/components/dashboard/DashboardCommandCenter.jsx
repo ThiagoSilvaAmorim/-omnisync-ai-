@@ -184,8 +184,15 @@ export function DashboardCommandCenter({ period, customRange }) {
           <CardContent>
             {loading ? (
               <Skeleton className="h-[260px] rounded-lg" />
-            ) : (
+            ) : serie.length > 0 ? (
               <AreaChart data={serie} theme={theme} label="Faturamento" />
+            ) : (
+              /* G15: sem série real → estado vazio honesto (nunca eixos vazios plotados). */
+              <div className="flex h-[260px] flex-col items-center justify-center gap-1.5 text-center">
+                <TrendingUp className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Sem pedidos no período</p>
+                <p className="text-xs text-slate-400">Quando houver pedidos reais, a série do faturamento aparece aqui.</p>
+              </div>
             )}
           </CardContent>
         </Card>
