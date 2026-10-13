@@ -266,22 +266,9 @@ export const api = {
     ? request(`/marketplaces/${id}/sync`, { method: 'POST' })
     : semBackend()),
 
-  // ---------- Produtos (KPIs calculados de dados reais) ----------
-  // Backend ainda não tem /api/produtos/kpis, então calcula a partir da lista real.
-  // Com VITE_API_URL vazia, usa o mock de produtos como base.
-  getKpisProdutos: async () => {
-    const base = await api.getProdutos({ limit: 1000 });
-    const lista = base.produtos || base || [];
-    const totalItens = lista.length;
-    const valorTotal = lista.reduce((a, p) => a + (Number(p.preco) || 0) * (Number(p.estoque ?? p.atual ?? 0) || 0), 0);
-    const itensBaixoEstoque = lista.filter(p => {
-      const atual = Number(p.estoque ?? p.atual ?? 0);
-      const minimo = Number(p.minimo ?? 0);
-      return minimo > 0 && atual <= minimo;
-    }).length;
-    const produtosCriticos = lista.filter(p => Number(p.estoque ?? p.atual ?? 0) <= 0 || p.status === 'critico').length;
-    return { totalItens, valorTotal, itensBaixoEstoque, produtosCriticos };
-  },
+  // ---------- Produtos (KPIs derivados na tela pela fonte única kpisPainel) ----------
+  // getKpisProdutos foi removido (G14): a página Produtos calcula os KPIs da
+  // mesma lista que exibe (src/lib/kpisPainel.js), evitando contagens divergentes.
 
   // ---------- Logística (usa /api/logistica real + KPIs derivados) ----------
   getEntregas: () => get('/logistica', mock.entregas),

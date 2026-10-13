@@ -9,7 +9,6 @@ import { Produtos } from '../pages/Produtos';
 vi.mock('../services/api', () => ({
   api: {
     getProdutos: vi.fn(),
-    getKpisProdutos: vi.fn(async () => ({ totalItens: 3, valorTotal: 300, itensBaixoEstoque: 1, produtosCriticos: 0 })),
     gerarRascunhoAnuncio: vi.fn(),
     solicitarAprovacao: vi.fn(),
     getAprovacao: vi.fn(),

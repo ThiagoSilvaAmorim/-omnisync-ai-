@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Download, Plus, Search } from 'lucide-react';
 import { api } from '../services/api';
 import { useToast } from '../hooks/useToast';
-import { exportarCsv, formatCurrency, formatNumber } from '../lib/utils';
+import { exportarCsv, formatCurrency } from '../lib/utils';
+import { statusEstoque, contarPorStatus, calcularKpisProdutos, cardsProdutos } from '../lib/kpisPainel';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -46,13 +47,12 @@ function CatalogoProdutos() {
   const carregarProdutos = useCallback(async () => {
     setLoading(true);
     try {
-      // Busca a lista completa uma vez; busca/filtros são aplicados localmente em `filtrados`.
-      const [produtosData, kpisData] = await Promise.all([
-        api.getProdutos({ limit: 100 }),
-        api.getKpisProdutos(),
-      ]);
-      setProdutos(produtosData.produtos || []);
-      setKpisState(kpisData);
+      // Lista única (fonte de verdade): tabela, filtro, painel de status e
+      // KPIs derivam todos da MESMA carga (G14 — sem contagens divergentes).
+      const produtosData = await api.getProdutos({ limit: 1000 });
+      const lista = produtosData.produtos || [];
+      setProdutos(lista);
+      setKpisState(calcularKpisProdutos(lista));
     } catch (e) {
       console.error('Erro ao carregar produtos:', e);
       toast('Erro ao carregar produtos');
@@ -65,13 +65,7 @@ function CatalogoProdutos() {
     carregarProdutos();
   }, [carregarProdutos]);
 
-  const k = kpisState;
-  const dadosKpis = [
-    { label: 'Total de Itens', valor: k.totalItens, destaque: true },
-    { label: 'Valor Total em Estoque', valor: `R$ ${formatNumber(k.valorTotal)}`, destaque: true },
-    { label: 'Itens com Estoque Baixo', valor: k.itensBaixoEstoque, destaque: true },
-    { label: 'Produtos Críticos', valor: k.produtosCriticos, destaque: false },
-  ];
+  const dadosKpis = cardsProdutos(kpisState);
 
   const [selecionados, setSelecionados] = useState([]);
   const [modalNovo, setModalNovo] = useState(false);
@@ -172,7 +166,7 @@ function CatalogoProdutos() {
     if (filtros.status !== 'todos') {
       if (filtros.status === 'esgotado') {
         if (Number(p.estoque ?? p.atual ?? 0) > 0) return false;
-      } else if ((p.status || 'normal') !== filtros.status) return false;
+      } else if (statusEstoque(p) !== filtros.status) return false;
     }
     if (filtros.categoria !== 'todas' && p.categoria !== filtros.categoria) return false;
     return true;
@@ -298,7 +292,7 @@ function CatalogoProdutos() {
             { titulo: 'Preço', chave: 'preco' },
             { titulo: 'Estoque', chave: 'estoque' },
             { titulo: 'Status', chave: 'status' },
-          ], filtrados);
+          ], filtrados.map(p => ({ ...p, status: statusEstoque(p) })));
           toast(`${filtrados.length} produto(s) exportados em CSV`);
         }}>
           <Download className="h-4 w-4" /> Exportar relatório
@@ -424,7 +418,7 @@ function CatalogoProdutos() {
                     </td>
                   </tr>
                 ) : paginaAtual.map(p => {
-                  const s = STATUS_CONFIG[p.status] || { label: p.status ?? '—', variant: 'gray' };
+                  const s = STATUS_CONFIG[statusEstoque(p)] || { label: '—', variant: 'gray' };
                   const estoqueAtual = Number(p.estoque ?? p.atual ?? 0);
                   const marcado = selecionados.includes(p.id);
                   return (
@@ -490,7 +484,7 @@ function CatalogoProdutos() {
             <CardContent className="space-y-4">
               {['normal', 'baixo', 'critico', 'excesso'].map(status => {
                 const s = STATUS_CONFIG[status] || { label: status, variant: 'gray' };
-                const qtd = filtrados.filter(p => (p.status || 'normal') === status).length;
+                const qtd = contarPorStatus(filtrados)[status] || 0;
                 return (
                   <div key={status} className="flex items-center justify-between">
                     <span className="text-slate-600 dark:text-slate-300">{s.label}</span>

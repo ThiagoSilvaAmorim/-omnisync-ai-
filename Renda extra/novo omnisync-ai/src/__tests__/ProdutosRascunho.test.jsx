@@ -11,7 +11,6 @@ vi.mock('../services/api', () => ({
     getProdutos: vi.fn(async () => ({
       produtos: [{ id: 1, nome: 'Cadeira X', sku: 'C1', preco: 500, estoque: 3, categoria: 'Móveis', status: 'ativo' }],
     })),
-    getKpisProdutos: vi.fn(async () => ({ totalItens: 1, valorTotal: 1500, itensBaixoEstoque: 0, produtosCriticos: 0 })),
     gerarRascunhoAnuncio: vi.fn(),
     solicitarAprovacao: vi.fn(),
     getAprovacao: vi.fn(),

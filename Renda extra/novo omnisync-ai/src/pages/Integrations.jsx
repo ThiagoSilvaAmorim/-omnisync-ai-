@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Download, ExternalLink, Globe, Plug, Refresh
 import { useToast } from '../hooks/useToast';
 import { api } from '../services/api';
 import { exportarCsv } from '../lib/utils';
+import { cardsIntegracao } from '../lib/kpisPainel';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -254,12 +255,9 @@ export function Integrations() {
   const totalPaginas = Math.max(1, Math.ceil(filtradas.length / 10));
   const paginaAtual = filtradas.slice((pagina - 1) * 10, pagina * 10);
 
-  const kpisCards = [
-    { label: 'Integrações ativas', valor: kpis.integracaoAtiva, destaque: true },
-    { label: 'Total de envios', valor: kpis.totalEnvios ?? '—', destaque: true },
-    { label: 'Taxa de sucesso', valor: kpis.taxaSucesso == null ? '—' : `${kpis.taxaSucesso}%`, destaque: false },
-    { label: 'Pendências', valor: kpis.pending, destaque: true },
-  ].map(item => (
+  // Regra de cor (G14): vermelho só para valor realmente problemático —
+  // ativas === 0 (nada conectado) ou pendências > 0; zeros neutros ficam neutros.
+  const kpisCards = cardsIntegracao(kpis).map(item => (
     <div
       key={item.label}
       className={`rounded-xl border p-5 shadow-sm ${item.destaque
