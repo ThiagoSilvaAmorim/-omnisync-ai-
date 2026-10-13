@@ -57,16 +57,9 @@ export const radarProdutos = {
 };
 
 export const estoque = {
-  kpis: { atual: 8420, critico: 32, reservado: 624, coberturaMediaDias: 42, capitalParado: 31200 },
-  previsao: [
-    { dia: 'D1', total: 8420, faixa: 'normal' },
-    { dia: 'D10', total: 8120, faixa: 'normal' },
-    { dia: 'D20', total: 7540, faixa: 'baixo' },
-    { dia: 'D30', total: 6920, faixa: 'baixo' },
-    { dia: 'D40', total: 6450, faixa: 'critico' },
-    { dia: 'D50', total: 6190, faixa: 'critico' },
-    { dia: 'D60', total: 6100, faixa: 'critico' },
-  ],
+  // G4: reservado/cobertura sem fonte real → null; previsão sem histórico → [].
+  kpis: { atual: 8420, critico: 32, reservado: null, coberturaMediaDias: null, capitalParado: 31200 },
+  previsao: [],
   estoqueParado: [
     { faixa: '0-30 dias', valor: 6520, percentual: 21 },
     { faixa: '31-60 dias', valor: 7840, percentual: 25 },

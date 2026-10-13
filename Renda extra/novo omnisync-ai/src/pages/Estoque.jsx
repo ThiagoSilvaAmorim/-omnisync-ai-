@@ -30,7 +30,7 @@ const ACOES_IA = ['Desconto', 'Kit', 'Campanha', 'Liquidar'];
 function PrevisaoChart({ data }) {
   const pontos = (Array.isArray(data) ? data : []).filter(d => Number.isFinite(Number(d.total)));
   if (pontos.length < 2) {
-    return <p className="py-8 text-center text-sm text-slate-500">Sem dados suficientes para projetar.</p>;
+    return <p className="py-8 text-center text-sm text-slate-500">Sem histórico de saídas para projetar.</p>;
   }
   const w = 600;
   const h = 260;
@@ -60,7 +60,7 @@ export function Estoque() {
   const [busca, setBusca] = useState('');
   const [filtros, setFiltros] = useState({ status: 'todos' });
   const [loading, setLoading] = useState(true);
-  const [kpisState, setKpisState] = useState({ atual: 0, critico: 0, reservado: 0, coberturaMediaDias: 0, capitalParado: 0 });
+  const [kpisState, setKpisState] = useState({ atual: 0, critico: 0, reservado: null, coberturaMediaDias: null, capitalParado: 0 });
   const [previsao, setPrevisao] = useState([]);
   const [produtos, setProdutos] = useState([]);
   const [estoqueParado, setEstoqueParado] = useState([]);
@@ -93,11 +93,24 @@ export function Estoque() {
 
   const k = kpisState || {};
   const num = v => Number(v ?? 0);
+  // G4: reservado/cobertura vêm null do backend (sem fonte real) → "—" honesto
+  // com dica, em vez de 0 dias ou valores fabricados (7% / 42 dias).
+  const semFonte = v => v === null || v === undefined;
   const dadosKpis = [
     { label: 'Estoque atual', valor: formatNumber(num(k.atual)), destaque: false },
     { label: 'Estoque crítico', valor: `${num(k.critico)} itens`, destaque: true },
-    { label: 'Estoque reservado', valor: formatNumber(num(k.reservado)), destaque: false },
-    { label: 'Cobertura média', valor: `${num(k.coberturaMediaDias)} dias`, destaque: false },
+    {
+      label: 'Estoque reservado',
+      valor: semFonte(k.reservado) ? '—' : formatNumber(num(k.reservado)),
+      destaque: false,
+      hint: !loading && semFonte(k.reservado) ? 'Sem fonte de dados' : null,
+    },
+    {
+      label: 'Cobertura média',
+      valor: semFonte(k.coberturaMediaDias) ? '—' : `${num(k.coberturaMediaDias)} dias`,
+      destaque: false,
+      hint: !loading && semFonte(k.coberturaMediaDias) ? 'Sem histórico' : null,
+    },
     { label: 'Capital parado', valor: formatCurrency(num(k.capitalParado)), destaque: false },
   ];
 
@@ -136,6 +149,7 @@ export function Estoque() {
       >
         {item.valor}
       </p>
+      {item.hint && <p className="mt-1 text-xs text-slate-400">{item.hint}</p>}
     </div>
   ));
 

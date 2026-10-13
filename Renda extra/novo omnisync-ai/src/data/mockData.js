@@ -427,29 +427,17 @@ export const radarProdutos = {
 };
 
 // ---------- Gestão de Estoque ----------
+// G4: reservado e cobertura sem fonte real → null (o exibidor mostra "—");
+// previsão sem histórico → []. Nada de 7% / 42 dias fabricados.
 export const estoqueKpis = {
   atual: 8420,
   critico: 32,
-  reservado: 624,
-  coberturaMediaDias: 42,
+  reservado: null,
+  coberturaMediaDias: null,
   capitalParado: 31200,
 };
 
-export const previsaoEstoque = [
-  { dia: 'D1', total: 8420, faixa: 'normal' },
-  { dia: 'D5', total: 8350, faixa: 'normal' },
-  { dia: 'D10', total: 8120, faixa: 'normal' },
-  { dia: 'D15', total: 7890, faixa: 'baixo' },
-  { dia: 'D20', total: 7540, faixa: 'baixo' },
-  { dia: 'D25', total: 7180, faixa: 'baixo' },
-  { dia: 'D30', total: 6920, faixa: 'baixo' },
-  { dia: 'D35', total: 6610, faixa: 'critico' },
-  { dia: 'D40', total: 6450, faixa: 'critico' },
-  { dia: 'D45', total: 6280, faixa: 'critico' },
-  { dia: 'D50', total: 6190, faixa: 'critico' },
-  { dia: 'D55', total: 6150, faixa: 'critico' },
-  { dia: 'D60', total: 6100, faixa: 'critico' },
-];
+export const previsaoEstoque = [];
 
 export const produtosEstoque = [
   { id: 1, nome: 'Fone Bluetooth Pro X', sku: 'FBX-001', atual: 120, minimo: 30, coberturaDias: 18, status: 'normal' },

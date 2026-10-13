@@ -158,6 +158,9 @@ router.get('/resumo/:productId', async (req, res) => {
 
 // GET /api/estoque/kpis
 // KPIs reais calculados do Neon: estoque atual, críticos, reservado, cobertura e capital parado.
+// G4: reservado e cobertura NÃO têm fonte real no schema (não existe campo de reserva e
+// não há histórico de saída para cobertura) → null honesto; o front exibe "—" em vez de
+// números fabricados (antes: 7% do estoque e cobertura fixa em 42 dias).
 router.get('/kpis', async (_req, res) => {
   try {
     const produtos = await prisma.product.findMany({
@@ -165,8 +168,8 @@ router.get('/kpis', async (_req, res) => {
     });
     const atual = produtos.reduce((a, p) => a + (Number(p.estoque) || 0), 0);
     const critico = produtos.filter(p => (Number(p.minimo) || 0) > 0 && (Number(p.estoque) || 0) <= (Number(p.minimo) || 0)).length;
-    const reservado = Math.round(atual * 0.07);
-    const coberturaMediaDias = 42;
+    const reservado = null;
+    const coberturaMediaDias = null;
     const capitalParado = Math.round(produtos.reduce((a, p) => a + (Number(p.preco) || 0) * (Number(p.estoque) || 0), 0) * 100) / 100;
     res.json({ atual, critico, reservado, coberturaMediaDias, capitalParado });
   } catch (error) {
@@ -176,14 +179,28 @@ router.get('/kpis', async (_req, res) => {
 });
 
 // GET /api/estoque/previsao
-// Projeção simples de 60 dias a partir do saldo atual (queda linear ilustrativa).
+// Projeção de 60 dias a partir da MÉDIA DIÁRIA REAL de saídas dos últimos 60 dias.
+// G4: antes usava queda linear fabricada (0,5%/dia fixos). Sem histórico de saída →
+// retorna [] e o front mostra estado vazio honesto ("Sem histórico de saídas").
 router.get('/previsao', async (_req, res) => {
   try {
-    const total = await prisma.product.aggregate({ _sum: { estoque: true } });
+    const desde = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    const [total, saidas] = await Promise.all([
+      prisma.product.aggregate({ _sum: { estoque: true } }),
+      prisma.stockMovement.aggregate({
+        where: { type: 'saida', createdAt: { gte: desde } },
+        _sum: { quantity: true },
+      }),
+    ]);
     const base = Number(total._sum.estoque) || 0;
+    const totalSaidas = Number(saidas._sum.quantity) || 0;
+    if (totalSaidas <= 0) {
+      return res.json([]);
+    }
+    const mediaDiaria = totalSaidas / 60;
     const pontos = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
     const previsao = pontos.map(d => {
-      const totalDia = Math.max(0, Math.round(base * (1 - d * 0.005)));
+      const totalDia = Math.max(0, Math.round(base - mediaDiaria * d));
       const faixa = totalDia > base * 0.7 ? 'normal' : totalDia > base * 0.4 ? 'baixo' : 'critico';
       return { dia: `D${d}`, total: totalDia, faixa };
     });

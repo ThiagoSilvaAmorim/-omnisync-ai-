@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import app from '../src/app.js';
+import { prisma } from '../src/prisma/client.js';
 
 // ============================================
 // Testes de API (supertest). Exigem o banco
@@ -102,14 +103,39 @@ describe('API — Estoque (KPIs reais do Neon)', () => {
     expect(res.body).toHaveProperty('atual');
     expect(res.body).toHaveProperty('critico');
     expect(res.body).toHaveProperty('capitalParado');
+    // G4: sem fonte real no schema → null honesto (nada de 7% ou 42 dias fabricados).
+    expect(res.body.reservado).toBeNull();
+    expect(res.body.coberturaMediaDias).toBeNull();
   });
 
-  it('retorna previsão de 60 dias', async () => {
-    const res = await request(app).get('/api/estoque/previsao');
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThan(0);
-    expect(res.body[0]).toHaveProperty('total');
+  it('retorna previsão baseada em saídas reais (G4, sem curva fabricada)', async () => {
+    const criado = await request(app).post('/api/produtos').send({
+      nome: 'Produto Previsão Teste',
+      sku: 'PREV-TESTE',
+      categoria: 'Testes',
+      preco: 10,
+      estoque: 100,
+      status: 'ativo',
+    });
+    expect(criado.status).toBe(201);
+    try {
+      // Garante histórico mínimo de saída para a projeção.
+      const mov = await request(app)
+        .post('/api/estoque/movimentacao')
+        .send({ productId: criado.body.id, type: 'saida', quantity: 10 });
+      expect(mov.status).toBe(201);
+
+      const res = await request(app).get('/api/estoque/previsao');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body[0]).toHaveProperty('total');
+      // Projeção nunca negativa e com taxas reais (não a curva fixa antiga).
+      expect(res.body.every(p => p.total >= 0)).toBe(true);
+    } finally {
+      await prisma.stockMovement.deleteMany({ where: { productId: criado.body.id } });
+      await request(app).delete(`/api/produtos/${criado.body.id}`);
+    }
   });
 
   it('retorna faixas de estoque parado', async () => {
