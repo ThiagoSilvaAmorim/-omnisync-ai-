@@ -136,13 +136,10 @@ export function Sidebar({ onNavigate, forceExpanded = false, collapsed = false }
                             'flex items-center gap-3 rounded-lg py-2 pl-8 pr-3 text-sm transition-all duration-150',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400',
                             isActive
-                              ? 'font-medium text-white'
+                              ? 'nav-ativa font-medium'
                               : 'text-slate-300 hover:bg-white/8 hover:text-white',
                             item.destaque && !isActive && 'bg-emerald-500/10 hover:bg-emerald-500/20'
                           )}
-                          style={({ isActive }) =>
-                            isActive ? { background: 'var(--tl-sidebar-active)' } : undefined
-                          }
                         >
                           {({ isActive }) => (
                             <>
@@ -322,13 +319,10 @@ export function Sidebar({ onNavigate, forceExpanded = false, collapsed = false }
                     'flex items-center gap-3 rounded-lg py-2 pl-3 pr-3 text-sm transition-all duration-150',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400',
                     isActive
-                      ? 'font-medium text-white'
+                      ? 'nav-ativa font-medium'
                       : 'text-slate-300 hover:bg-white/8 hover:text-white',
                     item.destaque && !isActive && 'bg-emerald-500/10 hover:bg-emerald-500/20'
                   )}
-                  style={({ isActive }) =>
-                    isActive ? { background: 'var(--tl-sidebar-active)' } : undefined
-                  }
                 >
                   {({ isActive }) => (
                     <>

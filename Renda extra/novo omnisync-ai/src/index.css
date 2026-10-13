@@ -67,6 +67,15 @@
   .animate-page {
     animation: page-in 0.25s ease-out;
   }
+
+  /* Item de navegação ativo (sidebar): tinta da cor primária (âmbar por
+     padrão) sobre a superfície escura + texto branco. Contraste garantido
+     em qualquer modo/paleta — substitui o fundo opaco branco que deixava
+     o texto invisível (branco sobre branco) no modo Clássico. */
+  .nav-ativa {
+    background: color-mix(in srgb, rgb(var(--primary-500)) 32%, transparent);
+    color: #ffffff;
+  }
 }
 
 /* Impressão: margens da página e fundo branco */

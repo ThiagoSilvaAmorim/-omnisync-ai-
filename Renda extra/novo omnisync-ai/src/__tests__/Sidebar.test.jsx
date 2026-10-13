@@ -99,6 +99,15 @@ describe('Sidebar — trilha de ícones (desktop, collapsed)', () => {
     fireEvent.click(within(screen.getByTestId('painel-secao')).getByText('Dashboard'));
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
+
+  it('item ativo no painel usa estilo nav-ativa (contraste legível) sem background inline', () => {
+    renderizar({ collapsed: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Principal' }));
+    const link = within(screen.getByTestId('painel-secao')).getByRole('link', { name: 'Dashboard' });
+    expect(link.className).toContain('nav-ativa');
+    expect(link.getAttribute('aria-current')).toBe('page');
+    expect(link.style.background).toBe('');
+  });
 });
 
 describe('Sidebar — modo expandido (drawer mobile, forceExpanded)', () => {
@@ -120,5 +129,13 @@ describe('Sidebar — modo expandido (drawer mobile, forceExpanded)', () => {
     fireEvent.click(screen.getByText('Vendas'));
     expect(screen.getByTestId('sonda').textContent).toBe('/vendas');
     expect(screen.queryByTestId('painel-secao')).toBeNull();
+  });
+
+  it('item ativo usa estilo nav-ativa unificado (contraste legível), sem fundo branco inline', () => {
+    renderizar({ forceExpanded: true });
+    const link = screen.getByRole('link', { name: 'Dashboard' });
+    expect(link.className).toContain('nav-ativa');
+    expect(link.getAttribute('aria-current')).toBe('page');
+    expect(link.style.background).toBe('');
   });
 });
